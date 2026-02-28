@@ -19,6 +19,9 @@ env/
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
+# Firebase Credentials
+firebase-credentials.json
+
 # OS
 .DS_Store
 Thumbs.db

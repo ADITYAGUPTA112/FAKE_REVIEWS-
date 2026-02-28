@@ -28,8 +28,28 @@
                         brand: {
                             cyan: '#06b6d4',
                             purple: '#a855f7',
-                            fake: '#ef4444', // Red 500
-                            genuine: '#10b981' // Emerald 500
+                            fake: '#ef4444',
+                            genuine: '#10b981'
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'slide-up': 'slideUp 0.4s ease-out forwards',
+                        'shimmer': 'shimmer 2s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        shimmer: {
+                            '0%': { backgroundPosition: '-1000px 0' },
+                            '100%': { backgroundPosition: '1000px 0' },
                         }
                     }
                 }
@@ -44,16 +64,53 @@
         body {
             background-color: #0f172a;
             color: #f8fafc;
+            overflow: hidden;
+            /* App-like feel */
+        }
+
+        /* Ambient Premium Gradients */
+        .ambient-bg {
+            position: fixed;
+            top: -20vh;
+            left: -10vw;
+            width: 70vw;
+            height: 70vh;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.08) 0%, rgba(6, 182, 212, 0.03) 50%, rgba(15, 23, 42, 0) 80%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(80px);
+        }
+
+        .ambient-bg-2 {
+            position: fixed;
+            bottom: -20vh;
+            right: -10vw;
+            width: 60vw;
+            height: 60vh;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, rgba(168, 85, 247, 0.03) 50%, rgba(15, 23, 42, 0) 80%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(80px);
         }
 
         /* Glassmorphism utility */
         .glass-panel {
-            background: rgba(30, 41, 59, 0.5);
-            /* Slate 800 with opacity */
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            /* Soft, subtle shadow instead of heavy box-shadow */
+            box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 10;
+            transition: border-color 0.3s ease, background 0.3s ease;
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.04);
         }
 
         /* Gradient Button */
@@ -64,6 +121,7 @@
             overflow: hidden;
             border: none;
             color: white;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
         }
 
         .btn-gradient::before {
@@ -83,6 +141,11 @@
             opacity: 1;
         }
 
+        .btn-gradient:hover {
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.5);
+            transform: translateY(-2px);
+        }
+
         .btn-gradient span,
         .btn-gradient i {
             position: relative;
@@ -91,348 +154,731 @@
 
         /* Input styling */
         .input-dark {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             color: #f8fafc;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .input-dark:focus {
-            background: rgba(15, 23, 42, 0.8);
+            background: rgba(0, 0, 0, 0.4);
             border-color: #06b6d4;
-            box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
+            box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.15);
             outline: none;
         }
 
         /* Sidebar Link animation */
         .sidebar-link {
             transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .sidebar-link::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 0;
+            width: 3px;
+            background: #06b6d4;
+            border-radius: 0 4px 4px 0;
+            transition: height 0.3s ease;
         }
 
         .sidebar-link:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.03);
             color: #fff;
         }
 
-        .sidebar-link.active {
-            background: rgba(6, 182, 212, 0.1);
+        .sidebar-link:hover i {
+            transform: scale(1.1);
             color: #06b6d4;
-            border-right: 3px solid #06b6d4;
+        }
+
+        .sidebar-link.active {
+            background: linear-gradient(90deg, rgba(6, 182, 212, 0.1) 0%, transparent 100%);
+            color: #06b6d4;
+        }
+
+        .sidebar-link.active::before {
+            height: 100%;
         }
 
         /* Loading Skeleton */
         .skeleton {
             background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite linear;
+            border-color: transparent !important;
+            color: transparent !important;
         }
 
-        @keyframes loading {
-            0% {
-                background-position: 200% 0;
-            }
-
-            100% {
-                background-position: -200% 0;
-            }
+        .skeleton * {
+            visibility: hidden;
         }
 
         /* Review Card Colored Borders */
         .border-left-genuine {
-            border-left: 4px solid #10b981;
+            border-left: 3px solid #10b981;
         }
 
         .border-left-fake {
-            border-left: 4px solid #ef4444;
+            border-left: 3px solid #ef4444;
         }
 
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
         }
 
         ::-webkit-scrollbar-track {
-            background: #0f172a;
+            background: transparent;
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #334155;
-            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Toast Animations */
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
+
+        .toast-enter {
+            animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .toast-exit {
+            animation: fadeOut 0.3s ease forwards;
+        }
+
+        /* Processing Blur Overlay */
+        .processing-blur {
+            filter: blur(4px) brightness(0.7);
+            pointer-events: none;
+            transition: all 0.5s ease;
+        }
+
+        /* Model Toggle Slider */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #06b6d4;
+        }
+
+        .toggle-checkbox:checked+.toggle-label {
+            background-color: #06b6d4;
         }
     </style>
 </head>
 
-<body class="flex h-screen overflow-hidden antialiased">
+<body class="flex h-screen bg-background antialiased selection:bg-cyan-500/30">
+
+    <!-- Ambient Gradients -->
+    <div class="ambient-bg"></div>
+    <div class="ambient-bg-2"></div>
 
     <!-- LEFT SIDEBAR -->
-    <aside
-        class="w-64 flex-shrink-0 border-r border-slate-800 bg-slate-900/50 backdrop-blur-xl flex flex-col justify-between transition-all duration-300 z-20">
+    <aside id="sidebar"
+        class="w-64 flex-shrink-0 border-r border-white/5 bg-slate-900/40 backdrop-blur-2xl flex flex-col justify-between transition-all duration-300 z-30">
         <div>
             <!-- Logo Section -->
-            <div class="h-16 flex items-center px-6 border-b border-slate-800">
+            <div class="h-16 flex items-center px-6 border-b border-white/5">
                 <div
-                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center mr-3 shadow-lg shadow-purple-500/20">
-                    <i class="ph-fill ph-shield-check text-white text-lg"></i>
+                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center mr-3 shadow-[0_0_15px_rgba(168,85,247,0.4)]">
+                    <i class="ph-fill ph-check-square-offset text-white text-lg"></i>
                 </div>
-                <span
-                    class="text-lg font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">TrustLens
-                    AI</span>
+                <span class="text-lg font-bold tracking-tight text-white">TrustLens<span
+                        class="text-cyan-400">.ai</span></span>
             </div>
 
             <!-- Navigation Links -->
-            <nav class="p-4 space-y-1 mt-2">
-                <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Main Menu</p>
+            <nav class="p-4 space-y-1 mt-4">
+                <p class="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Menu</p>
                 <a href="#"
                     class="sidebar-link active flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300">
-                    <i class="ph ph-squares-four text-lg mr-3"></i> Dashboard
+                    <i class="ph ph-squares-four text-lg mr-3 transition-transform"></i> Overview
+                </a>
+                <a href="#analysis-section"
+                    class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
+                    <i class="ph ph-magnifying-glass-plus text-lg mr-3 transition-transform"></i> Analyze Product
                 </a>
                 <a href="#"
-                    class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
-                    <i class="ph ph-magnifying-glass text-lg mr-3"></i> Analyze Product
+                    class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 opacity-50 cursor-not-allowed"
+                    title="Coming Soon">
+                    <i class="ph ph-clock-counter-clockwise text-lg mr-3 transition-transform"></i> Scan History
+                </a>
+            </nav>
+
+            <nav class="p-4 space-y-1 mt-2">
+                <p class="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Settings</p>
+                <a href="#"
+                    class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 opacity-50 cursor-not-allowed"
+                    title="Coming Soon">
+                    <i class="ph ph-funnel text-lg mr-3 transition-transform"></i> Rule Filters
                 </a>
                 <a href="#"
-                    class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
-                    <i class="ph ph-cpu text-lg mr-3"></i> Model Settings
-                </a>
-                <a href="#"
-                    class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
-                    <i class="ph ph-download-simple text-lg mr-3"></i> Export CSV
+                    class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 opacity-50 cursor-not-allowed"
+                    title="Coming Soon">
+                    <i class="ph ph-plug text-lg mr-3 transition-transform"></i> API Integration
                 </a>
             </nav>
         </div>
 
-        <!-- User Profile & Logout -->
-        <div class="p-4 border-t border-slate-800 space-y-2">
-            <div class="flex items-center px-3 py-2">
-                <img src="https://i.pravatar.cc/150?img=68" alt="User Avatar"
-                    class="w-9 h-9 rounded-full mr-3 border border-slate-700">
-                <div class="flex flex-col">
-                    <span class="text-sm font-medium text-white shadow-sm">{{ session.get('user', 'Demo User') }}</span>
-                    <span class="text-xs text-cyan-400">Pro Plan</span>
-                </div>
+        <!-- System Status area -->
+        <div class="p-4 border-t border-white/5">
+            <div class="flex items-center px-3 py-2 bg-emerald-500/5 border border-emerald-500/10 rounded-lg">
+                <span class="relative flex h-2 w-2 mr-3">
+                    <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span class="text-xs text-emerald-400/90 font-medium">All systems operational</span>
             </div>
-            <a href="{{ url_for('logout') }}"
-                class="sidebar-link flex items-center px-3 py-2 rounded-lg text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
-                <i class="ph ph-sign-out text-lg mr-3"></i> Logout
-            </a>
         </div>
     </aside>
 
     <!-- MAIN CONTENT AREA -->
-    <div class="flex-1 flex flex-col h-screen overflow-hidden relative">
-        <!-- Ambient lighting in main area -->
-        <div
-            class="absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full mix-blend-screen filter blur-3xl pointer-events-none">
-        </div>
+    <div class="flex-1 flex flex-col h-screen overflow-hidden relative z-20">
 
         <!-- TOP NAVBAR -->
-        <header class="h-16 flex items-center justify-between px-8 border-b border-slate-800 glass-panel z-10">
-            <div class="flex items-center space-x-4">
-                <h2 class="text-xl font-semibold text-white">Dashboard Overview</h2>
-                <div
-                    class="hidden md:flex items-center px-2.5 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-xs font-medium">
-                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 mr-2 animate-pulse"></span>
-                    DistilBERT Active
-                </div>
+        <header
+            class="h-16 flex items-center justify-between px-8 border-b border-white/5 bg-slate-900/30 backdrop-blur-xl z-30">
+            <div class="flex items-center space-x-6">
+                <!-- Mobile Menu Toggle (hidden on desktop) -->
+                <button class="md:hidden text-slate-400 hover:text-white transition">
+                    <i class="ph ph-list text-2xl"></i>
+                </button>
+
+                <h2 class="text-sm font-medium text-slate-300 hidden md:block">TrustLens / <span
+                        class="text-white">Workspace</span></h2>
             </div>
-            <div class="flex items-center space-x-4">
-                <button class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
-                    <i class="ph ph-moon text-xl"></i>
-                </button>
-                <button class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition relative">
+
+            <div class="flex items-center space-x-5">
+                <!-- Plan Badge -->
+                <div
+                    class="hidden sm:flex items-center px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border border-purple-500/20 text-xs font-medium text-purple-300">
+                    <i class="ph-fill ph-lightning mr-1 text-amber-400"></i> Pro Tier
+                </div>
+
+                <div class="h-5 w-px bg-white/10 hidden sm:block"></div>
+
+                <!-- Icons -->
+                <button class="text-slate-400 hover:text-white transition relative">
                     <i class="ph ph-bell text-xl"></i>
-                    <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-purple-500"></span>
+                    <span class="absolute top-0 right-0 w-2 h-2 rounded-full bg-cyan-400 ring-2 ring-slate-900"></span>
                 </button>
+
+                <!-- Avatar / User Menu Trigger -->
+                <div class="relative group cursor-pointer" id="openProfileModalBtn">
+                    <img src="{{ session.get('user_photo') or 'https://api.dicebear.com/7.x/initials/svg?seed=' ~ session.get('user_name', 'U') }}"
+                        alt="Avatar"
+                        class="w-8 h-8 rounded-full border border-white/10 group-hover:border-cyan-400 transition object-cover">
+                </div>
             </div>
         </header>
 
-        <!-- SCROLLABLE CONTENT -->
-        <main class="flex-1 overflow-y-auto p-8 z-10 scroll-smooth">
-            <div class="max-w-7xl mx-auto space-y-8">
+        <!-- SCROLLABLE CONTENT WITH SMOOTH SCROLLING -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 z-10 scroll-smooth" id="mainScrollArea">
+            <div class="max-w-[1400px] mx-auto space-y-6 md:space-y-8 pb-12 transition-all duration-500"
+                id="dashboardContent">
 
                 <!-- HERO SECTION: URL INPUT -->
-                <section class="glass-panel p-8 rounded-2xl relative overflow-hidden group">
-                    <!-- Subtle gradient overlay -->
-                    <div
-                        class="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                    </div>
+                <section id="analysis-section"
+                    class="glass-panel p-6 md:p-10 rounded-2xl relative overflow-hidden group">
+                    <div class="relative z-10 max-w-4xl">
+                        <div
+                            class="inline-flex items-center px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mb-5">
+                            <i class="ph ph-sparkle mr-1.5"></i> V2 AI Engine Active
+                        </div>
+                        <h1 class="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">Intercept Fraudulent
+                            Reviews</h1>
+                        <p class="text-slate-400 mb-8 max-w-2xl text-sm md:text-base leading-relaxed">Instantly analyze
+                            any Amazon product page using specialized NLP transformers. We dissect syntax, sentiment,
+                            and metadata to expose AI-generated and paid manipulative reviews.</p>
 
-                    <div class="relative z-10 max-w-3xl">
-                        <h1 class="text-3xl font-bold text-white mb-2">AI-Powered Fake Review Detection</h1>
-                        <p class="text-slate-400 mb-6 text-sm">Analyze Amazon products using transformer-based NLP
-                            models. Paste a URL or ASIN below.</p>
-
-                        <div class="flex flex-col sm:flex-row gap-4">
-                            <div class="relative flex-grow">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <i class="ph ph-link text-slate-400 text-lg"></i>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <div class="relative flex-grow group">
+                                <div
+                                    class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-cyan-400 text-slate-500">
+                                    <i class="ph ph-link-bold text-lg"></i>
                                 </div>
                                 <input type="text" id="asinInput"
-                                    class="input-dark block w-full pl-11 pr-4 py-3.5 rounded-xl sm:text-sm shadow-inner"
-                                    placeholder="E.g., https://www.amazon.com/dp/B07VGRJDFY or ASIN">
+                                    class="input-dark block w-full pl-11 pr-4 py-4 rounded-xl text-sm md:text-base tracking-wide"
+                                    placeholder="Paste Amazon Product URL or ASIN here...">
+                                <!-- Floating enter key hint -->
+                                <div
+                                    class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none hidden md:flex">
+                                    <div
+                                        class="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-400 text-xs font-mono font-medium tracking-tight">
+                                        ↵ Return</div>
+                                </div>
                             </div>
 
                             <button id="analyzeBtn"
-                                class="btn-gradient py-3.5 px-8 rounded-xl font-semibold flex items-center justify-center shadow-lg shadow-cyan-500/20 whitespace-nowrap">
-                                <i class="ph ph-magic-wand mr-2 text-lg"></i>
-                                <span id="analyzeBtnText">Analyze Now</span>
+                                class="btn-gradient py-4 px-8 rounded-xl font-semibold flex items-center justify-center whitespace-nowrap text-sm md:text-base">
+                                <i class="ph-bold ph-magic-wand mr-2 text-lg"></i>
+                                <span id="analyzeBtnText">Run Analysis</span>
                             </button>
                         </div>
+
+                        <!-- Mini metadata (hidden until search) -->
+                        <div id="productMeta"
+                            class="mt-4 flex items-center text-xs text-slate-500 hidden opacity-0 transition-opacity duration-500">
+                            <i class="ph ph-check-circle text-emerald-500 mr-1 mt-0.5"></i>
+                            <span>Target Acquired: <span id="metaAsin" class="text-slate-300 font-mono"></span></span>
+                            <span class="mx-3">•</span>
+                            <i class="ph ph-clock mr-1 mt-0.5"></i>
+                            <span><span id="metaTime" class="text-slate-300">Just now</span></span>
+                        </div>
+                    </div>
+
+                    <!-- Decorative Graphic right side -->
+                    <div
+                        class="absolute right-0 top-0 bottom-0 w-1/3 pointer-events-none hidden lg:block opacity-30 select-none">
+                        <svg class="w-full h-full text-cyan-500/20" viewBox="0 0 200 200"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path fill="currentColor"
+                                d="M44.7,-76.4C58.8,-69.2,71.8,-59.1,81.1,-46.3C90.4,-33.5,96,-18,95.5,-2.9C95,12.2,88.4,26.9,78.2,38.5C68,50.1,54.2,58.6,40.1,66.1C26,73.6,11.6,80.1,-3.5,85.6C-18.6,91.1,-37.2,85.6,-51.9,76C-66.6,66.4,-77.4,52.7,-84.9,37.3C-92.4,21.9,-96.6,4.8,-92.5,-10.8C-88.4,-26,-76,-39.8,-62.4,-49.2C-48.8,-58.6,-34,-63.6,-20.3,-70C-6.6,-76.4,6,-84.2,21.1,-84.6C36.2,-85,44.7,-76.4,44.7,-76.4Z"
+                                transform="translate(100 100)" />
+                        </svg>
                     </div>
                 </section>
 
-                <!-- 4 GRID METRIC CARDS -->
-                <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <!-- Card 1 -->
-                    <div class="glass-panel p-6 rounded-2xl hover:-translate-y-1 transition-transform duration-300">
-                        <div class="flex justify-between items-start mb-4">
-                            <h3 class="text-slate-400 text-sm font-medium">Total Reviews</h3>
-                            <div
-                                class="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400">
-                                <i class="ph ph-chat-text text-xl"></i>
-                            </div>
-                        </div>
-                        <div class="flex items-baseline mb-2">
-                            <span class="text-4xl font-bold text-white tracking-tight" id="statTotal">--</span>
-                        </div>
-                        <p class="text-xs text-slate-500">Fetched for analysis</p>
-                    </div>
-
-                    <!-- Card 2 -->
-                    <div class="glass-panel p-6 rounded-2xl hover:-translate-y-1 transition-transform duration-300">
-                        <div class="flex justify-between items-start mb-4">
-                            <h3 class="text-slate-400 text-sm font-medium">Fake Risk Count</h3>
-                            <div class="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500">
-                                <i class="ph ph-shield-warning text-xl"></i>
-                            </div>
-                        </div>
-                        <div class="flex items-baseline mb-2">
-                            <span class="text-4xl font-bold text-red-400 tracking-tight" id="statFakeCount">--</span>
-                        </div>
-                        <p class="text-xs text-slate-500">Predicted artificial reviews</p>
-                    </div>
-
-                    <!-- Card 3 -->
+                <!-- 4 METRIC CARDS GRID -->
+                <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                    <!-- Total Reviews Card -->
                     <div
-                        class="glass-panel p-6 rounded-2xl hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
-                        <div class="flex justify-between items-start mb-4 relative z-10">
-                            <h3 class="text-slate-400 text-sm font-medium">Genuine Ratio</h3>
-                            <div
-                                class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-                                <i class="ph ph-check-circle text-xl"></i>
+                        class="glass-panel p-5 rounded-2xl flex flex-col justify-between h-36 border-t-2 border-t-white/5 data-card">
+                        <div class="flex justify-between items-start">
+                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Total
+                                Evaluated</span>
+                            <i class="ph ph-files text-slate-500 text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-baseline space-x-2">
+                                <span class="text-3xl font-bold text-white tracking-tight" id="statTotal">--</span>
                             </div>
-                        </div>
-                        <div class="flex items-baseline mb-2 relative z-10">
-                            <span class="text-4xl font-bold text-emerald-400 tracking-tight"
-                                id="statTrustScore">--%</span>
-                        </div>
-                        <div class="w-full bg-slate-800 rounded-full h-1.5 mt-3 relative z-10">
-                            <div class="bg-emerald-400 h-1.5 rounded-full" style="width: 0%" id="trustScoreBar"></div>
+                            <p class="text-[10px] text-slate-500 mt-1">Sourced from multiple regions</p>
                         </div>
                     </div>
 
-                    <!-- Card 4 -->
-                    <div class="glass-panel p-6 rounded-2xl hover:-translate-y-1 transition-transform duration-300">
-                        <div class="flex justify-between items-start mb-4">
-                            <h3 class="text-slate-400 text-sm font-medium">Avg Confidence</h3>
-                            <div
-                                class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">
-                                <i class="ph ph-target text-xl"></i>
+                    <!-- Fake Risk Score Card -->
+                    <div
+                        class="glass-panel p-5 rounded-2xl flex flex-col justify-between h-36 border-t-2 border-t-white/5 data-card relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        </div>
+                        <div class="flex justify-between items-start relative z-10">
+                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Fake Risk
+                                Score</span>
+                            <i class="ph ph-warning-circle text-red-500/70 text-lg"></i>
+                        </div>
+                        <div class="relative z-10 w-full">
+                            <div class="flex items-baseline justify-between mb-2">
+                                <div class="flex items-baseline">
+                                    <span class="text-3xl font-bold text-red-400 tracking-tight"
+                                        id="statFakeCount">--</span>
+                                    <span class="text-sm text-red-400/70 font-medium ml-1">%</span>
+                                </div>
+                                <span
+                                    class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700"
+                                    id="riskLevelBadge">N/A</span>
+                            </div>
+                            <div class="w-full bg-black/40 rounded-full h-1.5 overflow-hidden">
+                                <div class="bg-gradient-to-r from-red-600 to-red-400 h-full rounded-full transition-all duration-1000 w-0"
+                                    id="fakeRiskBar"></div>
                             </div>
                         </div>
-                        <div class="flex items-baseline mb-2">
-                            <span class="text-4xl font-bold text-purple-400 tracking-tight" id="statAccuracy">--%</span>
+                    </div>
+
+                    <!-- Authentic Ratio Card -->
+                    <div
+                        class="glass-panel p-5 rounded-2xl flex flex-col justify-between h-36 border-t-2 border-t-white/5 data-card relative overflow-hidden group">
+                        <div
+                            class="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity">
                         </div>
-                        <p class="text-xs text-slate-500">Model certainty level</p>
+                        <div class="flex justify-between items-start relative z-10">
+                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Authentic
+                                Ratio</span>
+                            <i class="ph ph-shield-check text-emerald-500/70 text-lg"></i>
+                        </div>
+                        <div class="relative z-10 w-full">
+                            <div class="flex items-baseline mb-2">
+                                <span class="text-3xl font-bold text-emerald-400 tracking-tight"
+                                    id="statTrustScore">--</span>
+                                <span class="text-sm text-emerald-400/70 font-medium ml-1">%</span>
+                            </div>
+                            <div class="w-full bg-black/40 rounded-full h-1.5 overflow-hidden">
+                                <div class="bg-gradient-to-r from-emerald-600 to-emerald-400 h-full rounded-full transition-all duration-1000 w-0"
+                                    id="trustScoreBar"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Avg Confidence Card -->
+                    <div
+                        class="glass-panel p-5 rounded-2xl flex flex-col justify-between h-36 border-t-2 border-t-white/5 data-card">
+                        <div class="flex justify-between items-start">
+                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">AI
+                                Confidence</span>
+                            <i class="ph ph-brain text-purple-400/70 text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-baseline">
+                                <span class="text-3xl font-bold text-purple-400 tracking-tight"
+                                    id="statAccuracy">--</span>
+                                <span class="text-sm text-purple-400/70 font-medium ml-1">%</span>
+                            </div>
+                            <p class="text-[10px] text-slate-500 mt-1">Neural network precision</p>
+                        </div>
                     </div>
                 </section>
 
                 <!-- MAIN VIZ SECTION -->
-                <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Gauge / Risk Visualization -->
-                    <div
-                        class="lg:col-span-1 glass-panel p-6 rounded-2xl flex flex-col items-center justify-center text-center">
-                        <h3 class="text-slate-300 text-sm font-medium mb-6 w-full text-left">Overall Authenticity Score
-                        </h3>
+                <section class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
 
-                        <div class="relative w-48 h-48 flex items-center justify-center mb-4">
-                            <!-- Circular Gauge Placeholder (Will use Chart.js Doughnut or SVG) -->
-                            <svg viewBox="0 0 36 36" class="w-full h-full transform -rotate-90">
-                                <path class="text-slate-800" stroke-width="3" stroke="currentColor" fill="none"
-                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                                <path id="gaugePath" class="text-emerald-500 transition-all duration-1000 ease-out"
-                                    stroke-dasharray="0, 100" stroke-width="3" stroke="currentColor" fill="none"
-                                    stroke-linecap="round"
-                                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            </svg>
-                            <div class="absolute flex flex-col items-center justify-center">
-                                <span class="text-4xl font-bold text-white tracking-tighter" id="gaugeScore">--</span>
-                                <span class="text-xs text-slate-400 mt-1">/ 100</span>
+                    <!-- Advanced Polished Doughnut Gauge -->
+                    <div
+                        class="lg:col-span-1 glass-panel p-6 rounded-2xl flex flex-col items-center justify-center relative border-t-2 border-t-white/5 data-card min-h-[300px]">
+                        <div class="w-full flex justify-between items-start absolute top-5 left-5 right-5">
+                            <h3 class="text-slate-300 text-sm font-semibold tracking-tight">Trust Index</h3>
+                            <div class="group relative cursor-help">
+                                <i class="ph ph-info text-slate-500"></i>
+                                <div
+                                    class="absolute right-0 w-48 p-2 mt-1 bg-slate-800 border border-white/10 rounded-lg text-[10px] text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
+                                    A composite score of product listing integrity based on NLP review analysis.
+                                </div>
                             </div>
                         </div>
 
-                        <div class="bg-slate-800/50 px-4 py-2 rounded-lg border border-slate-700 w-full">
-                            <p class="text-sm text-slate-300 flex items-center justify-center">
-                                Status: <span id="riskLabel"
-                                    class="ml-2 font-semibold text-slate-500">Awaiting...</span>
-                            </p>
+                        <!-- Chart.js Doughnut Container -->
+                        <div class="relative w-48 h-48 mt-4">
+                            <canvas id="gaugeChartCanvas"></canvas>
+                            <!-- Center text overlay -->
+                            <div
+                                class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
+                                <span class="text-4xl font-bold text-white tracking-tighter"
+                                    id="gaugeScoreText">--</span>
+                                <span class="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mt-0.5"
+                                    id="riskLabel">Score</span>
+                            </div>
+                        </div>
+
+                        <!-- Badge -->
+                        <div class="mt-6">
+                            <span id="badgeText"
+                                class="px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs font-medium text-slate-400 shadow-sm">Waiting
+                                for URL</span>
                         </div>
                     </div>
 
                     <!-- Distribution Bar Chart -->
-                    <div class="lg:col-span-2 glass-panel p-6 rounded-2xl flex flex-col">
+                    <div
+                        class="lg:col-span-2 glass-panel p-6 rounded-2xl flex flex-col border-t-2 border-t-white/5 data-card min-h-[300px]">
                         <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-slate-300 text-sm font-medium">Confidence Distribution</h3>
-                            <button class="text-slate-500 hover:text-white transition"><i
-                                    class="ph ph-dots-three text-xl"></i></button>
+                            <div>
+                                <h3 class="text-slate-300 text-sm font-semibold tracking-tight">Authenticity
+                                    Distribution</h3>
+                                <p class="text-[10px] text-slate-500 mt-0.5">Volumetric split of AI classification
+                                    predictions</p>
+                            </div>
+                            <button
+                                class="text-slate-500 hover:text-white transition bg-black/20 p-1.5 rounded-lg border border-white/5">
+                                <i class="ph ph-arrows-out-simple text-sm"></i>
+                            </button>
                         </div>
-                        <div class="flex-grow w-full relative h-[250px]">
+                        <div class="flex-grow w-full relative h-[220px]">
                             <canvas id="distributionChart"></canvas>
                         </div>
                     </div>
                 </section>
 
                 <!-- REVIEW INTELLIGENCE FEED -->
-                <section class="glass-panel p-6 rounded-2xl">
-                    <div class="flex justify-between items-center border-b border-slate-800 pb-4 mb-6">
+                <section class="glass-panel p-6 md:p-8 rounded-2xl border-t-2 border-t-white/5 data-card">
+                    <div
+                        class="flex flex-col sm:flex-row justify-between items-start md:items-center border-b border-white/5 pb-5 mb-6 gap-4">
                         <div>
-                            <h3 class="text-lg font-semibold text-white">Review Intelligence Feed</h3>
-                            <p class="text-sm text-slate-400">Detailed breakdown of individual AI predictions</p>
+                            <h3 class="text-lg font-bold text-white tracking-tight">Intelligence Log</h3>
+                            <p class="text-xs text-slate-400 mt-1">Micro-level breakdown of the highest confidence
+                                predictions.</p>
                         </div>
-                        <button
-                            class="flex items-center space-x-2 text-sm text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg border border-slate-700 transition">
-                            <i class="ph ph-download-simple"></i>
-                            <span>Download CSV</span>
-                        </button>
+
+                        <div class="flex items-center space-x-3 w-full sm:w-auto">
+                            <!-- Filter Toggle Placeholder -->
+                            <div class="bg-black/40 rounded-lg p-1 border border-white/5 hidden md:flex items-center">
+                                <button
+                                    class="px-3 py-1.5 text-xs font-medium rounded-md bg-slate-800 text-white shadow-sm transition">All</button>
+                                <button
+                                    class="px-3 py-1.5 text-xs font-medium rounded-md text-slate-400 hover:text-white transition">Fake
+                                    Only</button>
+                            </div>
+
+                            <button id="downloadCsvBtn"
+                                class="flex-1 sm:flex-none justify-center items-center space-x-2 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg border border-white/10 transition shadow-sm hidden">
+                                <i class="ph-bold ph-download-simple"></i>
+                                <span>Export CSV</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="space-y-4" id="reviewFeed">
-                        <!-- Empty State / Placeholder -->
+                    <!-- Grid Layout for Reviews -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4" id="reviewFeed">
+                        <!-- Empty State -->
                         <div
-                            class="text-center py-12 px-4 rounded-xl border border-dashed border-slate-700 bg-slate-800/20">
+                            class="col-span-full py-16 px-4 flex flex-col items-center justify-center text-center opacity-70">
                             <div
-                                class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-500">
-                                <i class="ph ph-magnifying-glass text-2xl"></i>
+                                class="w-16 h-16 bg-gradient-to-b from-slate-800 to-transparent rounded-full border border-white/5 flex items-center justify-center mb-4 shadow-inner">
+                                <i class="ph ph-magnifying-glass text-2xl text-slate-500"></i>
                             </div>
-                            <h4 class="text-slate-300 font-medium mb-1">No Data Yet</h4>
-                            <p class="text-slate-500 text-sm">Enter a product URL above to generate the intelligence
-                                feed.</p>
+                            <h4 class="text-slate-300 font-medium mb-1 tracking-tight">Awaiting Target</h4>
+                            <p class="text-slate-500 text-sm max-w-sm">Paste a product URL above to generate the live
+                                intelligence feed and unveil the hidden truth.</p>
                         </div>
                     </div>
                 </section>
 
-                <!-- Spacer for bottom scroll -->
-                <div class="h-10"></div>
+                <div class="h-6"></div> <!-- Bottom padding -->
             </div>
         </main>
     </div>
 
+    <!-- PROFILE SETTINGS MODAL -->
+    <div id="profileModal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300 ease-out">
+        <div
+            class="bg-slate-900 border border-white/10 w-full max-w-md p-6 rounded-2xl transform scale-95 transition-transform duration-300 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)]">
+            <!-- Modal body identical to previous setup but with updated design classes -->
+            <div class="flex justify-between items-center mb-6 border-b border-white/5 pb-4">
+                <h3 class="text-lg font-bold text-white tracking-tight">Account Settings</h3>
+                <button id="closeProfileBtn"
+                    class="text-slate-400 hover:text-white transition bg-white/5 hover:bg-white/10 p-1.5 rounded-lg active:scale-95">
+                    <i class="ph-bold ph-x text-sm"></i>
+                </button>
+            </div>
+
+            <div class="space-y-5">
+                <div class="flex items-center justify-center mb-2">
+                    <div class="relative group cursor-pointer"
+                        onclick="document.getElementById('profilePhotoInput').focus()">
+                        <img id="modalAvatarPreview"
+                            src="{{ session.get('user_photo') or 'https://api.dicebear.com/7.x/initials/svg?seed=' ~ session.get('user_name', 'U') }}"
+                            class="w-20 h-20 rounded-full border border-white/10 object-cover group-hover:opacity-40 transition-opacity shadow-lg">
+                        <div
+                            class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                            <i class="ph-fill ph-camera text-xl text-white"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Display
+                        Name</label>
+                    <input type="text" id="profileNameInput"
+                        class="input-dark w-full px-4 py-3 rounded-xl text-sm font-medium"
+                        value="{{ session.get('user_name', '') }}">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1.5">Profile
+                        Picture</label>
+                    <label for="profilePhotoInput"
+                        class="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:border-cyan-500/50 hover:bg-white/5 transition group">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <i
+                                class="ph ph-cloud-arrow-up text-2xl text-slate-400 group-hover:text-cyan-400 mb-1 transition"></i>
+                            <p class="text-xs text-slate-500 group-hover:text-slate-300"><span
+                                    class="font-semibold">Click to upload</span> or drag and drop</p>
+                        </div>
+                        <input id="profilePhotoInput" type="file" class="hidden"
+                            accept="image/png, image/jpeg, image/gif, image/webp" />
+                    </label>
+                    <p id="fileNameDisplay" class="text-[10px] text-cyan-400 mt-2 text-center hidden"></p>
+                </div>
+
+                <div id="profileError"
+                    class="hidden text-red-400 bg-red-500/10 border border-red-500/20 px-4 py-3 rounded-xl text-xs font-medium flex items-center">
+                    <i class="ph-fill ph-warning-circle mr-2 text-base"></i>
+                    <span id="profileErrorText"></span>
+                </div>
+
+                <div class="pt-2">
+                    <button id="saveProfileBtn"
+                        class="btn-gradient w-full py-3 rounded-xl text-sm font-bold tracking-wide shadow-lg">
+                        <span id="saveProfileBtnText">Save Profile Data</span>
+                    </button>
+                    <div class="mt-4 text-center">
+                        <a href="{{ url_for('logout') }}"
+                            class="text-xs text-red-400 hover:text-red-300 font-medium transition">Sign Out Securely</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none">
+        <!-- Toasts injected by JS -->
+    </div>
+
+    <!-- MAIN JAVASCRIPT LOGIC -->
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+    <!-- FIREBASE PROFILE MODAL LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+        import { getAuth, updateProfile } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+
+        // Global Toast Utility Function
+        window.showToast = function (message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+
+            // Icon handling
+            const icon = type === 'success' ? '<i class="ph-fill ph-check-circle text-emerald-400 text-lg mr-2"></i>' :
+                type === 'error' ? '<i class="ph-fill ph-warning-circle text-red-400 text-lg mr-2"></i>' :
+                    '<i class="ph-fill ph-info text-cyan-400 text-lg mr-2"></i>';
+
+            const borderClass = type === 'success' ? 'border-emerald-500/20' :
+                type === 'error' ? 'border-red-500/20' : 'border-cyan-500/20';
+
+            toast.className = `glass-panel pointer-events-auto flex items-center px-4 py-3 rounded-xl shadow-xl border ${borderClass} toast-enter`;
+            toast.innerHTML = `${icon} <span class="text-sm font-medium text-white">${message}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.replace('toast-enter', 'toast-exit');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        };
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCFZukdrr5sehQ2NRvtrzRnIm0qog2AiDQ",
+            authDomain: "fake-reviews-94913.firebaseapp.com",
+            projectId: "fake-reviews-94913"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // UI
+        const modal = document.getElementById('profileModal');
+        const openBtn = document.getElementById('openProfileModalBtn');
+        const closeBtn = document.getElementById('closeProfileBtn');
+        const saveBtn = document.getElementById('saveProfileBtn');
+        const nameInput = document.getElementById('profileNameInput');
+        const photoInput = document.getElementById('profilePhotoInput');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const errorDiv = document.getElementById('profileError');
+        const errorText = document.getElementById('profileErrorText');
+
+        openBtn.addEventListener('click', () => {
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.remove('scale-95');
+        });
+
+        closeBtn.addEventListener('click', () => {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.firstElementChild.classList.add('scale-95');
+        });
+
+        // Handle File Selection
+        photoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                fileNameDisplay.innerText = `Selected: ${file.name}`;
+                fileNameDisplay.classList.remove('hidden');
+
+                // Show local preview immediately
+                const reader = new FileReader();
+                reader.onload = function (evt) {
+                    document.getElementById('modalAvatarPreview').src = evt.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        saveBtn.addEventListener('click', async () => {
+            const newName = nameInput.value.trim();
+            if (!newName) return window.showToast('Name is required', 'error');
+
+            const ogText = document.getElementById('saveProfileBtnText').innerText;
+            document.getElementById('saveProfileBtnText').innerText = "Uploading & Saving...";
+            saveBtn.disabled = true;
+            errorDiv.classList.add('hidden');
+
+            try {
+                await new Promise(r => { const u = auth.onAuthStateChanged(usr => { u(); r(usr); }); });
+                const user = auth.currentUser;
+                if (!user) throw new Error("Session expired.");
+
+                let finalPhotoUrl = user.photoURL; // keep existing if no new file
+
+                // Upload file to Backend if selected
+                const file = photoInput.files[0];
+                if (file) {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const uploadRes = await fetch('/api/uploadAvatar', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const uploadData = await uploadRes.json();
+                    if (!uploadRes.ok) throw new Error(uploadData.error || "File upload failed");
+
+                    // The backend returns a relative mapped URL to the static folder
+                    // We can prepend the origin to make it an absolute URL for Firebase
+                    finalPhotoUrl = window.location.origin + uploadData.url;
+                }
+
+                // Update Profile in Firebase with the new Name and absolute mapped PhotoURL
+                await updateProfile(user, { displayName: newName, photoURL: finalPhotoUrl || null });
+
+                // Get refreshed token
+                const idToken = await user.getIdToken(true);
+
+                // Send to Flask backend to refresh session (also syncs with Firestore backend-side)
+                const response = await fetch('/api/sessionLogin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken: idToken })
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                } else throw new Error("Backend sync failed.");
+            } catch (error) {
+                window.showToast(error.message, 'error');
+                saveBtn.disabled = false;
+                document.getElementById('saveProfileBtnText').innerText = ogText;
+            }
+        });
+    </script>
 </body>
 
 </html>

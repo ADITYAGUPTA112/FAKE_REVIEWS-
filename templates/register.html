@@ -132,7 +132,15 @@
             <p class="text-slate-400 text-sm">Start protecting your brand from fake reviews</p>
         </div>
 
-        <form action="{{ url_for('register') }}" method="POST" class="space-y-4">
+        {% if error %}
+        <div class="mb-4 bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg relative flex items-center shadow-sm shadow-red-500/20"
+            role="alert">
+            <i class="ph ph-warning-circle text-xl mr-3"></i>
+            <span class="block sm:inline text-sm font-medium">{{ error }}</span>
+        </div>
+        {% endif %}
+
+        <form id="register-form" class="space-y-4">
 
             <div>
                 <label for="name" class="block text-sm font-medium text-slate-300 mb-1">Full Name</label>
@@ -197,6 +205,84 @@
             </p>
         </div>
     </div>
+    </div>
+
+    <!-- Firebase SDK Setup -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCFZukdrr5sehQ2NRvtrzRnIm0qog2AiDQ",
+            authDomain: "fake-reviews-94913.firebaseapp.com",
+            projectId: "fake-reviews-94913",
+            storageBucket: "fake-reviews-94913.firebasestorage.app",
+            messagingSenderId: "105585292004",
+            appId: "1:105585292004:web:e46524076707170c5df2f1",
+            measurementId: "G-JQDBMQT5CV"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirm_password = document.getElementById('confirm_password').value;
+
+            if (password !== confirm_password) {
+                showError("Passwords do not match!");
+                return;
+            }
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+
+            submitBtn.innerHTML = '<span>Creating account...</span>';
+            submitBtn.disabled = true;
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                await updateProfile(userCredential.user, { displayName: name });
+                const idToken = await userCredential.user.getIdToken();
+
+                // Send token to backend
+                const response = await fetch('/api/sessionLogin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ idToken: idToken })
+                });
+
+                if (response.ok) {
+                    window.location.href = '/';
+                } else {
+                    showError('Session initialization failed. Please try again.');
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            } catch (error) {
+                console.error("Registration Error:", error);
+                showError(error.message.replace("Firebase: ", ""));
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        function showError(msg) {
+            let errorHtml = `
+            <div class="mb-4 bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg relative flex items-center shadow-sm shadow-red-500/20" role="alert">
+                <i class="ph ph-warning-circle text-xl mr-3"></i>
+                <span class="block sm:inline text-sm font-medium">${msg}</span>
+            </div>`;
+
+            const form = document.getElementById('register-form');
+            const previousErrors = form.parentNode.querySelectorAll('div[role="alert"]');
+            previousErrors.forEach(err => err.remove());
+            form.insertAdjacentHTML('beforebegin', errorHtml);
+        }
+    </script>
 </body>
 
 </html>
