@@ -1,0 +1,24 @@
+# Large model weights (exceed GitHub's 100MB file limit)
+*.safetensors
+*.bin
+*.pt
+*.pth
+optimizer.pt
+rng_state.pth
+scheduler.pt
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+env/
+.venv/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db

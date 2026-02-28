@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Fake Review Analyzer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <i class="ph-fill ph-shield-check"></i>
+                </div>
+                <span class="logo-text">Verax.ai</span>
+            </div>
+
+            <nav class="nav-menu">
+                <div class="nav-group">
+                    <span class="nav-label">Menu</span>
+                    <a href="#" class="nav-item active">
+                        <i class="ph ph-squares-four"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="ph ph-magnifying-glass"></i>
+                        <span>Analysis</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="ph ph-chart-line-up"></i>
+                        <span>Insights</span>
+                    </a>
+                </div>
+
+                <div class="nav-group">
+                    <span class="nav-label">Settings</span>
+                    <a href="#" class="nav-item">
+                        <i class="ph ph-plugs"></i>
+                        <span>Integrations</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="ph ph-gear"></i>
+                        <span>Preferences</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="user-profile">
+                    <img src="https://i.pravatar.cc/150?img=68" alt="User Avatar" class="avatar">
+                    <div class="user-info">
+                        <span class="user-name">Alex G.</span>
+                        <span class="user-role">Pro Plan</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="top-header">
+                <div>
+                    <h1 class="page-title">Overview</h1>
+                    <p class="page-subtitle">Real-time analysis of product sentiment and authenticity.</p>
+                </div>
+                <div class="header-actions">
+                    <div class="search-bar">
+                        <i class="ph ph-magnifying-glass"></i>
+                        <input type="text" placeholder="Paste Amazon URL...">
+                    </div>
+                    <button class="btn-primary">
+                        <i class="ph ph-magic-wand"></i>
+                        Analyze Now
+                    </button>
+                    <button class="icon-btn">
+                        <i class="ph ph-bell"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-grid">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card glassmorphism">
+                        <div class="stat-header">
+                            <span class="stat-title">Total Analyzed</span>
+                            <div class="stat-icon purple-glow">
+                                <i class="ph ph-file-search"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value">124,592</div>
+                        <div class="stat-trend positive">
+                            <i class="ph ph-trend-up"></i>
+                            <span>+12.5% this week</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card glassmorphism">
+                        <div class="stat-header">
+                            <span class="stat-title">Fake Reviews Blocked</span>
+                            <div class="stat-icon red-glow">
+                                <i class="ph ph-shield-warning"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value">18,304</div>
+                        <div class="stat-trend negative">
+                            <i class="ph ph-trend-up"></i>
+                            <span>+4.2% this week</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card glassmorphism">
+                        <div class="stat-header">
+                            <span class="stat-title">Avg. Trust Score</span>
+                            <div class="stat-icon green-glow">
+                                <i class="ph ph-check-circle"></i>
+                            </div>
+                        </div>
+                        <div class="stat-value">86.4%</div>
+                        <div class="stat-trend positive">
+                            <i class="ph ph-trend-up"></i>
+                            <span>+1.1% this week</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card active-monitor glassmorphism">
+                        <div class="active-pulse"></div>
+                        <div class="stat-header">
+                            <span class="stat-title">Active Monitoring</span>
+                        </div>
+                        <div class="stat-value">42 <span class="text-sm">ASINs</span></div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 75%;"></div>
+                            </div>
+                            <span class="progress-text">75% of limit</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Chart & Sidebar Data -->
+                <div class="middle-grid">
+                    <div class="chart-container glassmorphism">
+                        <div class="section-header">
+                            <h2>Authenticity Trend</h2>
+                            <div class="chart-filters">
+                                <button class="filter-btn active">7D</button>
+                                <button class="filter-btn">1M</button>
+                                <button class="filter-btn">3M</button>
+                                <button class="filter-btn">1Y</button>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="distribution-container glassmorphism">
+                        <div class="section-header">
+                            <h2>Risk Distribution</h2>
+                            <button class="icon-btn-small"><i class="ph ph-dots-three"></i></button>
+                        </div>
+                        <div class="doughnut-wrapper">
+                            <canvas id="distributionChart"></canvas>
+                        </div>
+                        <div class="legend-custom">
+                            <div class="legend-item">
+                                <div class="legend-color genuine-color"></div>
+                                <span>Genuine</span>
+                                <span class="legend-value">65%</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color suspicious-color"></div>
+                                <span>Suspicious</span>
+                                <span class="legend-value">22%</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color fake-color"></div>
+                                <span>Fake</span>
+                                <span class="legend-value">13%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity Table section -->
+                <div class="table-container glassmorphism">
+                    <div class="section-header">
+                        <h2>Recent Analysis</h2>
+                        <button class="btn-secondary">View All</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="modern-table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>ASIN</th>
+                                    <th>Reviews Analyzed</th>
+                                    <th>Trust Score</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="product-cell">
+                                            <div class="product-icon"><i class="ph ph-headphones"></i></div>
+                                            <div class="product-info">
+                                                <span class="product-name">Noise Cancelling Pro Max</span>
+                                                <span class="product-date">Today, 10:23 AM</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="mono-text">B08H95Y23B</td>
+                                    <td>1,245</td>
+                                    <td>
+                                        <div class="score-cell">
+                                            <span class="score-value text-green">94%</span>
+                                            <div
+                                                style="width: 60px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; position: relative;">
+                                                <div class="green-bar"
+                                                    style="width: 94%; height: 100%; border-radius: 2px;"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge badge-genuine">Verified Genuine</span></td>
+                                    <td><button class="btn-ghost">Report</button></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="product-cell">
+                                            <div class="product-icon"><i class="ph ph-lightning"></i></div>
+                                            <div class="product-info">
+                                                <span class="product-name">UltraFast Charger 120W</span>
+                                                <span class="product-date">Today, 09:12 AM</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="mono-text">B09F52X11A</td>
+                                    <td>432</td>
+                                    <td>
+                                        <div class="score-cell">
+                                            <span class="score-value text-red">32%</span>
+                                            <div
+                                                style="width: 60px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; position: relative;">
+                                                <div class="red-bar"
+                                                    style="width: 32%; height: 100%; border-radius: 2px;"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge badge-fake">Critical Risk</span></td>
+                                    <td><button class="btn-ghost">Report</button></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="product-cell">
+                                            <div class="product-icon"><i class="ph ph-watch"></i></div>
+                                            <div class="product-info">
+                                                <span class="product-name">SmartFit Tracker V4</span>
+                                                <span class="product-date">Yesterday, 14:45 PM</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="mono-text">B07V23B45C</td>
+                                    <td>890</td>
+                                    <td>
+                                        <div class="score-cell">
+                                            <span class="score-value text-yellow">68%</span>
+                                            <div
+                                                style="width: 60px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; position: relative;">
+                                                <div class="yellow-bar"
+                                                    style="width: 68%; height: 100%; border-radius: 2px;"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge badge-suspicious">Review Needed</span></td>
+                                    <td><button class="btn-ghost">Report</button></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="product-cell">
+                                            <div class="product-icon"><i class="ph ph-camera"></i></div>
+                                            <div class="product-info">
+                                                <span class="product-name">Security Cam 360</span>
+                                                <span class="product-date">Yesterday, 11:20 AM</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="mono-text">B08K98C12D</td>
+                                    <td>2,104</td>
+                                    <td>
+                                        <div class="score-cell">
+                                            <span class="score-value text-green">89%</span>
+                                            <div
+                                                style="width: 60px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; position: relative;">
+                                                <div class="green-bar"
+                                                    style="width: 89%; height: 100%; border-radius: 2px;"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge badge-genuine">Verified Genuine</span></td>
+                                    <td><button class="btn-ghost">Report</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - TrustLens AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            dark: '#0f172a',
+                            card: 'rgba(255, 255, 255, 0.03)',
+                            cardHover: 'rgba(255, 255, 255, 0.06)',
+                            border: 'rgba(255, 255, 255, 0.08)'
+                        }
+                    },
+                    animation: {
+                        'blob': 'blob 7s infinite',
+                    },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .input-dark {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+            transition: all 0.2s ease;
+        }
+
+        .input-dark:focus {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: #06b6d4;
+            /* Cyan 500 */
+            box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
+            outline: none;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #a855f7 0%, #06b6d4 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-gradient::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #06b6d4 0%, #a855f7 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 0;
+        }
+
+        .btn-gradient:hover::before {
+            opacity: 1;
+        }
+
+        .btn-gradient span {
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center relative">
+    <!-- Ambient Background Lighting -->
+    <div
+        class="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob">
+    </div>
+    <div
+        class="absolute top-0 -right-4 w-72 h-72 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000">
+    </div>
+    <div
+        class="absolute -bottom-8 left-20 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000">
+    </div>
+
+    <!-- Login Container -->
+    <div class="w-full max-w-md p-8 glass-panel rounded-2xl relative z-10 m-4">
+
+        <!-- Logo Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center space-x-2 mb-4">
+                <div
+                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                    <i class="ph-fill ph-shield-check text-white text-xl"></i>
+                </div>
+                <span
+                    class="text-2xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">TrustLens
+                    AI</span>
+            </div>
+            <h1 class="text-2xl font-semibold mb-2">Welcome back</h1>
+            <p class="text-slate-400 text-sm">Sign in to access your intelligence dashboard</p>
+        </div>
+
+        <form action="{{ url_for('login') }}" method="POST" class="space-y-5">
+            <div>
+                <label for="email" class="block text-sm font-medium text-slate-300 mb-1">Email address</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="ph ph-envelope text-slate-400 text-lg"></i>
+                    </div>
+                    <input type="email" id="email" name="email"
+                        class="input-dark block w-full pl-10 pr-3 py-2.5 rounded-lg sm:text-sm"
+                        placeholder="alex@trustlens.ai" required>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between mb-1">
+                    <label for="password" class="block text-sm font-medium text-slate-300">Password</label>
+                    <a href="#" class="text-sm font-medium text-cyan-400 hover:text-cyan-300 transition-colors">Forgot
+                        password?</a>
+                </div>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="ph ph-lock-key text-slate-400 text-lg"></i>
+                    </div>
+                    <input type="password" id="password" name="password"
+                        class="input-dark block w-full pl-10 pr-10 py-2.5 rounded-lg sm:text-sm" placeholder="••••••••"
+                        required>
+                </div>
+            </div>
+
+            <div class="flex items-center">
+                <input id="remember-me" name="remember-me" type="checkbox"
+                    class="h-4 w-4 rounded border-gray-700 bg-brand-card text-cyan-500 focus:ring-cyan-500 focus:ring-offset-gray-900 cursor-pointer">
+                <label for="remember-me" class="ml-2 block text-sm text-slate-400 cursor-pointer">
+                    Remember me for 30 days
+                </label>
+            </div>
+
+            <button type="submit"
+                class="btn-gradient w-full flex justify-center py-3 px-4 rounded-lg text-sm font-semibold text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-900">
+                <span>Sign in to Dashboard</span>
+            </button>
+        </form>
+
+        <div class="mt-8 text-center">
+            <p class="text-sm text-slate-400">
+                Don't have an account?
+                <a href="{{ url_for('register') }}"
+                    class="font-medium text-cyan-400 hover:text-cyan-300 transition-colors">Sign up for free</a>
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>
