@@ -1,0 +1,5 @@
+connectorId: "ecommerce-connector"
+generate:
+  javascriptSdk:
+    outputDir: "../../static/js/dataconnect/ecommerce"
+    package: "@fake-reviews/ecommerce-connector"

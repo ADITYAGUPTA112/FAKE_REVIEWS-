@@ -1,0 +1,11 @@
+specVersion: "v1alpha"
+serviceId: "fake-reviews-platform"
+location: "us-central1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "sqldb"
+      cloudSql:
+        instanceId: "fake-reviews-platform-pg"
+connectorDirs: ["./connector"]
