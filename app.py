@@ -125,6 +125,39 @@ def logout():
     session.pop("user_photo", None)
     return redirect(url_for("login"))
 
+@app.route("/history", methods=["GET"])
+def history():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    return render_template("history.html")
+
+@app.route("/api/history", methods=["GET"])
+def api_history():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    if db is None:
+        return jsonify({"error": "Database not configured"}), 500
+        
+    try:
+        user_id = session["user_id"]
+        # Fetch scans for this user, ordered by timestamp descending
+        scans_ref = db.collection('scans').where('user_id', '==', user_id).order_by('timestamp', direction=firestore.Query.DESCENDING).limit(50)
+        docs = scans_ref.stream()
+        
+        history_data = []
+        for doc in docs:
+            data = doc.to_dict()
+            # Convert Firestore timestamp to string
+            if 'timestamp' in data and data['timestamp']:
+                data['timestamp'] = data['timestamp'].isoformat()
+            history_data.append(data)
+            
+        return jsonify({"history": history_data})
+    except Exception as e:
+        print(f"Error fetching history: {e}")
+        return jsonify({"error": "Failed to fetch history"}), 500
+
 @app.route("/api/analyze", methods=["POST"])
 def analyze_api():
     try:

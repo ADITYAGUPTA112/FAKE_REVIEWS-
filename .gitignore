@@ -12,9 +12,10 @@ __pycache__/
 *.py[cod]
 *.pyo
 .env
-venv/
-env/
+.venv311/
 .venv/
+env/
+venv/
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/

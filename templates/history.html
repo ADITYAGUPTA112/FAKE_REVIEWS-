@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan History - TrustLens AI</title>
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        background: '#0f172a',
+                        surface: 'rgba(255, 255, 255, 0.03)',
+                        surfaceHover: 'rgba(255, 255, 255, 0.06)',
+                        border: 'rgba(255, 255, 255, 0.08)',
+                        brand: {
+                            cyan: '#06b6d4',
+                            purple: '#a855f7',
+                            fake: '#ef4444',
+                            genuine: '#10b981'
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'slide-up': 'slideUp 0.4s ease-out forwards',
+                        'shimmer': 'shimmer 2s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        shimmer: {
+                            '0%': { backgroundPosition: '-1000px 0' },
+                            '100%': { backgroundPosition: '1000px 0' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow: hidden;
+        }
+
+        /* Ambient Premium Gradients */
+        .ambient-bg {
+            position: fixed;
+            top: -20vh;
+            left: -10vw;
+            width: 70vw;
+            height: 70vh;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.08) 0%, rgba(6, 182, 212, 0.03) 50%, rgba(15, 23, 42, 0) 80%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(80px);
+        }
+
+        .ambient-bg-2 {
+            position: fixed;
+            bottom: -20vh;
+            right: -10vw;
+            width: 60vw;
+            height: 60vh;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, rgba(168, 85, 247, 0.03) 50%, rgba(15, 23, 42, 0) 80%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(80px);
+        }
+
+        /* Glassmorphism utility */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 10;
+            transition: border-color 0.3s ease, background 0.3s ease;
+        }
+
+        .glass-panel:hover {
+            border-color: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        /* Sidebar Link animation */
+        .sidebar-link {
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .sidebar-link::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 0;
+            width: 3px;
+            background: #06b6d4;
+            border-radius: 0 4px 4px 0;
+            transition: height 0.3s ease;
+        }
+
+        .sidebar-link:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+        }
+
+        .sidebar-link:hover i {
+            transform: scale(1.1);
+            color: #06b6d4;
+        }
+
+        .sidebar-link.active {
+            background: linear-gradient(90deg, rgba(6, 182, 212, 0.1) 0%, transparent 100%);
+            color: #06b6d4;
+        }
+
+        .sidebar-link.active::before {
+            height: 100%;
+        }
+
+        /* Loading Skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 75%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite linear;
+            border-color: transparent !important;
+            color: transparent !important;
+        }
+
+        .skeleton * {
+            visibility: hidden;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+
+<body class="flex h-screen bg-background antialiased selection:bg-cyan-500/30">
+
+    <!-- Ambient Gradients -->
+    <div class="ambient-bg"></div>
+    <div class="ambient-bg-2"></div>
+
+    <!-- LEFT SIDEBAR -->
+    <aside id="sidebar"
+        class="w-64 flex-shrink-0 border-r border-white/5 bg-slate-900/40 backdrop-blur-2xl flex flex-col justify-between transition-all duration-300 z-30">
+        <div>
+            <!-- Logo Section -->
+            <div class="h-16 flex items-center px-6 border-b border-white/5">
+                <div
+                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center mr-3 shadow-[0_0_15px_rgba(168,85,247,0.4)]">
+                    <i class="ph-fill ph-check-square-offset text-white text-lg"></i>
+                </div>
+                <span class="text-lg font-bold tracking-tight text-white">TrustLens<span
+                        class="text-cyan-400">.ai</span></span>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="p-4 space-y-1 mt-4">
+                <p class="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Menu</p>
+                <a href="{{ url_for('index') }}"
+                    class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
+                    <i class="ph ph-squares-four text-lg mr-3 transition-transform"></i> Overview
+                </a>
+                <a href="{{ url_for('index') }}#analysis-section"
+                    class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
+                    <i class="ph ph-magnifying-glass-plus text-lg mr-3 transition-transform"></i> Analyze Product
+                </a>
+                <a href="{{ url_for('history') }}"
+                    class="sidebar-link active flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300">
+                    <i class="ph ph-clock-counter-clockwise text-lg mr-3 transition-transform"></i> Scan History
+                </a>
+            </nav>
+
+            <nav class="p-4 space-y-1 mt-2">
+                <p class="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Settings</p>
+                <a href="#"
+                    class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 opacity-50 cursor-not-allowed"
+                    title="Coming Soon">
+                    <i class="ph ph-funnel text-lg mr-3 transition-transform"></i> Rule Filters
+                </a>
+                <a href="#"
+                    class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 opacity-50 cursor-not-allowed"
+                    title="Coming Soon">
+                    <i class="ph ph-plug text-lg mr-3 transition-transform"></i> API Integration
+                </a>
+            </nav>
+        </div>
+
+        <!-- System Status area -->
+        <div class="p-4 border-t border-white/5">
+            <div class="flex items-center px-3 py-2 bg-emerald-500/5 border border-emerald-500/10 rounded-lg">
+                <span class="relative flex h-2 w-2 mr-3">
+                    <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span class="text-xs text-emerald-400/90 font-medium">All systems operational</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden relative z-20">
+
+        <!-- TOP NAVBAR -->
+        <header
+            class="h-16 flex items-center justify-between px-8 border-b border-white/5 bg-slate-900/30 backdrop-blur-xl z-30">
+            <div class="flex items-center space-x-6">
+                <!-- Mobile Menu Toggle (hidden on desktop) -->
+                <button class="md:hidden text-slate-400 hover:text-white transition">
+                    <i class="ph ph-list text-2xl"></i>
+                </button>
+
+                <h2 class="text-sm font-medium text-slate-300 hidden md:block">TrustLens / <span
+                        class="text-white">Workspace</span> / <span class="text-white">History</span></h2>
+            </div>
+
+            <div class="flex items-center space-x-5">
+                <!-- Plan Badge -->
+                <div
+                    class="hidden sm:flex items-center px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border border-purple-500/20 text-xs font-medium text-purple-300">
+                    <i class="ph-fill ph-lightning mr-1 text-amber-400"></i> Pro Tier
+                </div>
+
+                <div class="h-5 w-px bg-white/10 hidden sm:block"></div>
+
+                <!-- Icons -->
+                <button class="text-slate-400 hover:text-white transition relative">
+                    <i class="ph ph-bell text-xl"></i>
+                    <span class="absolute top-0 right-0 w-2 h-2 rounded-full bg-cyan-400 ring-2 ring-slate-900"></span>
+                </button>
+
+                <!-- Avatar -->
+                <a href="{{ url_for('index') }}" class="relative group block">
+                    <img src="{{ session.get('user_photo') or 'https://api.dicebear.com/7.x/initials/svg?seed=' ~ session.get('user_name', 'U') }}"
+                        alt="Avatar"
+                        class="w-8 h-8 rounded-full border border-white/10 group-hover:border-cyan-400 transition object-cover">
+                </a>
+            </div>
+        </header>
+
+        <!-- SCROLLABLE CONTENT WITH SMOOTH SCROLLING -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 z-10 scroll-smooth">
+            <div class="max-w-[1400px] mx-auto space-y-6 md:space-y-8 pb-12 transition-all duration-500">
+
+                <!-- HEADER -->
+                <div class="flex justify-between items-end border-b border-white/5 pb-6">
+                    <div>
+                        <h1 class="text-3xl font-bold text-white tracking-tight mb-2">Scan History</h1>
+                        <p class="text-slate-400 text-sm">Review your past product analyses and monitor fraud trends
+                            over time.</p>
+                    </div>
+                </div>
+
+                <!-- HISTORY FEED -->
+                <div class="glass-panel rounded-2xl border-t-2 border-t-white/5 overflow-hidden">
+                    <div class="p-6 md:p-8 flex flex-col gap-4" id="historyFeed">
+                        <!-- Loading State -->
+                        <div class="skeleton h-24 rounded-xl w-full"></div>
+                        <div class="skeleton h-24 rounded-xl w-full"></div>
+                        <div class="skeleton h-24 rounded-xl w-full"></div>
+                    </div>
+                </div>
+
+                <div class="h-6"></div> <!-- Bottom padding -->
+            </div>
+        </main>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const feed = document.getElementById('historyFeed');
+
+            try {
+                const response = await fetch('/api/history');
+                const data = await response.json();
+
+                if (data.error) {
+                    feed.innerHTML = `<div class="p-8 text-center text-red-400"><i class="ph ph-warning-circle text-3xl mb-2"></i><p>${data.error}</p></div>`;
+                    return;
+                }
+
+                if (!data.history || data.history.length === 0) {
+                    feed.innerHTML = `
+                        <div class="py-16 flex flex-col items-center justify-center text-center opacity-70">
+                            <div class="w-16 h-16 bg-gradient-to-b from-slate-800 to-transparent rounded-full border border-white/5 flex items-center justify-center mb-4 shadow-inner">
+                                <i class="ph ph-ghost text-2xl text-slate-500"></i>
+                            </div>
+                            <h4 class="text-slate-300 font-medium mb-1 tracking-tight">No History Found</h4>
+                            <p class="text-slate-500 text-sm max-w-sm">You haven't analyzed any products yet. Go back to the dashboard to start a scan.</p>
+                            <a href="{{ url_for('index') }}" class="mt-6 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium transition border border-white/10">Start Scanning</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Render history
+                feed.innerHTML = '';
+                data.history.forEach((scan, index) => {
+                    const chartData = scan.chart_data || {};
+                    const fakeCount = chartData.fake || 0;
+                    const genuineCount = chartData.genuine || 0;
+                    const total = fakeCount + genuineCount;
+                    const fakePercent = total > 0 ? (fakeCount / total * 100).toFixed(1) : 0;
+                    const isHighRisk = fakePercent > 30;
+
+                    const borderClass = isHighRisk ? 'border-red-500/30' : 'border-emerald-500/30';
+                    const iconClass = isHighRisk ? 'text-red-400 bg-red-500/10' : 'text-emerald-400 bg-emerald-500/10';
+                    const iconName = isHighRisk ? 'ph-warning-octagon' : 'ph-shield-check';
+
+                    let timePassed = "Unknown";
+                    if (scan.timestamp) {
+                        const date = new Date(scan.timestamp);
+                        timePassed = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    }
+
+                    const card = document.createElement('div');
+                    card.className = `p-5 rounded-xl bg-slate-800/50 border border-white/5 hover:border-white/20 transition-all flex flex-col md:flex-row gap-4 items-start md:items-center cursor-pointer group animate-slide-up hover:shadow-lg hover:shadow-cyan-500/5`;
+                    card.style.animationDelay = `${index * 0.05}s`;
+
+                    card.innerHTML = `
+                        <div class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${iconClass} border ${borderClass} group-hover:scale-110 transition-transform">
+                            <i class="ph-fill ${iconName} text-xl"></i>
+                        </div>
+                        <div class="flex-grow">
+                            <h4 class="text-white font-medium mb-1 truncate max-w-sm" title="${scan.asin || 'Unknown Target'}">${scan.asin ? 'Target: ' + scan.asin : 'Unknown Target'}</h4>
+                            <div class="flex items-center text-xs text-slate-400 space-x-3">
+                                <span class="flex items-center"><i class="ph ph-clock mr-1"></i>${timePassed}</span>
+                                <span>•</span>
+                                <span>${total} Reviews</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-6 w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t border-white/5 md:border-t-0 justify-between md:justify-end">
+                            <div class="text-right">
+                                <div class="text-xs text-slate-500 uppercase font-semibold tracking-wider mb-1">Fake Risk</div>
+                                <div class="text-lg font-bold ${isHighRisk ? 'text-red-400' : 'text-emerald-400'}">${fakePercent}%</div>
+                            </div>
+                            <button class="bg-slate-700/50 hover:bg-slate-700 text-white rounded-lg p-2 transition ml-4 hidden md:block">
+                                <i class="ph ph-caret-right text-slate-400"></i>
+                            </button>
+                        </div>
+                    `;
+
+                    // Allow clicking the card to go back and scan it again (mock action for now)
+                    card.onclick = () => {
+                        window.location.href = `{{ url_for('index') }}?asin=${scan.asin || ''}`;
+                    };
+
+                    feed.appendChild(card);
+                });
+
+            } catch (e) {
+                console.error(e);
+                feed.innerHTML = `<div class="p-8 text-center text-red-400"><i class="ph ph-warning-circle text-3xl mb-2"></i><p>Failed to load history</p></div>`;
+            }
+        });
+    </script>
+</body>
+
+</html>
