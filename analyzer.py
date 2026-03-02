@@ -12,7 +12,7 @@ le = joblib.load("./models/label_encoder.pkl")
 # =========================
 # CONFIG
 # =========================
-SERP_API_KEY = os.getenv("SERP_API_KEY", "894bf919c29bd261838dd97a18cced3971f17f0077e190f7f4e4f33bbe47468c")
+SERP_API_KEY = os.getenv("SERP_API_KEY", "add your api key")
 MODEL_PATH = "./models/distilbert"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
