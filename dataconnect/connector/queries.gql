@@ -1,0 +1,9 @@
+query GetUserScanHistory($userId: String!) @auth(level: USER) {
+  scanHistories(where: {userId: {eq: $userId}}, orderBy: [{timestamp: DESC}]) {
+    id
+    asin
+    fakeCount
+    genuineCount
+    timestamp
+  }
+}

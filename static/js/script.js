@@ -35,6 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const asinInput = document.getElementById('asinInput');
     const mainSection = document.getElementById('analysis-section');
 
+    // --- Variables ---
+    let gaugeChart, distChart, temporalChart;
+
     // Stats Elements
     const statElements = {
         total: document.getElementById('statTotal'),
@@ -199,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Render Review Feed (Cards) ---
-    function renderReviewFeed(reviews, predictions, confidences) {
+    function renderReviewFeed(reviews, predictions, confidences, dates, explanations) {
         reviewFeed.innerHTML = '';
         downloadCsvBtn.classList.remove('hidden');
 
@@ -211,23 +214,30 @@ document.addEventListener('DOMContentLoaded', () => {
         reviews.forEach((reviewText, i) => {
             const pred = predictions[i];
             const conf = parseFloat(confidences[i]).toFixed(1);
+            const dateStr = dates[i] ? new Date(dates[i]).toLocaleDateString() : 'Unknown Date';
+            const expList = explanations ? explanations[i] : [];
 
             const isFake = pred === "Fake";
             const borderClass = isFake ? 'border-left-fake' : 'border-left-genuine';
             const badgeClass = isFake ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
             const icon = isFake ? "ph-fill ph-warning-circle" : "ph-fill ph-check-circle";
 
-            // Determine dynamic "Reasons" based on prediction to simulate complex analysis
+            // Render LIME Explanations
             let flagHTML = '';
-            if (isFake) {
-                // Randomly pick a couple of reasons based on text length or index just for simulation aesthetic
-                const reasons = ["High semantic similarity", "Over-praising adjectives", "Repetitive sentence structure", "Bot-like timestamps", "Generic phrasing"];
-                const r1 = reasons[i % reasons.length];
-                const r2 = reasons[(i + 1) % reasons.length];
+            if (expList && expList.length > 0) {
+                let badges = expList.map(item => {
+                    // Usually LIME gives negative weight to one class, positive to another.
+                    // We just care about magnitude for importance
+                    const imp = Math.abs(item.weight).toFixed(2);
+                    return `<span class="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-[10px] text-slate-400 uppercase tracking-wide inline-flex items-center" title="LIME Weight: ${imp}"><i class="ph-fill ph-push-pin mr-1"></i> ${item.word}</span>`;
+                }).join('');
+
                 flagHTML = `
-                    <div class="mt-4 flex flex-wrap gap-2">
-                        <span class="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-[10px] text-slate-400 uppercase tracking-wide inline-flex items-center"><i class="ph-fill ph-flag mr-1"></i> ${r1}</span>
-                        <span class="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-[10px] text-slate-400 uppercase tracking-wide inline-flex items-center"><i class="ph-fill ph-flag mr-1"></i> ${r2}</span>
+                    <div class="mt-4 border-t border-white/5 pt-3">
+                        <p class="text-[10px] text-slate-500 mb-2 uppercase tracking-wider font-semibold">AI Key Factors (Explainable AI)</p>
+                        <div class="flex flex-wrap gap-2">
+                            ${badges}
+                        </div>
                     </div>
                 `;
             }
@@ -242,7 +252,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <i class="${icon} mr-1 text-sm"></i>
                                 ${pred}
                             </span>
-                            <span class="text-xs font-mono text-slate-500 tracking-tight">Conf: ${conf}%</span>
+                            <div class="text-right">
+                                <div class="text-[10px] text-slate-500 mb-0.5"><i class="ph ph-calendar mr-1"></i>${dateStr}</div>
+                                <span class="text-xs font-mono text-slate-500 tracking-tight">Conf: ${conf}%</span>
+                            </div>
                         </div>
                         <p class="text-sm text-slate-300 leading-relaxed font-serif">"${cleanText}"</p>
                     </div>
@@ -250,6 +263,91 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
             reviewFeed.innerHTML += cardHTML;
+        });
+    }
+
+    // --- Build Temporal Chart ---
+    function buildTemporalChart(dates, predictions) {
+        const ctxTemp = document.getElementById('temporalChart').getContext('2d');
+        if (temporalChart) temporalChart.destroy();
+
+        // 1. Group by Month-Year
+        const grouped = {};
+        for (let i = 0; i < dates.length; i++) {
+            if (!dates[i]) continue;
+            const d = new Date(dates[i]);
+            if (isNaN(d)) continue;
+
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
+            if (!grouped[key]) grouped[key] = { fake: 0, genuine: 0 };
+
+            if (predictions[i] === 'Fake') grouped[key].fake++;
+            else grouped[key].genuine++;
+        }
+
+        // Sort keys chronologically
+        const sortedKeys = Object.keys(grouped).sort();
+        if (sortedKeys.length === 0) return; // No valid dates
+
+        const labels = sortedKeys.map(k => {
+            const parts = k.split('-');
+            const d = new Date(parts[0], parseInt(parts[1]) - 1);
+            return d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+        });
+
+        const fakeData = sortedKeys.map(k => grouped[k].fake);
+        const genData = sortedKeys.map(k => grouped[k].genuine);
+
+        temporalChart = new Chart(ctxTemp, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Genuine Reviews',
+                        data: genData,
+                        borderColor: COLORS.emerald,
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Fake Reviews',
+                        data: fakeData,
+                        borderColor: COLORS.red,
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { color: COLORS.slate400, usePointStyle: true, boxWidth: 6 }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: COLORS.slate400, precision: 0 }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: COLORS.slate400 }
+                    }
+                }
+            }
         });
     }
 
@@ -306,14 +404,18 @@ document.addEventListener('DOMContentLoaded', () => {
             initOrUpdateCharts(data.chart_data.genuine, data.chart_data.fake, sum.fake_percent);
 
             // --- 3. Build Feed ---
-            renderReviewFeed(data.results.review, data.results.prediction, data.results.confidence);
+            renderReviewFeed(data.results.review, data.results.prediction, data.results.confidence, data.results.date, data.results.explanation);
+
+            // --- 4. Build Temporal Diagram ---
+            buildTemporalChart(data.results.date, data.results.prediction);
 
             // Store for CSV
             window.latestScanResults = {
                 asin: asin,
                 reviews: data.results.review,
                 predictions: data.results.prediction,
-                confidences: data.results.confidence
+                confidences: data.results.confidence,
+                dates: data.results.date
             };
 
             if (window.showToast) window.showToast('Analysis completed successfully!');

@@ -7,6 +7,9 @@ from transformers import DistilBertForSequenceClassification, DistilBertTokenize
 from sklearn.preprocessing import LabelEncoder
 import re
 import joblib
+import dateparser
+from lime.lime_text import LimeTextExplainer
+
 le = joblib.load("./models/label_encoder.pkl")
 
 # =========================
@@ -22,21 +25,55 @@ tokenizer = DistilBertTokenizerFast.from_pretrained("./models/distilbert")
 model.to(device)
 model.eval()
 
+explainer = LimeTextExplainer(class_names=['Fake', 'Genuine'])
+
 # Load label encoder
 df_temp = pd.read_csv("fake reviews dataset.csv")
 le = LabelEncoder()
 le.fit(df_temp["label"])
+
+def get_prediction_probs(texts):
+    inputs = tokenizer(
+        texts,
+        truncation=True,
+        padding="max_length",
+        max_length=256,
+        return_tensors="pt"
+    )
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+    with torch.no_grad():
+        outputs = model(**inputs)
+    probs = torch.softmax(outputs.logits, dim=1).cpu().numpy()
+    # Assuming label 0 is Fake and 1 is Genuine for LIME ordering, though we need to check LE ordering.
+    # LIME expects a 2D array of probabilities 
+    # Let's map probabilities to Fake / Genuine order consistently based on LabelEncoder
+    # If le.classes_ = ['CG', 'OR'] -> CG=Fake, OR=Genuine.
+    # We will return the raw probs, LIME will use class 0 and 1.
+    return probs
 
 # =========================
 # FETCH MULTIPLE PAGES
 # =========================
 def fetch_reviews_multi_page(asin, target_domain="amazon.com", pages=3, max_reviews=55):
     all_reviews = []
+    seen_texts = set()
     
-    # We will try the target domain first, then fallback to other English domains
-    # to aggregate enough reviews to reach our goal (50+)
     domains = [target_domain, "amazon.co.uk", "amazon.ca", "amazon.in", "amazon.com.au"]
     
+    def add_review(text, date_str):
+        if text and text not in seen_texts:
+            parsed_date = None
+            if date_str:
+                d = dateparser.parse(date_str)
+                if d:
+                    parsed_date = d.isoformat()
+            
+            all_reviews.append({
+                "text": text,
+                "date": parsed_date or ""
+            })
+            seen_texts.add(text)
+
     for domain in domains:
         if len(all_reviews) >= max_reviews:
             break
@@ -58,43 +95,35 @@ def fetch_reviews_multi_page(asin, target_domain="amazon.com", pages=3, max_revi
         
         # 1. Extract authors_reviews
         for review in reviews_info.get("authors_reviews", []):
-            if "text" in review and review["text"] not in all_reviews:
-                all_reviews.append(review["text"])
+            add_review(review.get("text"), review.get("date"))
 
         # 2. Extract other_countries_reviews
         for review in reviews_info.get("other_countries_reviews", []):
-            if "text" in review and review["text"] not in all_reviews:
-                all_reviews.append(review["text"])
+            add_review(review.get("text"), review.get("date"))
                 
         # 3. Extract top_reviews
         for review in reviews_info.get("top_reviews", []):
-            if "text" in review and review["text"] not in all_reviews:
-                all_reviews.append(review["text"])
+            add_review(review.get("text"), review.get("date"))
 
-        # 4. Extract insights examples (lots of snippets here)
+        # 4. Extract insights examples
         summary_info = reviews_info.get("summary", {})
         for insight in summary_info.get("insights", []):
             for example in insight.get("examples", []):
                 snippet = example.get("snippet", "")
-                if snippet and snippet not in all_reviews:
-                    all_reviews.append(snippet)
+                add_review(snippet, "")
         
         # 5. Extract fallback native reviews format
         for review in results.get("reviews", []):
             text = review.get("content", review.get("body", ""))
-            if text and text not in all_reviews:
-                all_reviews.append(text)
+            add_review(text, review.get("date"))
                 
     print("REVIEWS COUNT:", len(all_reviews))
-
-    # Cap at exactly the target limit or a little over to keep processing fast
     return all_reviews[:100]
     
 # =========================
 # PREDICTION
 # =========================
 def predict_review(text):
-
     inputs = tokenizer(
         text,
         truncation=True,
@@ -118,6 +147,22 @@ def predict_review(text):
 
     return readable, confidence
 
+def explain_review(text, label):
+    try:
+        exp = explainer.explain_instance(text, get_prediction_probs, num_features=5)
+        # Class 0 usually CG/Fake, 1 usually OR/Genuine
+        # Find which index the label actually mapped to in the model
+        fake_idx = list(le.classes_).index("CG") if "CG" in le.classes_ else 0
+        gen_idx = list(le.classes_).index("OR") if "OR" in le.classes_ else 1
+        
+        target_idx = fake_idx if label == "Fake" else gen_idx
+        
+        explanation_list = exp.as_list(label=target_idx)
+        return [{"word": w, "weight": float(wt)} for w, wt in explanation_list]
+    except Exception as e:
+        print("LIME explanation error:", e)
+        return []
+
 # =========================
 # ANALYZE PRODUCT
 # =========================
@@ -131,19 +176,27 @@ def analyze_product(asin, pages=3):
     fake_count = 0
     total_confidence = 0
 
-    for review in reviews:
-
-        label, confidence = predict_review(review)
+    for rev_dict in reviews:
+        text = rev_dict["text"]
+        label, confidence = predict_review(text)
 
         if label == "Fake":
             fake_count += 1
 
         total_confidence += confidence
+        
+        # Apply LIME only to high confidence fake reviews or sample to keep it fast
+        # Let's run LIME on a few of them
+        explanation = []
+        if len(results_data) < 10:  # Only explain first 10 for performance
+            explanation = explain_review(text, label)
 
         results_data.append({
-            "review": review,
+            "review": text,
+            "date": rev_dict["date"],
             "prediction": label,
-            "confidence": round(confidence, 2)
+            "confidence": round(confidence, 2),
+            "explanation": explanation
         })
 
     total_reviews = len(reviews)

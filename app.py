@@ -141,8 +141,8 @@ def api_history():
         
     try:
         user_id = session["user_id"]
-        # Fetch scans for this user, ordered by timestamp descending
-        scans_ref = db.collection('scans').where('user_id', '==', user_id).order_by('timestamp', direction=firestore.Query.DESCENDING).limit(50)
+        # Fetch scans for this user without order_by to avoid composite index requirement
+        scans_ref = db.collection('scans').where('user_id', '==', user_id)
         docs = scans_ref.stream()
         
         history_data = []
@@ -152,6 +152,11 @@ def api_history():
             if 'timestamp' in data and data['timestamp']:
                 data['timestamp'] = data['timestamp'].isoformat()
             history_data.append(data)
+            
+        # Sort by timestamp descending in Python
+        history_data.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+        # Limit to top 50
+        history_data = history_data[:50]
             
         return jsonify({"history": history_data})
     except Exception as e:
@@ -178,12 +183,14 @@ def analyze_api():
             results = {
                 "review":     df_results["review"].tolist(),
                 "prediction": df_results["prediction"].tolist(),
-                "confidence": [round(float(c), 1) for c in df_results["confidence"].tolist()]
+                "confidence": [round(float(c), 1) for c in df_results["confidence"].tolist()],
+                "date":       df_results["date"].tolist() if "date" in df_results.columns else ["" for _ in range(len(df_results))],
+                "explanation": df_results["explanation"].tolist() if "explanation" in df_results.columns else [[] for _ in range(len(df_results))]
             }
         else:
             fake_count = 0
             genuine_count = 0
-            results = {"review": [], "prediction": [], "confidence": []}
+            results = {"review": [], "prediction": [], "confidence": [], "date": [], "explanation": []}
             
         chart_data = {
             "fake": fake_count,
@@ -206,7 +213,7 @@ def analyze_api():
                 print(f"Saved analysis for {asin} to Firestore.")
             except Exception as e:
                 print(f"Error saving to Firestore: {e}")
-
+        
         return jsonify({
             "summary": summary,
             "chart_data": chart_data,

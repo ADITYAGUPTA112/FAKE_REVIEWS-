@@ -1,0 +1,8 @@
+mutation AddScanHistory($userId: String!, $asin: String!, $fakeCount: Int!, $genuineCount: Int!) @auth(level: USER) {
+  scanHistory_insert(data: {
+    userId: $userId,
+    asin: $asin,
+    fakeCount: $fakeCount,
+    genuineCount: $genuineCount
+  })
+}

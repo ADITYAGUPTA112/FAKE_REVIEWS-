@@ -45,3 +45,11 @@ type OrderItem @table(key: ["order", "product"]) {
   quantity: Int!
   unitPrice: Float!
 }
+
+type ScanHistory @table {
+  user: User!
+  asin: String!
+  fakeCount: Int!
+  genuineCount: Int!
+  timestamp: Timestamp! @default(expr: "request.time")
+}
