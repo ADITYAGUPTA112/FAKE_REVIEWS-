@@ -15,7 +15,7 @@ le = joblib.load("./models/label_encoder.pkl")
 # =========================
 # CONFIG
 # =========================
-SERP_API_KEY = os.getenv("SERP_API_KEY", "add your api key")
+SERP_API_KEY = os.getenv("SERP_API_KEY", "894bf919c29bd261838dd97a18cced3971f17f0077e190f7f4e4f33bbe47468c")
 MODEL_PATH = "./models/distilbert"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -212,7 +212,7 @@ def analyze_product(asin, pages=3):
     summary = {
         "total_reviews": int(total_reviews),
         "fake_percent": float(round(fake_percent, 2)),
-        "genuine_percent": float(round(100 - fake_percent, 2)),
+        "genuine_percent": float(round(100 - fake_percent, 2)) if total_reviews else 0.0,
         "avg_confidence": float(round(avg_confidence, 2))
     }
 

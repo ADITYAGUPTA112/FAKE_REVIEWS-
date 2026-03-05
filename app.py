@@ -175,7 +175,10 @@ def analyze_api():
         
         summary, df_results = analyze_product(asin, pages)
         
-        if not df_results.empty and "prediction" in df_results.columns:
+        if df_results.empty:
+            return jsonify({"error": "No reviews found. Please check your ASIN or API Key."}), 400
+            
+        if "prediction" in df_results.columns:
             fake_count = int((df_results["prediction"] == "Fake").sum())
             genuine_count = int((df_results["prediction"] == "Genuine").sum())
             
