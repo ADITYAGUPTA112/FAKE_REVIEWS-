@@ -33,23 +33,23 @@ le = LabelEncoder()
 le.fit(df_temp["label"])
 
 def get_prediction_probs(texts):
-    inputs = tokenizer(
-        texts,
-        truncation=True,
-        padding="max_length",
-        max_length=256,
-        return_tensors="pt"
-    )
-    inputs = {k: v.to(device) for k, v in inputs.items()}
-    with torch.no_grad():
-        outputs = model(**inputs)
-    probs = torch.softmax(outputs.logits, dim=1).cpu().numpy()
-    # Assuming label 0 is Fake and 1 is Genuine for LIME ordering, though we need to check LE ordering.
-    # LIME expects a 2D array of probabilities 
-    # Let's map probabilities to Fake / Genuine order consistently based on LabelEncoder
-    # If le.classes_ = ['CG', 'OR'] -> CG=Fake, OR=Genuine.
-    # We will return the raw probs, LIME will use class 0 and 1.
-    return probs
+    batch_size = 32
+    all_probs = []
+    for i in range(0, len(texts), batch_size):
+        batch_texts = texts[i:i+batch_size]
+        inputs = tokenizer(
+            batch_texts,
+            truncation=True,
+            padding=True,
+            max_length=256,
+            return_tensors="pt"
+        )
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+        with torch.no_grad():
+            outputs = model(**inputs)
+        probs = torch.softmax(outputs.logits, dim=1).cpu().numpy()
+        all_probs.extend(probs)
+    return np.array(all_probs)
 
 # =========================
 # FETCH MULTIPLE PAGES
@@ -127,7 +127,7 @@ def predict_review(text):
     inputs = tokenizer(
         text,
         truncation=True,
-        padding="max_length",
+        padding=True,
         max_length=256,
         return_tensors="pt"
     )
@@ -147,9 +147,45 @@ def predict_review(text):
 
     return readable, confidence
 
+def predict_reviews_batch(texts):
+    batch_size = 32
+    all_labels = []
+    all_confidences = []
+    
+    if not texts:
+        return [], []
+        
+    for i in range(0, len(texts), batch_size):
+        batch_texts = texts[i:i+batch_size]
+        inputs = tokenizer(
+            batch_texts,
+            truncation=True,
+            padding=True,
+            max_length=256,
+            return_tensors="pt"
+        )
+        inputs = {k: v.to(device) for k, v in inputs.items()}
+        
+        with torch.no_grad():
+            outputs = model(**inputs)
+            
+        probs = torch.softmax(outputs.logits, dim=1).cpu().numpy()
+        pred_classes = np.argmax(probs, axis=1)
+        
+        for j, pred_class in enumerate(pred_classes):
+            original_label = le.inverse_transform([pred_class])[0]
+            readable = "Fake" if original_label == "CG" else "Genuine"
+            confidence = probs[j][pred_class] * 100
+            
+            all_labels.append(readable)
+            all_confidences.append(confidence)
+            
+    return all_labels, all_confidences
+
 def explain_review(text, label):
     try:
-        exp = explainer.explain_instance(text, get_prediction_probs, num_features=5)
+        # Reduced num_samples to 100 to significantly speed up explanation time
+        exp = explainer.explain_instance(text, get_prediction_probs, num_features=5, num_samples=100)
         # Class 0 usually CG/Fake, 1 usually OR/Genuine
         # Find which index the label actually mapped to in the model
         fake_idx = list(le.classes_).index("CG") if "CG" in le.classes_ else 0
@@ -176,9 +212,16 @@ def analyze_product(asin, pages=3):
     fake_count = 0
     total_confidence = 0
 
-    for rev_dict in reviews:
+    if not reviews:
+        return {"total_reviews": 0, "fake_percent": 0.0, "genuine_percent": 0.0, "avg_confidence": 0.0}, pd.DataFrame()
+
+    texts = [rev["text"] for rev in reviews]
+    labels, confidences = predict_reviews_batch(texts)
+
+    for i, rev_dict in enumerate(reviews):
         text = rev_dict["text"]
-        label, confidence = predict_review(text)
+        label = labels[i]
+        confidence = confidences[i]
 
         if label == "Fake":
             fake_count += 1
@@ -188,7 +231,7 @@ def analyze_product(asin, pages=3):
         # Apply LIME only to high confidence fake reviews or sample to keep it fast
         # Let's run LIME on a few of them
         explanation = []
-        if len(results_data) < 10:  # Only explain first 10 for performance
+        if len(results_data) < 3:  # Only explain first 3 for performance to avoid bottleneck
             explanation = explain_review(text, label)
 
         results_data.append({
