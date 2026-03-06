@@ -5,25 +5,27 @@ window.latestScanResults = null;
 
 // Thematic Colors setup
 const COLORS = {
-    background: '#0f172a',
+    background: '#0a0f1c',
     red: '#ef4444',
     redGlow: 'rgba(239, 68, 68, 0.4)',
     emerald: '#10b981',
     emeraldGlow: 'rgba(16, 185, 129, 0.4)',
-    cyan: '#06b6d4',
-    purple: '#a855f7',
-    slate800: '#1e293b'
+    amber: '#f59e0b',
+    amberGlow: 'rgba(245, 158, 11, 0.4)',
+    slate800: '#1e293b',
+    slate400: '#94a3b8'
 };
 
 // Global Chart Defaults for premium look
 Chart.defaults.color = '#94a3b8';
-Chart.defaults.font.family = "'Inter', sans-serif";
-Chart.defaults.scale.grid.color = 'rgba(255,255,255,0.05)';
-Chart.defaults.scale.grid.borderColor = 'rgba(255,255,255,0.05)';
-Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(15, 23, 42, 0.9)';
-Chart.defaults.plugins.tooltip.titleColor = '#fff';
+Chart.defaults.font.family = "'Space Mono', monospace";
+Chart.defaults.scale.grid.color = 'rgba(245,158,11,0.05)';
+Chart.defaults.scale.grid.borderColor = 'rgba(245,158,11,0.05)';
+Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(10, 15, 28, 0.9)';
+Chart.defaults.plugins.tooltip.titleColor = '#f59e0b';
+Chart.defaults.plugins.tooltip.titleFont = { family: "'Syne', sans-serif", weight: 'bold' };
 Chart.defaults.plugins.tooltip.bodyColor = '#cbd5e1';
-Chart.defaults.plugins.tooltip.borderColor = 'rgba(255,255,255,0.1)';
+Chart.defaults.plugins.tooltip.borderColor = 'rgba(245,158,11,0.2)';
 Chart.defaults.plugins.tooltip.borderWidth = 1;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -84,7 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const step = (timestamp) => {
             if (!startTimestamp) startTimestamp = timestamp;
             const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-            // easeOutExpo
             const easeProgress = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
             obj.innerHTML = (start + easeProgress * (end - start)).toFixed(end % 1 !== 0 ? 1 : 0);
             if (progress < 1) {
@@ -92,6 +93,37 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
         window.requestAnimationFrame(step);
+    }
+
+    // --- Decorative Sparklines ---
+    function drawDecorativeSparkline(canvasId, colorStr) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.clientWidth;
+        const h = canvas.clientHeight;
+        canvas.width = w;
+        canvas.height = h;
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.beginPath();
+        let pts = [];
+        for (let i = 0; i <= w; i += 5) {
+            pts.push({ x: i, y: h / 2 + (Math.random() * h / 2.5 * (Math.random() > 0.5 ? 1 : -1)) });
+        }
+        ctx.moveTo(0, h / 2);
+        for (let i = 0; i < pts.length; i++) {
+            ctx.lineTo(pts[i].x, pts[i].y);
+        }
+        ctx.strokeStyle = colorStr;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.lineTo(w, h);
+        ctx.lineTo(0, h);
+        ctx.fillStyle = colorStr.replace('rgb', 'rgba').replace(')', ', 0.1)');
+        if (colorStr.startsWith('#')) ctx.fillStyle = colorStr + '20';
+        ctx.fill();
     }
 
     // --- Chart Initializers ---
@@ -107,8 +139,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let badgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
 
         if (fakeScore > 20 && fakeScore <= 50) {
-            arcColor = '#f59e0b'; // Amber
-            ringGlow = 'rgba(245, 158, 11, 0.4)';
+            arcColor = COLORS.amber;
+            ringGlow = COLORS.amberGlow;
             riskLabel = 'Moderate Risk';
             badgeClass = 'bg-amber-500/10 text-amber-500 border-amber-500/20';
         } else if (fakeScore > 50) {
@@ -218,23 +250,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const expList = explanations ? explanations[i] : [];
 
             const isFake = pred === "Fake";
-            const borderClass = isFake ? 'border-left-fake' : 'border-left-genuine';
-            const badgeClass = isFake ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+            const borderClass = isFake ? 'card-fake' : 'card-genuine';
+            const badgeClass = isFake ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
             const icon = isFake ? "ph-fill ph-warning-circle" : "ph-fill ph-check-circle";
+            const stampHTML = isFake ? '<div class="stamp-fake">⚠ FLAGGED</div>' : '<div class="stamp-genuine">✓ VERIFIED</div>';
 
             // Render LIME Explanations
             let flagHTML = '';
             if (expList && expList.length > 0) {
                 let badges = expList.map(item => {
-                    // Usually LIME gives negative weight to one class, positive to another.
-                    // We just care about magnitude for importance
                     const imp = Math.abs(item.weight).toFixed(2);
-                    return `<span class="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-[10px] text-slate-400 uppercase tracking-wide inline-flex items-center" title="LIME Weight: ${imp}"><i class="ph-fill ph-push-pin mr-1"></i> ${item.word}</span>`;
+                    return `<span class="px-2 py-1 rounded bg-slate-900 border border-amber-500/20 text-[10px] text-amber-500/80 font-mono tracking-widest inline-flex items-center" title="LIME Weight: ${imp}"><i class="ph-fill ph-push-pin mr-1 text-amber-500"></i> ${item.word}</span>`;
                 }).join('');
 
                 flagHTML = `
-                    <div class="mt-4 border-t border-white/5 pt-3">
-                        <p class="text-[10px] text-slate-500 mb-2 uppercase tracking-wider font-semibold">AI Key Factors (Explainable AI)</p>
+                    <div class="mt-4 border-t border-amber-500/20 pt-3 relative z-10">
+                        <p class="text-[10px] text-amber-500/70 mb-2 uppercase tracking-widest font-bold font-mono">Forensic Keyword Traces</p>
                         <div class="flex flex-wrap gap-2">
                             ${badges}
                         </div>
@@ -245,19 +276,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const cleanText = reviewText.substring(0, 200) + (reviewText.length > 200 ? '...' : '');
 
             const cardHTML = `
-                <div class="glass-panel p-5 rounded-xl flex flex-col justify-between ${borderClass} hover:translate-y-[-2px] transition-transform duration-300">
-                    <div>
+                <div class="glass-panel p-5 rounded-xl flex flex-col justify-between ${borderClass} hover:translate-y-[-2px] transition-transform duration-300 relative overflow-hidden">
+                    ${stampHTML}
+                    <div class="relative z-10">
                         <div class="flex justify-between items-start mb-3">
-                            <span class="px-2 py-1 rounded-full text-xs font-semibold border ${badgeClass} flex items-center shadow-sm">
+                            <span class="px-2 py-1 rounded-full text-[10px] tracking-widest uppercase font-bold border ${badgeClass} flex items-center shadow-sm font-mono">
                                 <i class="${icon} mr-1 text-sm"></i>
                                 ${pred}
                             </span>
                             <div class="text-right">
-                                <div class="text-[10px] text-slate-500 mb-0.5"><i class="ph ph-calendar mr-1"></i>${dateStr}</div>
-                                <span class="text-xs font-mono text-slate-500 tracking-tight">Conf: ${conf}%</span>
+                                <div class="text-[10px] text-slate-400 mb-0.5 font-mono"><i class="ph ph-calendar mr-1"></i>${dateStr}</div>
+                                <span class="text-[10px] font-mono text-amber-500/80 tracking-widest uppercase font-bold">Conf: ${conf}%</span>
                             </div>
                         </div>
-                        <p class="text-sm text-slate-300 leading-relaxed font-serif">"${cleanText}"</p>
+                        <p class="text-sm text-slate-300 leading-relaxed font-mono">"${cleanText}"</p>
                     </div>
                     ${flagHTML}
                 </div>
@@ -266,46 +298,42 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Build Temporal Chart ---
-    function buildTemporalChart(dates, predictions) {
-        const ctxTemp = document.getElementById('temporalChart').getContext('2d');
-        if (temporalChart) temporalChart.destroy();
+    // --- 4. TEMPORAL CHART ---
+    let temporalChartInstance = null;
+    function buildTemporalChart(results) {
+        if (temporalChartInstance) temporalChartInstance.destroy();
+        const ctx = document.getElementById('temporalChart').getContext('2d');
 
-        // 1. Group by Month-Year
-        const grouped = {};
-        for (let i = 0; i < dates.length; i++) {
-            if (!dates[i]) continue;
-            const d = new Date(dates[i]);
+        // Check if we have date fields and sort
+        const timelineData = {};
+        for (let i = 0; i < results.review.length; i++) {
+            const dateStr = results.date[i];
+            const pred = results.prediction[i];
+            if (!dateStr) continue;
+
+            const d = new Date(dateStr);
             if (isNaN(d)) continue;
 
-            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
-            if (!grouped[key]) grouped[key] = { fake: 0, genuine: 0 };
+            const yyyy_mm = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0');
 
-            if (predictions[i] === 'Fake') grouped[key].fake++;
-            else grouped[key].genuine++;
+            if (!timelineData[yyyy_mm]) timelineData[yyyy_mm] = { fake: 0, genuine: 0 };
+
+            if (pred === 'Fake') timelineData[yyyy_mm].fake++;
+            else timelineData[yyyy_mm].genuine++;
         }
 
-        // Sort keys chronologically
-        const sortedKeys = Object.keys(grouped).sort();
-        if (sortedKeys.length === 0) return; // No valid dates
+        const labels = Object.keys(timelineData).sort();
+        const fakeData = labels.map(l => timelineData[l].fake);
+        const genuineData = labels.map(l => timelineData[l].genuine);
 
-        const labels = sortedKeys.map(k => {
-            const parts = k.split('-');
-            const d = new Date(parts[0], parseInt(parts[1]) - 1);
-            return d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
-        });
-
-        const fakeData = sortedKeys.map(k => grouped[k].fake);
-        const genData = sortedKeys.map(k => grouped[k].genuine);
-
-        temporalChart = new Chart(ctxTemp, {
+        temporalChartInstance = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Genuine Reviews',
-                        data: genData,
+                        label: 'Genuine Subs',
+                        data: genuineData,
                         borderColor: COLORS.emerald,
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         borderWidth: 2,
@@ -313,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         fill: true
                     },
                     {
-                        label: 'Fake Reviews',
+                        label: 'Fake Subs',
                         data: fakeData,
                         borderColor: COLORS.red,
                         backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -351,6 +379,136 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- 5. WORD CLOUD ---
+    function buildWordCloud(results) {
+        if (!window.WordCloud) return; // Library not loaded
+
+        const stopwords = new Set(["the", "and", "a", "to", "of", "in", "i", "is", "that", "it", "on", "you", "this", "for", "but", "with", "are", "have", "be", "at", "or", "as", "was", "so", "if", "out", "not", "my", "they", "we", "all", "just", "like", "very", "can", "will", "no", "there", "what", "when", "has", "do", "more", "me", "up", "an", "about", "which", "one", "from", "some", "would", "would", "get", "their"]);
+
+        const counts = { fake: {}, genuine: {} };
+        const combined = {};
+
+        for (let i = 0; i < results.review.length; i++) {
+            const text = results.review[i].toLowerCase();
+            const pred = results.prediction[i]; // 'Fake' or 'Genuine'
+
+            // Extract words (3 chars or more)
+            const words = text.match(/\b[a-z]{3,}\b/g) || [];
+
+            words.forEach(w => {
+                if (stopwords.has(w)) return;
+
+                if (pred === 'Fake') {
+                    counts.fake[w] = (counts.fake[w] || 0) + 1;
+                } else {
+                    counts.genuine[w] = (counts.genuine[w] || 0) + 1;
+                }
+                combined[w] = (combined[w] || 0) + 1;
+            });
+        }
+
+        // Convert to array format expected by wordcloud2.js: [word, size]
+        const list = [];
+        const maxWords = 60;
+
+        // Sort combined to get top words
+        const sortedWords = Object.keys(combined).sort((a, b) => combined[b] - combined[a]).slice(0, maxWords);
+
+        sortedWords.forEach(w => {
+            // we scale frequency to make it decent
+            list.push([w, combined[w] * 3 + 12]);
+        });
+
+        // Clear canvas first
+        const canvas = document.getElementById('wordCloudCanvas');
+        if (!canvas) return;
+
+        const wrapper = document.getElementById('wordCloudWrapper');
+        canvas.width = wrapper.clientWidth;
+        canvas.height = wrapper.clientHeight;
+
+        WordCloud(canvas, {
+            list: list,
+            fontFamily: 'Space Mono, monospace',
+            weightFactor: function (size) {
+                return size; // scale factor
+            },
+            color: function (word, weight) {
+                // Determine if this word is predominantly used in fake or genuine reviews
+                const f = counts.fake[word] || 0;
+                const g = counts.genuine[word] || 0;
+
+                // If it's leaning 60% or more towards faker, color it red. Else green. Else amber/white mix.
+                const total = f + g;
+                if (total === 0) return '#f59e0b';
+
+                if (f / total >= 0.6) return '#ef4444'; // Red
+                if (g / total >= 0.6) return '#10b981'; // Green
+                return '#94a3b8'; // Neutral Slate
+            },
+            rotateRatio: 0.1,
+            rotationSteps: 2,
+            backgroundColor: 'transparent',
+            shape: 'circle',
+            drawOutOfBound: false,
+            shrinkToFit: true
+        });
+    }
+
+    // --- Threat Scanner & AI Log Simulation ---
+    let aiLogInterval;
+    const aiLogMessages = [
+        "Establishing secure connection to Amazon data cluster...",
+        "Bypassing standard captchas...",
+        "Scraping review payloads... [OK]",
+        "Initializing DistilBERT sequence classification...",
+        "Running NLP model over extracted entities...",
+        "Cross-referencing temporal activity spikes...",
+        "Detecting bot patterns and repetitive syntax...",
+        "Calculating authenticity confidence scores...",
+        "Finalizing heuristic protocols...",
+        "Data compiled. Preparing visual synthesis..."
+    ];
+
+    function showThreatScanner() {
+        const overlay = document.getElementById('threatScannerOverlay');
+        const logStream = document.getElementById('aiLogStream');
+        if (!overlay || !logStream) return;
+
+        logStream.innerHTML = '';
+        overlay.classList.remove('hidden', 'opacity-0');
+
+        let msgIndex = 0;
+        aiLogInterval = setInterval(() => {
+            if (msgIndex >= aiLogMessages.length) {
+                // Keep repeating the last few or random to show activity if it takes long
+                const randomMsg = aiLogMessages[Math.floor(Math.random() * (aiLogMessages.length - 2)) + 2];
+                addLogLine(logStream, `[RETRY] ${randomMsg}`);
+            } else {
+                addLogLine(logStream, `> ${aiLogMessages[msgIndex]}`);
+                msgIndex++;
+            }
+        }, 800);
+    }
+
+    function addLogLine(container, text) {
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        line.innerHTML = `<span class="text-amber-500/70 mr-2">[${new Date().toISOString().split('T')[1].slice(0, -1)}]</span> ${text}`;
+        container.appendChild(line);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function hideThreatScanner() {
+        const overlay = document.getElementById('threatScannerOverlay');
+        if (!overlay) return;
+        overlay.classList.add('opacity-0');
+        clearInterval(aiLogInterval);
+        setTimeout(() => {
+            overlay.classList.add('hidden');
+        }, 500);
+    }
+
     // --- Main Analyze Action ---
     analyzeBtn.addEventListener('click', async () => {
         const asin = asinInput.value.trim();
@@ -362,6 +520,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Show loading state
         toggleSkeletons(true);
+        showThreatScanner();
 
         try {
             const response = await fetch('/api/analyze', {
@@ -376,23 +535,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(data.error || 'Server error occurred');
             }
 
-            // --- Remove skeleton loader ---
+            // --- Remove skeleton loader & overlay ---
             toggleSkeletons(false);
+            hideThreatScanner();
 
             // Populate Product Meta below search bar
             const metaDiv = document.getElementById('productMeta');
             document.getElementById('metaAsin').innerText = data.asin || asin;
             document.getElementById('metaTime').innerText = new Date().toLocaleTimeString();
-            metaDiv.classList.remove('hidden', 'opacity-0');
+
+            // Set active case number
+            const caseNum = "CASE-" + new Date().getTime().toString().slice(-6);
+            document.getElementById('activeCaseNumber').innerText = caseNum;
 
             // Set Data
             const sum = data.summary;
+            document.getElementById('metaTitle').innerText = sum.product_title || 'Unknown Product';
+            const ratingEl = document.getElementById('metaRating');
+            if (ratingEl) ratingEl.innerText = sum.product_rating || '0.0';
+            const revTotEl = document.getElementById('metaReviewsTotal');
+            if (revTotEl) revTotEl.innerText = sum.product_reviews_total || '0';
+
+            const metaImg = document.getElementById('metaImage');
+            const placeholder = document.getElementById('metaImagePlaceholder');
+            if (metaImg && placeholder && sum.product_image) {
+                metaImg.src = sum.product_image;
+                metaImg.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            } else if (metaImg && placeholder) {
+                metaImg.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+            }
+
+            metaDiv.classList.remove('hidden', 'opacity-0');
 
             // --- 1. Populate Metrics with CountUp Animations ---
+            // progress bars cleanup
+            document.querySelectorAll('.skeleton').forEach(el => el.classList.remove('skeleton'));
+
             animateValue(statElements.total, 0, sum.total_reviews, 1500);
             animateValue(statElements.fake, 0, sum.fake_percent, 1500);
             animateValue(statElements.trust, 0, sum.genuine_percent, 1500);
             animateValue(statElements.accuracy, 0, sum.avg_confidence, 1500);
+
+            // Draw Decorative sparklines
+            drawDecorativeSparkline('sparklineTotal', '#f8fafc');
+            drawDecorativeSparkline('sparklineAccuracy', '#f59e0b');
 
             // Progress Bar widths
             setTimeout(() => {
@@ -401,13 +589,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 100);
 
             // --- 2. Build Charts ---
-            initOrUpdateCharts(data.chart_data.genuine, data.chart_data.fake, sum.fake_percent);
+            initOrUpdateCharts(data.chart_data.fake, data.chart_data.genuine, sum.fake_percent);
 
             // --- 3. Build Feed ---
             renderReviewFeed(data.results.review, data.results.prediction, data.results.confidence, data.results.date, data.results.explanation);
 
             // --- 4. Build Temporal Diagram ---
-            buildTemporalChart(data.results.date, data.results.prediction);
+            buildTemporalChart(data.results);
+
+            // --- 5. Build Word Cloud ---
+            buildWordCloud(data.results);
 
             // Store for CSV
             window.latestScanResults = {
@@ -421,10 +612,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.showToast) window.showToast('Analysis completed successfully!');
 
         } catch (error) {
-            console.error('Error fetching data:', error);
+            console.error("Analysis failed:", error);
+            if (window.showToast) window.showToast(error.message || "Failed to analyze product. Please try again.", 'error');
+            else alert("Failed to analyze product. Please try again.");
+
             toggleSkeletons(false);
-            if (window.showToast) window.showToast(error.message, 'error');
-            else alert(error.message);
+            hideThreatScanner();
         }
     });
 
@@ -465,3 +658,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 });
+

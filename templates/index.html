@@ -9,8 +9,11 @@
     <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&family=Syne:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.2.2/wordcloud2.min.js"></script>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -19,29 +22,32 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    fontFamily: {
+                        sans: ['"Space Mono"', 'monospace'],
+                        heading: ['Syne', 'sans-serif']
+                    },
                     colors: {
-                        background: '#0f172a',
-                        surface: 'rgba(255, 255, 255, 0.03)',
-                        surfaceHover: 'rgba(255, 255, 255, 0.06)',
-                        border: 'rgba(255, 255, 255, 0.08)',
+                        background: '#0a0f1c',
+                        surface: 'rgba(255, 255, 255, 0.02)',
+                        surfaceHover: 'rgba(255, 255, 255, 0.05)',
+                        border: 'rgba(245, 158, 11, 0.15)', // Amber border
                         brand: {
-                            cyan: '#06b6d4',
-                            purple: '#a855f7',
+                            amber: '#f59e0b',
                             fake: '#ef4444',
                             genuine: '#10b981'
                         }
                     },
                     animation: {
                         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'float': 'float 6s ease-in-out infinite',
+                        'scanline': 'scanline 2.5s linear infinite',
                         'slide-up': 'slideUp 0.4s ease-out forwards',
                         'shimmer': 'shimmer 2s linear infinite',
+                        'glitch': 'glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite',
                     },
                     keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-10px)' },
+                        scanline: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(100%)' },
                         },
                         slideUp: {
                             '0%': { transform: 'translateY(20px)', opacity: '0' },
@@ -50,6 +56,14 @@
                         shimmer: {
                             '0%': { backgroundPosition: '-1000px 0' },
                             '100%': { backgroundPosition: '1000px 0' },
+                        },
+                        glitch: {
+                            '0%': { transform: 'translate(0)' },
+                            '20%': { transform: 'translate(-2px, 2px)' },
+                            '40%': { transform: 'translate(-2px, -2px)' },
+                            '60%': { transform: 'translate(2px, 2px)' },
+                            '80%': { transform: 'translate(2px, -2px)' },
+                            '100%': { transform: 'translate(0)' }
                         }
                     }
                 }
@@ -62,169 +76,234 @@
 
     <style>
         body {
-            background-color: #0f172a;
+            background-color: #0a0f1c;
             color: #f8fafc;
             overflow: hidden;
-            /* App-like feel */
+            font-family: 'Space Mono', monospace;
         }
 
-        /* Ambient Premium Gradients */
-        .ambient-bg {
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        .font-heading {
+            font-family: 'Syne', sans-serif;
+        }
+
+        /* Scanline Texture Overlay */
+        body::after {
+            content: '';
             position: fixed;
-            top: -20vh;
-            left: -10vw;
-            width: 70vw;
-            height: 70vh;
-            background: radial-gradient(circle, rgba(168, 85, 247, 0.08) 0%, rgba(6, 182, 212, 0.03) 50%, rgba(15, 23, 42, 0) 80%);
-            border-radius: 50%;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: repeating-linear-gradient(0deg,
+                    rgba(0, 0, 0, 0.15),
+                    rgba(0, 0, 0, 0.15) 1px,
+                    transparent 1px,
+                    transparent 2px);
             pointer-events: none;
-            z-index: 0;
-            filter: blur(80px);
+            z-index: 9999;
         }
 
-        .ambient-bg-2 {
-            position: fixed;
-            bottom: -20vh;
-            right: -10vw;
-            width: 60vw;
-            height: 60vh;
-            background: radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, rgba(168, 85, 247, 0.03) 50%, rgba(15, 23, 42, 0) 80%);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 0;
-            filter: blur(80px);
-        }
-
-        /* Glassmorphism utility */
+        /* Glassmorphism utility - updated for forensics theme */
         .glass-panel {
-            background: rgba(255, 255, 255, 0.02);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            /* Soft, subtle shadow instead of heavy box-shadow */
-            box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
+            background: rgba(10, 15, 28, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(245, 158, 11, 0.15);
+            box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.5);
             position: relative;
             z-index: 10;
-            transition: border-color 0.3s ease, background 0.3s ease;
+            transition: border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
         }
 
         .glass-panel:hover {
-            border-color: rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(245, 158, 11, 0.3);
+            background: rgba(10, 15, 28, 0.8);
+            box-shadow: 0 4px 24px -1px rgba(245, 158, 11, 0.05);
         }
 
-        /* Gradient Button */
+        /* High-tech Button */
         .btn-gradient {
-            background: linear-gradient(135deg, #a855f7 0%, #06b6d4 100%);
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid #f59e0b;
+            color: #f59e0b;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
-            border: none;
-            color: white;
-            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
-        }
-
-        .btn-gradient::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, #06b6d4 0%, #a855f7 100%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            z-index: 0;
-        }
-
-        .btn-gradient:hover::before {
-            opacity: 1;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.1);
         }
 
         .btn-gradient:hover {
-            box-shadow: 0 0 25px rgba(168, 85, 247, 0.5);
-            transform: translateY(-2px);
+            background: rgba(245, 158, 11, 0.2);
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4), inset 0 0 10px rgba(245, 158, 11, 0.2);
+            transform: translateY(-1px);
         }
 
-        .btn-gradient span,
-        .btn-gradient i {
-            position: relative;
-            z-index: 1;
+        .btn-gradient:active {
+            transform: translateY(1px);
+        }
+
+        /* Loading / Processing pulse for button */
+        .btn-loading {
+            animation: pulse-amber 1.5s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes pulse-amber {
+            0% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(245, 158, 11, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+            }
         }
 
         /* Input styling */
         .input-dark {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(245, 158, 11, 0.2);
             color: #f8fafc;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Space Mono', monospace;
         }
 
         .input-dark:focus {
-            background: rgba(0, 0, 0, 0.4);
-            border-color: #06b6d4;
-            box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.15);
+            background: rgba(0, 0, 0, 0.6);
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
             outline: none;
+        }
+
+        /* Cyberpunk Input Scanner */
+        .input-scanner-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 0.75rem;
+        }
+
+        .input-scanner {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 50%;
+            background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.4), transparent);
+            transform: translateX(-100%);
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .input-dark:focus~.input-scanner {
+            opacity: 1;
+            animation: scanline 2s linear infinite;
         }
 
         /* Sidebar Link animation */
         .sidebar-link {
             transition: all 0.2s ease;
             position: relative;
-        }
-
-        .sidebar-link::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            height: 0;
-            width: 3px;
-            background: #06b6d4;
-            border-radius: 0 4px 4px 0;
-            transition: height 0.3s ease;
+            border-left: 2px solid transparent;
         }
 
         .sidebar-link:hover {
-            background: rgba(255, 255, 255, 0.03);
-            color: #fff;
+            background: rgba(245, 158, 11, 0.05);
+            color: #f59e0b;
+            border-left: 2px solid rgba(245, 158, 11, 0.5);
         }
 
         .sidebar-link:hover i {
-            transform: scale(1.1);
-            color: #06b6d4;
+            color: #f59e0b;
         }
 
         .sidebar-link.active {
-            background: linear-gradient(90deg, rgba(6, 182, 212, 0.1) 0%, transparent 100%);
-            color: #06b6d4;
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+            border-left: 2px solid #f59e0b;
         }
 
-        .sidebar-link.active::before {
-            height: 100%;
+        /* Rubber Stamp Effects */
+        .stamp-fake,
+        .stamp-genuine {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-weight: 800;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            border: 4px solid;
+            padding: 0.25rem 1rem;
+            border-radius: 0.5rem;
+            transform: rotate(-12deg);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 20;
+            font-family: 'Syne', sans-serif;
+            letter-spacing: 2px;
+            animation: stampIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
         }
 
-        /* Loading Skeleton */
-        .skeleton {
-            background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 75%);
-            background-size: 1000px 100%;
-            animation: shimmer 2s infinite linear;
-            border-color: transparent !important;
-            color: transparent !important;
+        .stamp-fake {
+            color: rgba(239, 68, 68, 0.9);
+            border-color: rgba(239, 68, 68, 0.9);
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+            box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.3), 0 0 10px rgba(239, 68, 68, 0.3);
+            mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><filter id="f"><feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3"/><feDisplacementMap in="SourceGraphic" scale="5"/></filter><rect width="100%" height="100%" filter="url(%23f)"/></svg>');
+            -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><filter id="f"><feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="1"/><feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 7 -3"/></filter><rect width="100%" height="100%" filter="url(%23f)"/></svg>');
         }
 
-        .skeleton * {
-            visibility: hidden;
+        .stamp-genuine {
+            color: rgba(16, 185, 129, 0.9);
+            border-color: rgba(16, 185, 129, 0.9);
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.3), 0 0 10px rgba(16, 185, 129, 0.3);
         }
 
-        /* Review Card Colored Borders */
-        .border-left-genuine {
+        @keyframes stampIn {
+            0% {
+                transform: scale(3) rotate(-12deg);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(0.8) rotate(-12deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1) rotate(-12deg);
+                opacity: 0.8;
+            }
+        }
+
+        /* Review Card Colored Borders - Forensics Style */
+        .card-genuine {
             border-left: 3px solid #10b981;
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.05) 0%, transparent 100%);
         }
 
-        .border-left-fake {
+        .card-fake {
             border-left: 3px solid #ef4444;
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.05) 0%, transparent 100%);
+            position: relative;
+        }
+
+        .card-fake:hover {
+            animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+            border-color: #ef4444;
+            box-shadow: inset 2px 0 10px rgba(239, 68, 68, 0.3);
         }
 
         /* Custom Scrollbar */
@@ -234,16 +313,16 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: transparent;
+            background: rgba(10, 15, 28, 0.8);
         }
 
         ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
+            background: rgba(245, 158, 11, 0.3);
+            border-radius: 0;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(245, 158, 11, 0.6);
         }
 
         /* Toast Animations */
@@ -277,30 +356,15 @@
             animation: fadeOut 0.3s ease forwards;
         }
 
-        /* Processing Blur Overlay */
-        .processing-blur {
-            filter: blur(4px) brightness(0.7);
-            pointer-events: none;
-            transition: all 0.5s ease;
-        }
-
-        /* Model Toggle Slider */
-        .toggle-checkbox:checked {
-            right: 0;
-            border-color: #06b6d4;
-        }
-
-        .toggle-checkbox:checked+.toggle-label {
-            background-color: #06b6d4;
+        /* Odometer specific styling */
+        .odometer-digit {
+            display: inline-block;
+            transition: transform 1s cubic-bezier(0, 1, 0.5, 1);
         }
     </style>
 </head>
 
-<body class="flex h-screen bg-background antialiased selection:bg-cyan-500/30">
-
-    <!-- Ambient Gradients -->
-    <div class="ambient-bg"></div>
-    <div class="ambient-bg-2"></div>
+<body class="flex h-screen bg-background antialiased selection:bg-amber-500/30 text-slate-300">
 
     <!-- LEFT SIDEBAR -->
     <aside id="sidebar"
@@ -309,47 +373,52 @@
             <!-- Logo Section -->
             <div class="h-16 flex items-center px-6 border-b border-white/5">
                 <div
-                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-cyan-500 flex items-center justify-center mr-3 shadow-[0_0_15px_rgba(168,85,247,0.4)]">
-                    <i class="ph-fill ph-check-square-offset text-white text-lg"></i>
+                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-600 to-amber-400 flex items-center justify-center mr-3 shadow-[0_0_15px_rgba(245,158,11,0.4)]">
+                    <i class="ph-fill ph-fingerprint text-white text-lg"></i>
                 </div>
-                <span class="text-lg font-bold tracking-tight text-white">TrustLens<span
-                        class="text-cyan-400">.ai</span></span>
+                <span class="text-lg font-bold tracking-tight text-white font-heading">TrustLens<span
+                        class="text-amber-500">.ai</span></span>
             </div>
 
             <!-- Navigation Links -->
             <nav class="p-4 space-y-1 mt-4">
-                <p class="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Menu</p>
-                <a href="#"
-                    class="sidebar-link active flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-300">
-                    <i class="ph ph-squares-four text-lg mr-3 transition-transform"></i> Overview
+                <p class="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Investigation Files
+                </p>
+                <a href="#" class="sidebar-link active flex items-center px-3 py-2.5 rounded-lg text-sm font-medium">
+                    <i class="ph ph-terminal-window text-lg mr-3 transition-transform"></i> Control Center
                 </a>
                 <a href="#analysis-section"
                     class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
-                    <i class="ph ph-magnifying-glass-plus text-lg mr-3 transition-transform"></i> Analyze Product
+                    <i class="ph ph-crosshair text-lg mr-3 transition-transform"></i> Initialize Scan
                 </a>
                 <a href="{{ url_for('history') }}"
                     class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400">
-                    <i class="ph ph-clock-counter-clockwise text-lg mr-3 transition-transform"></i> Scan History
+                    <i class="ph ph-folder-open text-lg mr-3 transition-transform"></i> Case Archive
                 </a>
             </nav>
 
             <nav class="p-4 space-y-1 mt-2">
-                <p class="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Settings</p>
+                <p class="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">System Config</p>
                 <a href="#"
                     class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 opacity-50 cursor-not-allowed"
                     title="Coming Soon">
-                    <i class="ph ph-funnel text-lg mr-3 transition-transform"></i> Rule Filters
+                    <i class="ph ph-funnel text-lg mr-3 transition-transform"></i> Heuristic Protocols
                 </a>
                 <a href="#"
                     class="sidebar-link flex items-center px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 opacity-50 cursor-not-allowed"
                     title="Coming Soon">
-                    <i class="ph ph-plug text-lg mr-3 transition-transform"></i> API Integration
+                    <i class="ph ph-plug text-lg mr-3 transition-transform"></i> External Uplink
                 </a>
             </nav>
         </div>
 
         <!-- System Status area -->
-        <div class="p-4 border-t border-white/5">
+        <div class="p-4 border-t border-white/5 space-y-3">
+            <div class="flex flex-col px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg">
+                <span class="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-1">Active Case</span>
+                <span id="activeCaseNumber"
+                    class="text-amber-400 font-mono text-sm tracking-wider">AWAITING_INPUT</span>
+            </div>
             <div class="flex items-center px-3 py-2 bg-emerald-500/5 border border-emerald-500/10 rounded-lg">
                 <span class="relative flex h-2 w-2 mr-3">
                     <span
@@ -380,8 +449,8 @@
             <div class="flex items-center space-x-5">
                 <!-- Plan Badge -->
                 <div
-                    class="hidden sm:flex items-center px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border border-purple-500/20 text-xs font-medium text-purple-300">
-                    <i class="ph-fill ph-lightning mr-1 text-amber-400"></i> Pro Tier
+                    class="hidden sm:flex items-center px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/10 to-amber-300/10 border border-amber-500/20 text-xs font-medium text-amber-500">
+                    <i class="ph-fill ph-shield-check mr-1 text-amber-400"></i> Clearance Level 5
                 </div>
 
                 <div class="h-5 w-px bg-white/10 hidden sm:block"></div>
@@ -389,14 +458,14 @@
                 <!-- Icons -->
                 <button class="text-slate-400 hover:text-white transition relative">
                     <i class="ph ph-bell text-xl"></i>
-                    <span class="absolute top-0 right-0 w-2 h-2 rounded-full bg-cyan-400 ring-2 ring-slate-900"></span>
+                    <span class="absolute top-0 right-0 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-slate-900"></span>
                 </button>
 
                 <!-- Avatar / User Menu Trigger -->
                 <div class="relative group cursor-pointer" id="openProfileModalBtn">
                     <img src="{{ session.get('user_photo') or 'https://api.dicebear.com/7.x/initials/svg?seed=' ~ session.get('user_name', 'U') }}"
                         alt="Avatar"
-                        class="w-8 h-8 rounded-full border border-white/10 group-hover:border-cyan-400 transition object-cover">
+                        class="w-8 h-8 rounded-full border border-white/10 group-hover:border-amber-400 transition object-cover">
                 </div>
             </div>
         </header>
@@ -411,48 +480,79 @@
                     class="glass-panel p-6 md:p-10 rounded-2xl relative overflow-hidden group">
                     <div class="relative z-10 max-w-4xl">
                         <div
-                            class="inline-flex items-center px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium mb-5">
-                            <i class="ph ph-sparkle mr-1.5"></i> V2 AI Engine Active
+                            class="inline-flex items-center px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold tracking-widest font-mono mb-5 uppercase">
+                            <i class="ph-fill ph-radar mr-1.5 animate-pulse"></i> Neural Forensic Engine Active
                         </div>
-                        <h1 class="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">Intercept Fraudulent
+                        <h1 class="text-3xl md:text-5xl font-bold text-white mb-3 tracking-tight font-heading">Intercept
+                            Fraudulent
                             Reviews</h1>
                         <p class="text-slate-400 mb-8 max-w-2xl text-sm md:text-base leading-relaxed">Instantly analyze
                             any Amazon product page using specialized NLP transformers. We dissect syntax, sentiment,
                             and metadata to expose AI-generated and paid manipulative reviews.</p>
 
                         <div class="flex flex-col sm:flex-row gap-3">
-                            <div class="relative flex-grow group">
+                            <div class="relative flex-grow group input-scanner-container">
                                 <div
-                                    class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-cyan-400 text-slate-500">
-                                    <i class="ph ph-link-bold text-lg"></i>
+                                    class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors group-focus-within:text-amber-500 text-slate-500">
+                                    <i class="ph ph-scan text-lg z-10"></i>
                                 </div>
                                 <input type="text" id="asinInput"
                                     class="input-dark block w-full pl-11 pr-4 py-4 rounded-xl text-sm md:text-base tracking-wide"
-                                    placeholder="Paste Amazon Product URL or ASIN here...">
+                                    placeholder="PASTE AMAZON URL TO COMMENCE SCAN...">
+                                <div class="input-scanner"></div>
                                 <!-- Floating enter key hint -->
                                 <div
-                                    class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none hidden md:flex">
+                                    class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none hidden md:flex z-10">
                                     <div
-                                        class="px-2 py-1 rounded bg-slate-800 border border-slate-700 text-slate-400 text-xs font-mono font-medium tracking-tight">
+                                        class="px-2 py-1 rounded bg-black/60 border border-slate-700 text-slate-400 text-xs font-mono font-bold tracking-tight">
                                         ↵ Return</div>
                                 </div>
                             </div>
 
                             <button id="analyzeBtn"
-                                class="btn-gradient py-4 px-8 rounded-xl font-semibold flex items-center justify-center whitespace-nowrap text-sm md:text-base">
-                                <i class="ph-bold ph-magic-wand mr-2 text-lg"></i>
-                                <span id="analyzeBtnText">Run Analysis</span>
+                                class="btn-gradient py-4 px-8 rounded-xl font-bold flex items-center justify-center whitespace-nowrap text-sm md:text-base">
+                                <i class="ph-bold ph-crosshair mr-2 text-lg"></i>
+                                <span id="analyzeBtnText">Execute Scan</span>
                             </button>
                         </div>
 
                         <!-- Mini metadata (hidden until search) -->
                         <div id="productMeta"
-                            class="mt-4 flex items-center text-xs text-slate-500 hidden opacity-0 transition-opacity duration-500">
-                            <i class="ph ph-check-circle text-emerald-500 mr-1 mt-0.5"></i>
-                            <span>Target Acquired: <span id="metaAsin" class="text-slate-300 font-mono"></span></span>
-                            <span class="mx-3">•</span>
-                            <i class="ph ph-clock mr-1 mt-0.5"></i>
-                            <span><span id="metaTime" class="text-slate-300">Just now</span></span>
+                            class="mt-6 flex items-start gap-4 hidden opacity-0 transition-opacity duration-500 max-w-2xl relative z-10">
+                            <div
+                                class="w-16 h-16 rounded border border-amber-500/20 bg-slate-900/80 flex-shrink-0 flex items-center justify-center shadow-inner relative overflow-hidden">
+                                <i id="metaImagePlaceholder"
+                                    class="ph-fill ph-package text-2xl text-slate-600 absolute z-0"></i>
+                                <img id="metaImage" src="" alt="Product Image"
+                                    class="w-full h-full object-contain hidden relative z-10 bg-white/5 backdrop-blur-sm" />
+                            </div>
+                            <div class="flex flex-col flex-1">
+                                <div
+                                    class="flex flex-wrap items-center text-[10px] text-slate-500 font-mono mb-1.5 uppercase tracking-widest">
+                                    <i class="ph-fill ph-target text-amber-500 mr-1 animate-pulse"></i>
+                                    <span class="text-amber-500 font-bold mr-2">Target Acquired:</span>
+                                    <span id="metaAsin" class="text-slate-300 mr-3"></span>
+                                    <span class="text-slate-600 hidden sm:inline mr-3">|</span>
+                                    <i class="ph ph-clock mr-1 mt-0.5 hidden sm:inline"></i>
+                                    <span id="metaTime" class="text-slate-300 hidden sm:inline"></span>
+                                </div>
+                                <h3 id="metaTitle"
+                                    class="text-sm font-bold text-white leading-snug line-clamp-2 mb-2 font-heading">
+                                </h3>
+                                <div
+                                    class="flex items-center text-[10px] font-mono text-slate-400 space-x-3 uppercase tracking-widest">
+                                    <span
+                                        class="flex items-center bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/20">
+                                        <i class="ph-fill ph-star mr-1 text-amber-400"></i>
+                                        <span id="metaRating" class="font-bold">0.0</span>
+                                    </span>
+                                    <span class="flex items-center">
+                                        <i class="ph-fill ph-users text-slate-500 mr-1"></i>
+                                        <span id="metaReviewsTotal" class="text-slate-300 font-bold mr-1">0</span>
+                                        Global Ratings
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -472,87 +572,94 @@
                 <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                     <!-- Total Reviews Card -->
                     <div
-                        class="glass-panel p-5 rounded-2xl flex flex-col justify-between h-36 border-t-2 border-t-white/5 data-card">
+                        class="glass-panel p-5 rounded-2xl flex flex-col justify-between h-40 border-t-2 border-t-white/5 data-card">
                         <div class="flex justify-between items-start">
-                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Total
+                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider font-mono">Total
                                 Evaluated</span>
                             <i class="ph ph-files text-slate-500 text-lg"></i>
                         </div>
                         <div>
                             <div class="flex items-baseline space-x-2">
-                                <span class="text-3xl font-bold text-white tracking-tight" id="statTotal">--</span>
+                                <span class="text-3xl font-bold text-white tracking-tight odometer font-heading"
+                                    id="statTotal">--</span>
                             </div>
-                            <p class="text-[10px] text-slate-500 mt-1">Sourced from multiple regions</p>
+                            <canvas id="sparklineTotal" class="w-full h-8 mt-1 opacity-60"></canvas>
                         </div>
                     </div>
 
                     <!-- Fake Risk Score Card -->
                     <div
-                        class="glass-panel p-5 rounded-2xl flex flex-col justify-between h-36 border-t-2 border-t-white/5 data-card relative overflow-hidden group">
+                        class="glass-panel p-5 rounded-2xl flex flex-col justify-between h-40 border-t-2 border-t-white/5 data-card relative overflow-hidden group">
                         <div class="absolute inset-0 bg-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity">
                         </div>
                         <div class="flex justify-between items-start relative z-10">
-                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Fake Risk
+                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider font-mono">Fake
+                                Risk
                                 Score</span>
                             <i class="ph ph-warning-circle text-red-500/70 text-lg"></i>
                         </div>
                         <div class="relative z-10 w-full">
                             <div class="flex items-baseline justify-between mb-2">
                                 <div class="flex items-baseline">
-                                    <span class="text-3xl font-bold text-red-400 tracking-tight"
+                                    <span class="text-3xl font-bold text-red-500 tracking-tight odometer font-heading"
                                         id="statFakeCount">--</span>
-                                    <span class="text-sm text-red-400/70 font-medium ml-1">%</span>
+                                    <span class="text-sm text-red-500/70 font-medium ml-1">%</span>
                                 </div>
                                 <span
                                     class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700"
                                     id="riskLevelBadge">N/A</span>
                             </div>
                             <div class="w-full bg-black/40 rounded-full h-1.5 overflow-hidden">
-                                <div class="bg-gradient-to-r from-red-600 to-red-400 h-full rounded-full transition-all duration-1000 w-0"
-                                    id="fakeRiskBar"></div>
+                                <div class="bg-gradient-to-r from-red-600 to-red-400 h-full rounded-full transition-all duration-1000 w-0 relative"
+                                    id="fakeRiskBar">
+                                    <div class="absolute inset-0 bg-white/20 w-full skeleton"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Authentic Ratio Card -->
                     <div
-                        class="glass-panel p-5 rounded-2xl flex flex-col justify-between h-36 border-t-2 border-t-white/5 data-card relative overflow-hidden group">
+                        class="glass-panel p-5 rounded-2xl flex flex-col justify-between h-40 border-t-2 border-t-white/5 data-card relative overflow-hidden group">
                         <div
                             class="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity">
                         </div>
                         <div class="flex justify-between items-start relative z-10">
-                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Authentic
+                            <span
+                                class="text-slate-400 text-xs font-semibold uppercase tracking-wider font-mono">Authentic
                                 Ratio</span>
                             <i class="ph ph-shield-check text-emerald-500/70 text-lg"></i>
                         </div>
                         <div class="relative z-10 w-full">
                             <div class="flex items-baseline mb-2">
-                                <span class="text-3xl font-bold text-emerald-400 tracking-tight"
+                                <span class="text-3xl font-bold text-emerald-500 tracking-tight odometer font-heading"
                                     id="statTrustScore">--</span>
-                                <span class="text-sm text-emerald-400/70 font-medium ml-1">%</span>
+                                <span class="text-sm text-emerald-500/70 font-medium ml-1">%</span>
                             </div>
                             <div class="w-full bg-black/40 rounded-full h-1.5 overflow-hidden">
-                                <div class="bg-gradient-to-r from-emerald-600 to-emerald-400 h-full rounded-full transition-all duration-1000 w-0"
-                                    id="trustScoreBar"></div>
+                                <div class="bg-gradient-to-r from-emerald-600 to-emerald-400 h-full rounded-full transition-all duration-1000 w-0 relative"
+                                    id="trustScoreBar">
+                                    <div class="absolute inset-0 bg-white/20 w-full skeleton"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Avg Confidence Card -->
                     <div
-                        class="glass-panel p-5 rounded-2xl flex flex-col justify-between h-36 border-t-2 border-t-white/5 data-card">
+                        class="glass-panel p-5 rounded-2xl flex flex-col justify-between h-40 border-t-2 border-t-white/5 data-card">
                         <div class="flex justify-between items-start">
-                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">AI
+                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider font-mono">AI
                                 Confidence</span>
-                            <i class="ph ph-brain text-purple-400/70 text-lg"></i>
+                            <i class="ph ph-brain text-amber-500/70 text-lg"></i>
                         </div>
                         <div>
                             <div class="flex items-baseline">
-                                <span class="text-3xl font-bold text-purple-400 tracking-tight"
+                                <span class="text-3xl font-bold text-amber-500 tracking-tight odometer font-heading"
                                     id="statAccuracy">--</span>
-                                <span class="text-sm text-purple-400/70 font-medium ml-1">%</span>
+                                <span class="text-sm text-amber-500/70 font-medium ml-1">%</span>
                             </div>
-                            <p class="text-[10px] text-slate-500 mt-1">Neural network precision</p>
+                            <canvas id="sparklineAccuracy" class="w-full h-8 mt-1 opacity-60"></canvas>
                         </div>
                     </div>
                 </section>
@@ -564,11 +671,12 @@
                     <div
                         class="lg:col-span-1 glass-panel p-6 rounded-2xl flex flex-col items-center justify-center relative border-t-2 border-t-white/5 data-card min-h-[300px]">
                         <div class="w-full flex justify-between items-start absolute top-5 left-5 right-5">
-                            <h3 class="text-slate-300 text-sm font-semibold tracking-tight">Trust Index</h3>
+                            <h3 class="text-amber-500 text-sm font-bold tracking-widest uppercase font-heading">Trust
+                                Index</h3>
                             <div class="group relative cursor-help">
-                                <i class="ph ph-info text-slate-500"></i>
+                                <i class="ph ph-info text-slate-500 hover:text-amber-400 transition-colors"></i>
                                 <div
-                                    class="absolute right-0 w-48 p-2 mt-1 bg-slate-800 border border-white/10 rounded-lg text-[10px] text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
+                                    class="absolute right-0 w-48 p-2 mt-1 bg-slate-900 border border-amber-500/20 rounded-lg text-[10px] text-amber-100/70 font-mono opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
                                     A composite score of product listing integrity based on NLP review analysis.
                                 </div>
                             </div>
@@ -590,8 +698,8 @@
                         <!-- Badge -->
                         <div class="mt-6">
                             <span id="badgeText"
-                                class="px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs font-medium text-slate-400 shadow-sm">Waiting
-                                for URL</span>
+                                class="px-3 py-1 rounded-full bg-slate-900/80 border border-amber-500/30 text-[10px] uppercase font-bold tracking-widest text-amber-500/70 shadow-sm font-mono">Awaiting
+                                Target</span>
                         </div>
                     </div>
 
@@ -600,13 +708,15 @@
                         class="lg:col-span-2 glass-panel p-6 rounded-2xl flex flex-col border-t-2 border-t-white/5 data-card min-h-[300px]">
                         <div class="flex justify-between items-center mb-6">
                             <div>
-                                <h3 class="text-slate-300 text-sm font-semibold tracking-tight">Authenticity
+                                <h3 class="text-amber-500 text-sm font-bold tracking-widest uppercase font-heading">
+                                    Authenticity
                                     Distribution</h3>
-                                <p class="text-[10px] text-slate-500 mt-0.5">Volumetric split of AI classification
+                                <p class="text-[10px] text-slate-400 mt-0.5 font-mono uppercase">Volumetric split of AI
+                                    classification
                                     predictions</p>
                             </div>
                             <button
-                                class="text-slate-500 hover:text-white transition bg-black/20 p-1.5 rounded-lg border border-white/5">
+                                class="text-amber-500/70 hover:text-amber-400 transition bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20 hover:bg-amber-500/20">
                                 <i class="ph ph-arrows-out-simple text-sm"></i>
                             </button>
                         </div>
@@ -622,11 +732,13 @@
                         class="glass-panel p-6 rounded-2xl flex flex-col border-t-2 border-t-white/5 data-card min-h-[300px]">
                         <div class="flex justify-between items-center mb-6">
                             <div>
-                                <h3 class="text-slate-300 text-sm font-semibold tracking-tight">Temporal Activity</h3>
-                                <p class="text-[10px] text-slate-500 mt-0.5">Velocity of Review Submission over Time</p>
+                                <h3 class="text-amber-500 text-sm font-bold tracking-widest uppercase font-heading">
+                                    Temporal Activity</h3>
+                                <p class="text-[10px] text-slate-400 mt-0.5 font-mono uppercase">Velocity of Review
+                                    Submission over Time</p>
                             </div>
                             <button
-                                class="text-slate-500 hover:text-white transition bg-black/20 p-1.5 rounded-lg border border-white/5">
+                                class="text-amber-500/70 hover:text-amber-400 transition bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20 hover:bg-amber-500/20">
                                 <i class="ph ph-calendar-blank text-sm"></i>
                             </button>
                         </div>
@@ -636,28 +748,54 @@
                     </div>
                 </section>
 
+                <!-- WORD CLOUD SECTION -->
+                <section class="mt-4 md:mt-6 mb-8 w-full">
+                    <div
+                        class="glass-panel p-6 rounded-2xl flex flex-col border-t-2 border-t-white/5 data-card min-h-[350px]">
+                        <div class="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 class="text-amber-500 text-sm font-bold tracking-widest uppercase font-heading">
+                                    Entity Extraction Node</h3>
+                                <p class="text-[10px] text-slate-400 mt-0.5 font-mono uppercase">Linguistic Frequency
+                                    Cloud (Red=Suspicious, Green=Authentic)</p>
+                            </div>
+                            <button
+                                class="text-amber-500/70 hover:text-amber-400 transition bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20 hover:bg-amber-500/20">
+                                <i class="ph ph-text-aa text-sm"></i>
+                            </button>
+                        </div>
+                        <div class="flex-grow w-full relative h-[280px] bg-slate-900/50 rounded-xl overflow-hidden border border-amber-500/10"
+                            id="wordCloudWrapper">
+                            <canvas id="wordCloudCanvas" class="w-full h-full"></canvas>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- REVIEW INTELLIGENCE FEED -->
                 <section class="glass-panel p-6 md:p-8 rounded-2xl border-t-2 border-t-white/5 data-card">
                     <div
-                        class="flex flex-col sm:flex-row justify-between items-start md:items-center border-b border-white/5 pb-5 mb-6 gap-4">
+                        class="flex flex-col sm:flex-row justify-between items-start md:items-center border-b border-amber-500/20 pb-5 mb-6 gap-4">
                         <div>
-                            <h3 class="text-lg font-bold text-white tracking-tight">Intelligence Log</h3>
-                            <p class="text-xs text-slate-400 mt-1">Micro-level breakdown of the highest confidence
+                            <h3 class="text-xl font-bold text-white tracking-widest uppercase font-heading">Intelligence
+                                Log</h3>
+                            <p class="text-xs text-slate-400 mt-1 font-mono uppercase">Micro-level breakdown of the
+                                highest confidence
                                 predictions.</p>
                         </div>
 
                         <div class="flex items-center space-x-3 w-full sm:w-auto">
                             <!-- Filter Toggle Placeholder -->
-                            <div class="bg-black/40 rounded-lg p-1 border border-white/5 hidden md:flex items-center">
+                            <div
+                                class="bg-black/60 rounded-lg p-1 border border-amber-500/20 hidden md:flex items-center">
                                 <button
-                                    class="px-3 py-1.5 text-xs font-medium rounded-md bg-slate-800 text-white shadow-sm transition">All</button>
+                                    class="px-3 py-1.5 text-xs font-bold font-mono tracking-widest uppercase rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow-sm transition">All</button>
                                 <button
-                                    class="px-3 py-1.5 text-xs font-medium rounded-md text-slate-400 hover:text-white transition">Fake
+                                    class="px-3 py-1.5 text-xs font-bold font-mono tracking-widest uppercase rounded-md text-slate-500 hover:text-amber-400 transition">Fake
                                     Only</button>
                             </div>
 
                             <button id="downloadCsvBtn"
-                                class="flex-1 sm:flex-none justify-center items-center space-x-2 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg border border-white/10 transition shadow-sm hidden">
+                                class="flex-1 sm:flex-none justify-center items-center space-x-2 text-xs font-bold font-mono tracking-widest uppercase text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 px-4 py-2 rounded-lg border border-amber-500/30 transition shadow-sm hidden">
                                 <i class="ph-bold ph-download-simple"></i>
                                 <span>Export CSV</span>
                             </button>
@@ -670,11 +808,15 @@
                         <div
                             class="col-span-full py-16 px-4 flex flex-col items-center justify-center text-center opacity-70">
                             <div
-                                class="w-16 h-16 bg-gradient-to-b from-slate-800 to-transparent rounded-full border border-white/5 flex items-center justify-center mb-4 shadow-inner">
-                                <i class="ph ph-magnifying-glass text-2xl text-slate-500"></i>
+                                class="w-16 h-16 bg-gradient-to-b from-amber-500/10 to-transparent rounded-full border border-amber-500/20 flex items-center justify-center mb-4 shadow-inner relative">
+                                <i class="ph ph-magnifying-glass text-2xl text-amber-500/60 z-10"></i>
+                                <div class="absolute inset-0 rounded-full border border-amber-500/10 animate-ping">
+                                </div>
                             </div>
-                            <h4 class="text-slate-300 font-medium mb-1 tracking-tight">Awaiting Target</h4>
-                            <p class="text-slate-500 text-sm max-w-sm">Paste a product URL above to generate the live
+                            <h4 class="text-amber-500 font-bold mb-1 tracking-widest uppercase font-heading">Awaiting
+                                Target</h4>
+                            <p class="text-slate-400 text-[10px] font-mono uppercase max-w-sm">Provide a product URL
+                                above to generate the live
                                 intelligence feed and unveil the hidden truth.</p>
                         </div>
                     </div>
@@ -898,6 +1040,44 @@
             }
         });
     </script>
+
+    <!-- Threat Scanner Overlay (Hidden by default) -->
+    <div id="threatScannerOverlay"
+        class="fixed inset-0 z-[9999] bg-slate-950/90 backdrop-blur-sm hidden flex-col items-center justify-center overflow-hidden opacity-0">
+        <!-- Radar Animation -->
+        <div class="radar-sweep"></div>
+        <div class="absolute w-full h-full border-[20vmax] border-slate-950/50 rounded-full pointer-events-none"></div>
+
+        <!-- Center Content -->
+        <div class="relative z-10 flex flex-col items-center">
+            <i class="ph-bold ph-crosshair text-amber-500 text-6xl animate-pulse mb-6"></i>
+            <h2
+                class="font-heading text-3xl text-amber-500 font-bold uppercase tracking-widest mb-8 text-center drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]">
+                Initiating Deep Scan</h2>
+
+            <!-- AI Thinking Stream Terminal -->
+            <div
+                class="w-full max-w-lg min-w-[320px] bg-black/80 border border-amber-500/30 rounded-lg p-5 shadow-[0_0_30px_rgba(245,158,11,0.15)] relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-amber-500/20"></div>
+                <div class="flex items-center space-x-2 mb-4 border-b border-amber-500/20 pb-2">
+                    <div class="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+                    <div class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></div>
+                    <div class="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></div>
+                    <span
+                        class="text-[10px] text-amber-500/60 font-mono uppercase tracking-widest ml-2">TrustLens_Core.v5</span>
+                </div>
+                <div id="aiLogStream"
+                    class="ai-log-terminal text-sm text-amber-400/90 h-40 overflow-hidden space-y-2 flex flex-col justify-end">
+                    <!-- Logs injected here via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Decorative grid -->
+        <div
+            class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTAgMGg0MHY0MEgweiIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0wIDM5LjVoNDBNMzkuNSAwdi00MCIgc3Ryb2tlPSJyZ2JhKDI0NSwgMTU4LCAxMSwgMC4wNSkiIHN0cm9rZS13aWR0aD0iMSIvPjwvc3ZnPg==')] pointer-events-none opacity-50">
+        </div>
+    </div>
 </body>
 
 </html>

@@ -2,6 +2,10 @@ import torch
 import numpy as np
 import pandas as pd
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from serpapi import GoogleSearch
 from transformers import DistilBertForSequenceClassification, DistilBertTokenizerFast
 from sklearn.preprocessing import LabelEncoder
@@ -15,7 +19,7 @@ le = joblib.load("./models/label_encoder.pkl")
 # =========================
 # CONFIG
 # =========================
-SERP_API_KEY = os.getenv("SERP_API_KEY", "add your api key")
+SERP_API_KEY = os.getenv("SERP_API_KEY", "894bf919c29bd261838dd97a18cced3971f17f0077e190f7f4e4f33bbe47468c")
 MODEL_PATH = "./models/distilbert"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -57,6 +61,7 @@ def get_prediction_probs(texts):
 def fetch_reviews_multi_page(asin, target_domain="amazon.com", pages=3, max_reviews=55):
     all_reviews = []
     seen_texts = set()
+    product_details = {}
     
     domains = [target_domain, "amazon.co.uk", "amazon.ca", "amazon.in", "amazon.com.au"]
     
@@ -91,6 +96,15 @@ def fetch_reviews_multi_page(asin, target_domain="amazon.com", pages=3, max_revi
         except:
             continue
 
+        if not product_details and "product_results" in results:
+            prod = results.get("product_results", {})
+            product_details = {
+                "title": prod.get("title", f"Amazon Product ({asin})"),
+                "thumbnail": prod.get("thumbnail", ""),
+                "rating": prod.get("rating", 0),
+                "reviews_total": prod.get("reviews", 0)
+            }
+
         reviews_info = results.get("reviews_information", {})
         
         # 1. Extract authors_reviews
@@ -118,7 +132,7 @@ def fetch_reviews_multi_page(asin, target_domain="amazon.com", pages=3, max_revi
             add_review(text, review.get("date"))
                 
     print("REVIEWS COUNT:", len(all_reviews))
-    return all_reviews[:100]
+    return all_reviews[:100], product_details
     
 # =========================
 # PREDICTION
@@ -206,7 +220,7 @@ def analyze_product(asin, pages=3):
 
     domain = extract_domain(asin)
     asin_id = extract_asin(asin)
-    reviews = fetch_reviews_multi_page(asin_id, domain, pages)
+    reviews, product_details = fetch_reviews_multi_page(asin_id, domain, pages)
 
     results_data = []
     fake_count = 0
@@ -256,7 +270,11 @@ def analyze_product(asin, pages=3):
         "total_reviews": int(total_reviews),
         "fake_percent": float(round(fake_percent, 2)),
         "genuine_percent": float(round(100 - fake_percent, 2)) if total_reviews else 0.0,
-        "avg_confidence": float(round(avg_confidence, 2))
+        "avg_confidence": float(round(avg_confidence, 2)),
+        "product_title": product_details.get("title", f"Amazon Product ({asin_id})"),
+        "product_image": product_details.get("thumbnail", ""),
+        "product_rating": product_details.get("rating", 0),
+        "product_reviews_total": product_details.get("reviews_total", 0)
     }
 
     return summary, df_results
