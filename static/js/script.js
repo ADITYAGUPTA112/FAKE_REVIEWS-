@@ -5,27 +5,29 @@ window.latestScanResults = null;
 
 // Thematic Colors setup
 const COLORS = {
-    background: '#0a0f1c',
-    red: '#ef4444',
-    redGlow: 'rgba(239, 68, 68, 0.4)',
+    background: '#050505',
+    red: '#ff003c',
+    redGlow: 'rgba(255, 0, 60, 0.4)',
     emerald: '#10b981',
     emeraldGlow: 'rgba(16, 185, 129, 0.4)',
-    amber: '#f59e0b',
-    amberGlow: 'rgba(245, 158, 11, 0.4)',
+    lime: '#39ff14',
+    limeGlow: 'rgba(57, 255, 20, 0.4)',
+    cyan: '#00f0ff',
+    cyanGlow: 'rgba(0, 240, 255, 0.4)',
     slate800: '#1e293b',
     slate400: '#94a3b8'
 };
 
 // Global Chart Defaults for premium look
-Chart.defaults.color = '#94a3b8';
+Chart.defaults.color = '#cbd5e1';
 Chart.defaults.font.family = "'Space Mono', monospace";
-Chart.defaults.scale.grid.color = 'rgba(245,158,11,0.05)';
-Chart.defaults.scale.grid.borderColor = 'rgba(245,158,11,0.05)';
-Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(10, 15, 28, 0.9)';
-Chart.defaults.plugins.tooltip.titleColor = '#f59e0b';
-Chart.defaults.plugins.tooltip.titleFont = { family: "'Syne', sans-serif", weight: 'bold' };
-Chart.defaults.plugins.tooltip.bodyColor = '#cbd5e1';
-Chart.defaults.plugins.tooltip.borderColor = 'rgba(245,158,11,0.2)';
+Chart.defaults.scale.grid.color = 'rgba(255,255,255,0.05)';
+Chart.defaults.scale.grid.borderColor = 'rgba(255,255,255,0.05)';
+Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(10, 10, 10, 0.9)';
+Chart.defaults.plugins.tooltip.titleColor = '#39ff14';
+Chart.defaults.plugins.tooltip.titleFont = { family: "'Outfit', sans-serif", weight: 'bold' };
+Chart.defaults.plugins.tooltip.bodyColor = '#f8fafc';
+Chart.defaults.plugins.tooltip.borderColor = 'rgba(57, 255, 20, 0.3)';
 Chart.defaults.plugins.tooltip.borderWidth = 1;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -139,10 +141,10 @@ document.addEventListener('DOMContentLoaded', () => {
         let badgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
 
         if (fakeScore > 20 && fakeScore <= 50) {
-            arcColor = COLORS.amber;
-            ringGlow = COLORS.amberGlow;
+            arcColor = COLORS.cyan;
+            ringGlow = COLORS.cyanGlow;
             riskLabel = 'Moderate Risk';
-            badgeClass = 'bg-amber-500/10 text-amber-500 border-amber-500/20';
+            badgeClass = 'bg-cyan-500/10 text-[#00f0ff] border-[#00f0ff]/20';
         } else if (fakeScore > 50) {
             arcColor = COLORS.red;
             ringGlow = COLORS.redGlow;
@@ -260,12 +262,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (expList && expList.length > 0) {
                 let badges = expList.map(item => {
                     const imp = Math.abs(item.weight).toFixed(2);
-                    return `<span class="px-2 py-1 rounded bg-slate-900 border border-amber-500/20 text-[10px] text-amber-500/80 font-mono tracking-widest inline-flex items-center" title="LIME Weight: ${imp}"><i class="ph-fill ph-push-pin mr-1 text-amber-500"></i> ${item.word}</span>`;
+                    return `<span class="px-2 py-1 rounded bg-black border border-[#39ff14]/20 text-[10px] text-[#39ff14] font-mono tracking-widest inline-flex items-center" title="LIME Weight: ${imp}"><i class="ph-fill ph-sparkle mr-1 text-[#39ff14]"></i> ${item.word}</span>`;
                 }).join('');
 
                 flagHTML = `
-                    <div class="mt-4 border-t border-amber-500/20 pt-3 relative z-10">
-                        <p class="text-[10px] text-amber-500/70 mb-2 uppercase tracking-widest font-bold font-mono">Forensic Keyword Traces</p>
+                    <div class="mt-4 border-t border-[#39ff14]/20 pt-3 relative z-10">
+                        <p class="text-[10px] text-[#39ff14]/70 mb-2 uppercase tracking-widest font-bold font-mono">AI Keyword Analysis</p>
                         <div class="flex flex-wrap gap-2">
                             ${badges}
                         </div>
@@ -286,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </span>
                             <div class="text-right">
                                 <div class="text-[10px] text-slate-400 mb-0.5 font-mono"><i class="ph ph-calendar mr-1"></i>${dateStr}</div>
-                                <span class="text-[10px] font-mono text-amber-500/80 tracking-widest uppercase font-bold">Conf: ${conf}%</span>
+                                <span class="text-[10px] font-mono text-[#00f0ff] tracking-widest uppercase font-bold">Conf: ${conf}%</span>
                             </div>
                         </div>
                         <p class="text-sm text-slate-300 leading-relaxed font-mono">"${cleanText}"</p>
@@ -379,6 +381,62 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- 4b. HEATMAP CHART ---
+    let heatmapChartInstance = null;
+    function buildHeatmapChart(results) {
+        if (heatmapChartInstance) heatmapChartInstance.destroy();
+        const ctx = document.getElementById('heatmapChart');
+        if (!ctx) return;
+
+        const timelineData = {};
+        for (let i = 0; i < results.review.length; i++) {
+            const dateStr = results.date[i];
+            const pred = results.prediction[i];
+            if (!dateStr) continue;
+
+            const d = new Date(dateStr);
+            if (isNaN(d)) continue;
+
+            const yyyy_mm_dd = d.toISOString().split('T')[0];
+            if (!timelineData[yyyy_mm_dd]) timelineData[yyyy_mm_dd] = { fake: 0, genuine: 0, total: 0 };
+
+            if (pred === 'Fake') timelineData[yyyy_mm_dd].fake++;
+            else timelineData[yyyy_mm_dd].genuine++;
+            timelineData[yyyy_mm_dd].total++;
+        }
+
+        const labels = Object.keys(timelineData).sort();
+        const freqData = labels.map(l => timelineData[l].total);
+        const bgColors = labels.map(l => {
+            const ratio = timelineData[l].fake / timelineData[l].total;
+            if (ratio > 0.6) return 'rgba(255, 0, 60, 0.8)'; // Red
+            if (ratio > 0.3) return 'rgba(245, 158, 11, 0.8)'; // Amber
+            return 'rgba(57, 255, 20, 0.8)'; // Lime
+        });
+
+        heatmapChartInstance = new Chart(ctx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Review Density',
+                    data: freqData,
+                    backgroundColor: bgColors,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: COLORS.slate400 } },
+                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: COLORS.slate400, precision: 0 } }
+                }
+            }
+        });
+    }
+
     // --- 5. WORD CLOUD ---
     function buildWordCloud(results) {
         if (!window.WordCloud) return; // Library not loaded
@@ -438,11 +496,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const f = counts.fake[word] || 0;
                 const g = counts.genuine[word] || 0;
 
-                // If it's leaning 60% or more towards faker, color it red. Else green. Else amber/white mix.
+                // Color by density
                 const total = f + g;
-                if (total === 0) return '#f59e0b';
+                if (total === 0) return '#00f0ff';
 
-                if (f / total >= 0.6) return '#ef4444'; // Red
+                if (f / total >= 0.6) return '#ff003c'; // Red
                 if (g / total >= 0.6) return '#10b981'; // Green
                 return '#94a3b8'; // Neutral Slate
             },
@@ -494,7 +552,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function addLogLine(container, text) {
         const line = document.createElement('div');
         line.className = 'log-line';
-        line.innerHTML = `<span class="text-amber-500/70 mr-2">[${new Date().toISOString().split('T')[1].slice(0, -1)}]</span> ${text}`;
+        line.innerHTML = `<span class="text-[#39ff14]/70 mr-2">[${new Date().toISOString().split('T')[1].slice(0, -1)}]</span> ${text}`;
         container.appendChild(line);
         container.scrollTop = container.scrollHeight;
     }
@@ -594,8 +652,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // --- 3. Build Feed ---
             renderReviewFeed(data.results.review, data.results.prediction, data.results.confidence, data.results.date, data.results.explanation);
 
-            // --- 4. Build Temporal Diagram ---
+            // --- 4. Build Temporal Diagrams ---
             buildTemporalChart(data.results);
+            buildHeatmapChart(data.results);
 
             // --- 5. Build Word Cloud ---
             buildWordCloud(data.results);

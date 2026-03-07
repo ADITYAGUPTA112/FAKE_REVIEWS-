@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>TrustLens AI - Product Analysis</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#26eded",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#0a0a0a",
+                        "surface-dark": "#1a1a1a",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.75rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .glass-panel {
+            background: #1a1a1a;
+            border: 1px solid rgba(38, 237, 237, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        /* ── Fake review red highlight ── */
+        .review-fake {
+            background: rgba(239, 68, 68, 0.09) !important;
+            border: 1px solid rgba(239, 68, 68, 0.35) !important;
+            border-left: 4px solid #ef4444 !important;
+        }
+
+        .review-fake .review-text {
+            color: #fca5a5;
+        }
+
+        .review-genuine {
+            background: #1a1a1a;
+            border: 1px solid rgba(38, 237, 237, 0.15);
+            border-left: 4px solid #26eded;
+        }
+
+        @keyframes scan {
+            0% {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+        }
+
+        .scanner-line {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #26eded, transparent);
+            box-shadow: 0 0 15px #26eded;
+            animation: scan 2s linear infinite;
+        }
+
+        .loading-hidden {
+            display: none !important;
+        }
+
+        @keyframes progressFill {
+            from {
+                width: 0%;
+            }
+
+            to {
+                width: 100%;
+            }
+        }
+
+        .animate-progress {
+            animation: progressFill 4s linear forwards;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
+    <!-- Top Navigation Bar -->
+    <header
+        class="border-b border-primary/20 bg-background-light/50 dark:bg-[#0a0a0a]/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-3xl">shield_with_heart</span>
+                    <span class="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">TrustLens
+                        AI</span>
+                </div>
+                <nav class="hidden md:flex items-center gap-8">
+                    <a class="text-sm font-medium hover:text-primary transition-colors"
+                        href="{{ url_for('index') }}">Home</a>
+                    <a class="text-sm font-medium text-primary" href="{{ url_for('analyze') }}">Analyze</a>
+                    <a class="text-sm font-medium hover:text-primary transition-colors"
+                        href="{{ url_for('history') }}">History</a>
+                    <a class="text-sm font-medium hover:text-primary transition-colors"
+                        href="{{ url_for('leaderboard') }}">Leaderboard</a>
+                    <a class="text-sm font-medium hover:text-primary transition-colors"
+                        href="{{ url_for('profile') }}">Profile</a>
+                </nav>
+                <div class="flex items-center gap-4">
+                    <a href="{{ url_for('logout') }}"
+                        class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-background-dark font-bold text-sm hover:opacity-90 transition-opacity">
+                        <span class="material-symbols-outlined text-sm">logout</span>
+                        Logout
+                    </a>
+                    <div class="w-10 h-10 rounded-full bg-primary/20 border border-primary/40 overflow-hidden">
+                        <img class="w-full h-full object-cover" data-alt="User profile avatar placeholder"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDgnPjA7r2W5CWosZDqPeHjZYmCgnPZ-0_xhdzD5GyD-uNWGDcuQKmUls3Mib1gPaPYypkoNJv0Bs9__rc1TiNnRi3kX9gBn1aM58Gvj9lbBVp2F1JYT-ffBIAmPHw1yKE_AV8opNZe4FznX6LNoXJledHsO-54QPHC3ijRfrqS5tRj9UTjECdUJgRPIeudKnALwCvO-UmovMOYLq4Uz8M8AkWO36Pyuj0jRhI--QTeGUmFprw0px4l-omqBImPhtN76Dft11mJOO4" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Search/Analysis Input Section -->
+        <section class="mb-12" id="search-section">
+            <div class="glass-panel p-8 rounded-xl border border-primary/30 text-center max-w-4xl mx-auto">
+                <h1 class="text-3xl font-bold mb-2">Analyze Product Authenticity</h1>
+                <p class="text-slate-500 dark:text-slate-400 mb-6">Enter an Amazon URL or ASIN to identify fake reviews
+                    and suspicious patterns.</p>
+                <div class="flex flex-col md:flex-row gap-3">
+                    <div class="relative flex-grow">
+                        <span
+                            class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary/60">link</span>
+                        <input
+                            class="w-full pl-12 pr-4 py-4 rounded-xl bg-slate-100 dark:bg-slate-900 border border-primary/20 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                            placeholder="https://www.amazon.com/dp/B0..." type="text" />
+                    </div>
+                    <button
+                        class="bg-primary text-background-dark px-8 py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:shadow-[0_0_20px_rgba(68,237,38,0.4)] transition-all"
+                        id="run-analysis-btn">
+                        <span class="material-symbols-outlined">analytics</span>
+                        Run Analysis
+                    </button>
+                </div>
+            </div>
+        </section>
+        <div class="loading-hidden py-20 flex flex-col items-center justify-center max-w-2xl mx-auto"
+            id="loading-state">
+            <div
+                class="relative w-64 h-64 border-2 border-primary/20 rounded-xl overflow-hidden glass-panel flex items-center justify-center mb-8">
+                <div class="scanner-line absolute inset-x-0 top-0"></div>
+                <span class="material-symbols-outlined text-primary text-6xl animate-pulse">search_insights</span>
+            </div>
+            <div class="text-center w-full">
+                <h3 class="text-xl font-bold text-primary mb-4 h-8" id="status-text">Fetching Reviews...</h3>
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden border border-primary/10">
+                    <div class="bg-primary h-full w-0" id="progress-bar"></div>
+                </div>
+                <p class="text-slate-500 text-sm mt-4 uppercase tracking-widest">Analysis Engine V4.2 Active</p>
+            </div>
+        </div>
+
+        <!-- ── Product Details Panel (shown after analysis) ── -->
+        <div class="loading-hidden mb-8" id="product-panel">
+            <div class="glass-panel rounded-xl border border-primary/20 p-6">
+                <div class="flex flex-col md:flex-row gap-6 items-start">
+                    <!-- Product Image -->
+                    <div
+                        class="flex-shrink-0 w-36 h-36 rounded-xl overflow-hidden border border-primary/20 bg-slate-900 flex items-center justify-center">
+                        <img id="product-img" alt="Product image" class="w-full h-full object-contain" />
+                    </div>
+                    <!-- Details -->
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="material-symbols-outlined text-primary text-sm">inventory_2</span>
+                            <span class="text-xs text-slate-400 uppercase tracking-widest font-bold">Amazon
+                                Product</span>
+                        </div>
+                        <h2 class="text-xl font-bold mb-1" id="product-asin-title">ASIN: —</h2>
+                        <a id="product-link" href="#" target="_blank"
+                            class="text-xs text-primary/70 hover:text-primary underline underline-offset-2 transition-colors mb-4 inline-block">Open
+                            on Amazon ↗</a>
+                        <!-- Fake vs Genuine Bar -->
+                        <div class="mt-3">
+                            <div class="flex justify-between text-xs text-slate-400 mb-1">
+                                <span id="pd-genuine-label">Genuine: —</span>
+                                <span id="pd-fake-label" class="text-red-400">Fake: —</span>
+                            </div>
+                            <div class="w-full h-3 rounded-full bg-slate-800 overflow-hidden flex">
+                                <div id="pd-genuine-bar" class="h-full bg-primary transition-all duration-700"
+                                    style="width:0%"></div>
+                                <div id="pd-fake-bar" class="h-full bg-red-500 transition-all duration-700"
+                                    style="width:0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Stats Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="stats-dashboard">
+            <div class="glass-panel p-6 rounded-xl border-l-4 border-l-primary">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Reviews</span>
+                    <span class="material-symbols-outlined text-primary/60">reviews</span>
+                </div>
+                <div class="text-3xl font-bold">12,482</div>
+                <div class="text-xs text-primary mt-1">+124 from yesterday</div>
+            </div>
+            <div class="glass-panel p-6 rounded-xl border-l-4 border-l-red-500">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Fake Review %</span>
+                    <span class="material-symbols-outlined text-red-500/60">warning</span>
+                </div>
+                <div class="text-3xl font-bold text-red-500">24.8%</div>
+                <div class="text-xs text-slate-400 mt-1">High Risk Detected</div>
+            </div>
+            <div class="glass-panel p-6 rounded-xl border-l-4 border-l-blue-500">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Genuine Reviews</span>
+                    <span class="material-symbols-outlined text-blue-500/60">verified</span>
+                </div>
+                <div class="text-3xl font-bold text-blue-500">9,386</div>
+                <div class="text-xs text-slate-400 mt-1">Verified patterns</div>
+            </div>
+            <div class="glass-panel p-6 rounded-xl border-l-4 border-l-primary">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">AI Confidence</span>
+                    <span class="material-symbols-outlined text-primary/60">psychology</span>
+                </div>
+                <div class="text-3xl font-bold">98.2%</div>
+                <div class="text-xs text-primary mt-1">Advanced Neural Analysis</div>
+            </div>
+        </div>
+        <!-- Visual Analytics Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12" id="visual-analytics">
+            <!-- Fake vs Genuine Doughnut -->
+            <div class="glass-panel p-6 rounded-xl flex flex-col items-center justify-center min-h-[300px]">
+                <h3 class="text-lg font-semibold mb-4 self-start">Fake vs Genuine</h3>
+                <div class="relative w-52 h-52">
+                    <canvas id="donut-chart"></canvas>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span class="text-4xl font-bold" id="donut-center-score">75</span>
+                        <span class="text-xs uppercase tracking-widest text-slate-400"
+                            id="donut-center-label">Trust</span>
+                    </div>
+                </div>
+                <p class="mt-4 text-sm text-center text-slate-400" id="donut-caption">Run analysis to see breakdown</p>
+            </div>
+            <!-- Confidence Score Histogram (moved up) -->
+            <div class="glass-panel p-6 rounded-xl lg:col-span-2" id="histogram-panel">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="text-lg font-semibold">Confidence Score Distribution</h3>
+                        <p class="text-[10px] text-slate-500 mt-0.5 uppercase tracking-widest">How many reviews fall in
+                            each AI confidence bucket</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <span
+                            class="px-2 py-1 rounded bg-primary/10 text-primary text-xs border border-primary/20">Genuine</span>
+                        <span
+                            class="px-2 py-1 rounded bg-red-500/10 text-red-500 text-xs border border-red-500/20">Fake</span>
+                    </div>
+                </div>
+                <div class="relative h-52 mt-4">
+                    <canvas id="histogram-chart"></canvas>
+                </div>
+                <div class="flex justify-between text-[10px] text-slate-600 uppercase tracking-widest mt-2 px-1">
+                    <span>Low confidence</span><span>High confidence</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Review Analysis Section -->
+        <section id="reviews-section">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold">In-Depth Review Analysis</h2>
+                <div class="flex gap-2">
+                    <button
+                        class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm">Sort:
+                        Newest</button>
+                    <button
+                        class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm">Filter:
+                        Suspicious</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 gap-6">
+                <!-- Analysis Card 1 (Suspicious) -->
+                <div class="glass-panel p-6 rounded-xl border border-red-500/30">
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <div class="flex-grow">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span
+                                    class="px-2 py-1 rounded bg-red-500 text-white text-[10px] font-bold uppercase tracking-wider">High
+                                    Probability Fake</span>
+                                <span class="text-sm text-slate-500">October 12, 2023</span>
+                                <span class="text-sm font-medium text-slate-300">Verified Purchase: Yes</span>
+                            </div>
+                            <h4 class="text-lg font-bold mb-2">"This product changed my life, absolutely perfect!"</h4>
+                            <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                                I was very skeptical at first but after using this for exactly 2 hours I can say it is
+                                the best thing ever. Everyone should buy this immediately. No flaws at all. The
+                                packaging was also the most beautiful thing I have ever seen in my entire life.
+                            </p>
+                            <div class="flex flex-wrap gap-2">
+                                <span
+                                    class="text-xs px-2 py-1 bg-slate-800 text-red-400 rounded-full border border-red-500/20">Hyperbolic
+                                    Language</span>
+                                <span
+                                    class="text-xs px-2 py-1 bg-slate-800 text-red-400 rounded-full border border-red-500/20">Short
+                                    Duration Usage</span>
+                                <span
+                                    class="text-xs px-2 py-1 bg-slate-800 text-red-400 rounded-full border border-red-500/20">Repetitive
+                                    Pattern</span>
+                            </div>
+                        </div>
+                        <div
+                            class="md:w-48 flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-primary/10 pt-4 md:pt-0">
+                            <div class="text-sm text-slate-500 mb-1">AI Confidence</div>
+                            <div class="text-3xl font-bold text-red-500">99.4%</div>
+                            <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                                <div class="bg-red-500 h-full w-[99.4%]"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Analysis Card 2 (Genuine) -->
+                <div class="glass-panel p-6 rounded-xl border border-primary/30">
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <div class="flex-grow">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span
+                                    class="px-2 py-1 rounded bg-primary text-background-dark text-[10px] font-bold uppercase tracking-wider">Likely
+                                    Genuine</span>
+                                <span class="text-sm text-slate-500">September 28, 2023</span>
+                                <span class="text-sm font-medium text-slate-300">Verified Purchase: Yes</span>
+                            </div>
+                            <h4 class="text-lg font-bold mb-2">"Good performance but slightly overpriced"</h4>
+                            <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                                It works as advertised for the most part. The setup took longer than expected and the
+                                manual was a bit confusing. However, once running, it's solid. Not sure if it's worth
+                                the full retail price, maybe wait for a sale.
+                            </p>
+                            <div class="flex flex-wrap gap-2">
+                                <span
+                                    class="text-xs px-2 py-1 bg-slate-800 text-primary/80 rounded-full border border-primary/20">Balanced
+                                    Review</span>
+                                <span
+                                    class="text-xs px-2 py-1 bg-slate-800 text-primary/80 rounded-full border border-primary/20">Specific
+                                    Critique</span>
+                                <span
+                                    class="text-xs px-2 py-1 bg-slate-800 text-primary/80 rounded-full border border-primary/20">Natural
+                                    Language</span>
+                            </div>
+                        </div>
+                        <div
+                            class="md:w-48 flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-primary/10 pt-4 md:pt-0">
+                            <div class="text-sm text-slate-500 mb-1">AI Confidence</div>
+                            <div class="text-3xl font-bold text-primary">88.2%</div>
+                            <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                                <div class="bg-primary h-full w-[88.2%]"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 flex justify-center">
+                <button id="load-more-btn"
+                    class="hidden px-6 py-2 rounded-lg border border-primary text-primary font-medium hover:bg-primary/10 transition-colors">
+                    Load More Reviews
+                </button>
+            </div>
+        </section>
+    </main>
+    <footer class="border-t border-primary/10 py-12 mt-12 bg-slate-100/50 dark:bg-[#0a0a0a]">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <div class="flex items-center justify-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-primary text-2xl">shield_with_heart</span>
+                <span class="text-lg font-bold">TrustLens AI</span>
+            </div>
+            <p class="text-slate-500 text-sm mb-6">Securing the digital marketplace with advanced AI auditing.</p>
+            <div class="flex justify-center gap-8 mb-8 text-sm text-slate-400">
+                <a class="hover:text-primary" href="#">Terms of Service</a>
+                <a class="hover:text-primary" href="#">Privacy Policy</a>
+                <a class="hover:text-primary" href="#">API Documentation</a>
+                <a class="hover:text-primary" href="#">Contact Support</a>
+            </div>
+            <p class="text-[10px] text-slate-600 uppercase tracking-widest">© 2023 TrustLens AI. All rights reserved.
+            </p>
+        </div>
+    </footer>
+    <script>
+        const urlInput = document.querySelector('input[placeholder*="amazon.com"]');
+        const runBtn = document.getElementById('run-analysis-btn');
+        const searchSection = document.getElementById('search-section');
+        const statsSection = document.getElementById('stats-dashboard');
+        const visualSection = document.getElementById('visual-analytics');
+        const reviewsSection = document.getElementById('reviews-section');
+        const loadingState = document.getElementById('loading-state');
+        const statusText = document.getElementById('status-text');
+        const progressBar = document.getElementById('progress-bar');
+
+        const statuses = ['Fetching Reviews...', 'Analyzing Natural Language...', 'Calculating Trust Score...', 'Identifying Patterns...'];
+
+        function extractAsin(input) {
+            const m = input.match(/(?:dp|product|ASIN)\/([A-Z0-9]{10})/i) || input.match(/\b([A-Z0-9]{10})\b/);
+            return m ? m[1] : input.trim();
+        }
+
+        function showLoader() {
+            searchSection.classList.add('loading-hidden');
+            statsSection.classList.add('loading-hidden');
+            visualSection.classList.add('loading-hidden');
+            reviewsSection.classList.add('loading-hidden');
+            loadingState.classList.remove('loading-hidden');
+            progressBar.classList.remove('animate-progress');
+            void progressBar.offsetWidth;
+            progressBar.classList.add('animate-progress');
+            let i = 0;
+            return setInterval(() => { if (++i < statuses.length) statusText.innerText = statuses[i]; }, 1000);
+        }
+
+        const productPanel = document.getElementById('product-panel');
+        const productImg = document.getElementById('product-img');
+        const productAsinTitle = document.getElementById('product-asin-title');
+        const productLink = document.getElementById('product-link');
+        const pdGenuineLabel = document.getElementById('pd-genuine-label');
+        const pdFakeLabel = document.getElementById('pd-fake-label');
+        const pdGenuineBar = document.getElementById('pd-genuine-bar');
+        const pdFakeBar = document.getElementById('pd-fake-bar');
+
+        function hideLoader(timer) {
+            clearInterval(timer);
+            loadingState.classList.add('loading-hidden');
+            searchSection.classList.remove('loading-hidden');
+            statsSection.classList.remove('loading-hidden');
+            visualSection.classList.remove('loading-hidden');
+            reviewsSection.classList.remove('loading-hidden');
+        }
+
+        function showProductPanel(asin, chartData) {
+            const total = (chartData.fake || 0) + (chartData.genuine || 0);
+            const fakePct = total > 0 ? ((chartData.fake / total) * 100).toFixed(1) : 0;
+            const genPct = 100 - parseFloat(fakePct);
+
+            // Amazon image CDN (works for most ASINs without auth)
+            productImg.src = `https://images-na.ssl-images-amazon.com/images/P/${asin}.01._SCLZZZZZZZ_.jpg`;
+            productImg.onerror = () => {
+                productImg.src = `https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=${asin}&Format=_AC_SL160_`;
+                productImg.onerror = () => { productImg.style.display = 'none'; };
+            };
+            productAsinTitle.textContent = `ASIN: ${asin}`;
+            const amzUrl = `https://www.amazon.com/dp/${asin}`;
+            productLink.href = amzUrl;
+            productLink.textContent = `amazon.com/dp/${asin} ↗`;
+
+            pdGenuineLabel.textContent = `Genuine: ${chartData.genuine || 0} reviews (${genPct.toFixed(1)}%)`;
+            pdFakeLabel.textContent = `Fake: ${chartData.fake || 0} reviews (${fakePct}%)`;
+
+            // Animate bars after paint
+            setTimeout(() => {
+                pdGenuineBar.style.width = `${genPct}%`;
+                pdFakeBar.style.width = `${fakePct}%`;
+            }, 50);
+
+            productPanel.classList.remove('loading-hidden');
+        }
+
+        // ── Chart instances (created once, updated on each analysis) ──
+        let donutChart = null;
+
+        function initCharts() {
+            // ── Histogram: confidence score distribution ──
+            const hCtx = document.getElementById('histogram-chart').getContext('2d');
+            const bins = ['0–10', '10–20', '20–30', '30–40', '40–50', '50–60', '60–70', '70–80', '80–90', '90–100'];
+            histChart = new Chart(hCtx, {
+                type: 'bar',
+                data: {
+                    labels: bins.map(b => b + '%'),
+                    datasets: [
+                        {
+                            label: 'Genuine',
+                            data: new Array(10).fill(0),
+                            backgroundColor: 'rgba(38,237,237,0.75)',
+                            borderColor: '#26eded',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                        },
+                        {
+                            label: 'Fake',
+                            data: new Array(10).fill(0),
+                            backgroundColor: 'rgba(239,68,68,0.75)',
+                            borderColor: '#ef4444',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: items => `Confidence: ${bins[items[0].dataIndex]}%`,
+                                label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} review${ctx.parsed.y !== 1 ? 's' : ''}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            ticks: { color: '#64748b', font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.03)' }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: { color: '#64748b', font: { size: 10 }, stepSize: 1 },
+                            grid: { color: 'rgba(255,255,255,0.06)' }
+                        }
+                    },
+                    animation: { duration: 700, easing: 'easeInOutQuart' }
+                }
+            });
+
+            // ── Doughnut: Fake vs Genuine ──
+            const dCtx = document.getElementById('donut-chart').getContext('2d');
+            donutChart = new Chart(dCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Genuine', 'Fake'],
+                    datasets: [{
+                        data: [75, 25],
+                        backgroundColor: ['rgba(38,237,237,0.85)', 'rgba(239,68,68,0.85)'],
+                        borderColor: ['#26eded', '#ef4444'],
+                        borderWidth: 2,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    cutout: '72%',
+                    plugins: {
+                        legend: { display: false }, tooltip: {
+                            callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed}%` }
+                        }
+                    },
+                    animation: { duration: 800, easing: 'easeInOutQuart' }
+                }
+            });
+        }
+
+        function updateCharts(data) {
+            const { chart_data, results } = data;
+            const total = (chart_data.fake || 0) + (chart_data.genuine || 0);
+            const fakePct = total > 0 ? +((chart_data.fake / total) * 100).toFixed(1) : 0;
+            const genPct = 100 - fakePct;
+            const trustScore = Math.round(genPct);
+
+            // Update doughnut
+            donutChart.data.datasets[0].data = [genPct, fakePct];
+            donutChart.update();
+            document.getElementById('donut-center-score').textContent = trustScore;
+            document.getElementById('donut-center-label').textContent =
+                trustScore >= 80 ? 'Trusted' : trustScore >= 55 ? 'Fair' : 'High Risk';
+            document.getElementById('donut-caption').textContent =
+                `${chart_data.genuine || 0} genuine · ${chart_data.fake || 0} fake`;
+
+            // Build histogram bins
+            if (results && results.review) {
+                const genuineBins = new Array(10).fill(0);
+                const fakeBins = new Array(10).fill(0);
+                results.prediction.forEach((p, i) => {
+                    const conf = parseFloat(results.confidence[i]) || 0;
+                    const bin = Math.min(Math.floor(conf / 10), 9); // 0-9
+                    if (p === 'Fake') fakeBins[bin]++;
+                    else genuineBins[bin]++;
+                });
+                histChart.data.datasets[0].data = genuineBins;
+                histChart.data.datasets[1].data = fakeBins;
+                histChart.update();
+            }
+        }
+
+        // Initialise charts on page load
+        initCharts();
+        function renderStats(data) {
+            const { summary, chart_data } = data;
+            const total = (chart_data.fake || 0) + (chart_data.genuine || 0);
+            const fakePct = total > 0 ? ((chart_data.fake / total) * 100).toFixed(1) : 0;
+            const conf = summary ? (summary.confidence || summary.avg_confidence || 'N/A') : 'N/A';
+
+            const cards = statsSection.querySelectorAll('.glass-panel');
+            if (cards[0]) cards[0].querySelector('.text-3xl').textContent = total.toLocaleString();
+            if (cards[1]) { cards[1].querySelector('.text-3xl').textContent = `${fakePct}%`; cards[1].querySelector('.text-xs').textContent = parseFloat(fakePct) > 30 ? 'High Risk Detected' : 'Low Risk'; }
+            if (cards[2]) cards[2].querySelector('.text-3xl').textContent = (chart_data.genuine || 0).toLocaleString();
+            if (cards[3]) cards[3].querySelector('.text-3xl').textContent = conf !== 'N/A' ? `${parseFloat(conf).toFixed(1)}%` : 'N/A';
+
+            // Update Chart.js charts with real data
+            updateCharts(data);
+        }
+
+        function reviewCard(review, prediction, confidence, date, explanation) {
+            const isFake = prediction === 'Fake';
+            const tags = Array.isArray(explanation) ? explanation.slice(0, 3) : [];
+            const tagHtml = tags.map(t => `<span class="text-xs px-2 py-1 ${isFake ? 'bg-red-950/60 text-red-300 rounded-full border border-red-500/30' : 'bg-slate-800 text-primary/80 rounded-full border border-primary/20'}">${t}</span>`).join('');
+            return `
+    <div class="p-6 rounded-xl ${isFake ? 'review-fake' : 'review-genuine'}" style="${isFake ? 'background:rgba(239,68,68,0.09);' : 'background:#1a1a1a;'}">
+      <div class="flex flex-col md:flex-row gap-6">
+        <div class="flex-grow">
+          <div class="flex items-center gap-3 mb-3">
+            ${isFake
+                    ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider">&#xe002; Fake Review</span>`
+                    : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary text-black text-[10px] font-bold uppercase tracking-wider">&#xe86c; Genuine</span>`
+                }
+            <span class="text-sm text-slate-500">${date || ''}</span>
+          </div>
+          <p class="text-sm leading-relaxed mb-4" style="color:${isFake ? '#fca5a5' : '#cbd5e1'}">${review}</p>
+          <div class="flex flex-wrap gap-2">${tagHtml}</div>
+        </div>
+        <div class="md:w-48 flex flex-col items-center justify-center border-t md:border-t-0 md:border-l pt-4 md:pt-0" style="border-color:${isFake ? 'rgba(239,68,68,0.3)' : 'rgba(38,237,237,0.15)'}">
+          <div class="text-sm text-slate-500 mb-1">AI Confidence</div>
+          <div class="text-3xl font-bold" style="color:${isFake ? '#f87171' : '#26eded'}">${confidence}%</div>
+          <div class="w-full bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
+            <div style="width:${confidence}%;height:100%;background:${isFake ? '#ef4444' : '#26eded'}"></div>
+          </div>
+          ${isFake ? '<div style="margin-top:8px;font-size:10px;color:#f87171;font-weight:700;text-transform:uppercase;letter-spacing:0.1em">⚠ Suspicious</div>' : ''}
+        </div>
+      </div>
+    </div>`;
+        }
+
+        function renderReviews(data) {
+            const { results } = data;
+            if (!results || !results.review || results.review.length === 0) return;
+            const container = reviewsSection.querySelector('.grid.grid-cols-1.gap-6');
+            if (!container) return;
+
+            const pageSize = 10;
+            container.innerHTML = results.review.slice(0, pageSize).map((r, i) =>
+                reviewCard(r, results.prediction[i], results.confidence[i], results.date[i], results.explanation[i])
+            ).join('');
+
+            // Use the uniquely-id'd button — avoids accidentally selecting Sort/Filter buttons
+            const more = document.getElementById('load-more-btn');
+            if (more) {
+                if (results.review.length > pageSize) {
+                    more.classList.remove('hidden');
+                    more.onclick = () => {
+                        container.innerHTML = results.review.map((r, i) =>
+                            reviewCard(r, results.prediction[i], results.confidence[i], results.date[i], results.explanation[i])
+                        ).join('');
+                        more.classList.add('hidden');
+                    };
+                } else {
+                    more.classList.add('hidden');
+                }
+            }
+        }
+
+        runBtn.addEventListener('click', async () => {
+            const raw = urlInput.value.trim();
+            if (!raw) { urlInput.focus(); return; }
+            const asin = extractAsin(raw);
+            const timer = showLoader();
+
+            try {
+                const res = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ asin, pages: 1 })
+                });
+                const data = await res.json();
+                hideLoader(timer);
+                if (!res.ok || data.error) {
+                    statusText.textContent = data.error || 'Analysis failed.';
+                    loadingState.classList.remove('loading-hidden');
+                    return;
+                }
+                renderStats(data);
+                renderReviews(data);
+                showProductPanel(asin, data.chart_data);
+            } catch (e) {
+                hideLoader(timer);
+                alert('Analysis failed: ' + e.message);
+            }
+        });
+    </script>
+</body>
+
+</html>

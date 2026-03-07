@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>User Profile | TrustLens AI</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#26eded",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#0a0a0a",
+                        "card-dark": "#1a1a1a",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.75rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+        <!-- Header / Navigation -->
+        <header
+            class="border-b border-white/5 bg-background-light dark:bg-background-dark/80 backdrop-blur-md sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-3xl">shield_with_heart</span>
+                        <h1 class="text-xl font-bold tracking-tight dark:text-white">TrustLens AI</h1>
+                    </div>
+                    <nav class="hidden md:flex items-center gap-8">
+                        <a class="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+                            href="{{ url_for('index') }}">
+                            <span class="material-symbols-outlined text-[20px]">home</span> Home
+                        </a>
+                        <a class="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+                            href="{{ url_for('analyze') }}"><span
+                                class="material-symbols-outlined text-[20px]">analytics</span> Analyze
+                        </a>
+                        <a class="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+                            href="{{ url_for('history') }}"><span
+                                class="material-symbols-outlined text-[20px]">history</span> History
+                        </a>
+                        <a class="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+                            href="{{ url_for('leaderboard') }}"><span
+                                class="material-symbols-outlined text-[20px]">leaderboard</span> Leaderboard
+                        </a>
+                        <a class="flex items-center gap-2 text-sm font-medium text-primary"
+                            href="{{ url_for('profile') }}"><span
+                                class="material-symbols-outlined text-[20px]">person</span> Profile
+                        </a>
+                    </nav>
+                    <div class="flex items-center gap-4">
+                        <button
+                            class="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                            <span class="material-symbols-outlined">settings</span>
+                        </button>
+                        <div
+                            class="h-8 w-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center overflow-hidden">
+                            <img alt="User avatar" class="w-full h-full object-cover"
+                                data-alt="Cartoon avatar of a young professional man"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdi-P-pYGbwKCGyQeR-ewKR2hOIv7_NdiX301B0Kb913TQmlFjJNwWMICwFvIluwmozxWn7Jg-hf7OIIQeLXhWj-h8aadKRhnliFfLEht3B6ECeskiKiHi7LNZgvaOvuyCY-BS_A8hwypI_WFdSKIAb8Qh95TilDHaRdM6VQSRGtqUYDXHBfo0bu8559XF0d-E5JJ_qddJcXkuVrJc3hW_GFI2i0ZDF8sXDAilqj3LOXVHpMXGs0AsFiL_d5OsPgoGtJOVjZ5EGHMS" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <main class="flex-1 max-w-5xl mx-auto w-full px-4 py-12">
+            <!-- Profile Hero Section -->
+            <section class="flex flex-col items-center text-center mb-12">
+                <div class="relative mb-6">
+                    <div class="size-32 rounded-full border-4 border-primary/10 p-1">
+                        <div class="size-full rounded-full overflow-hidden bg-primary/10">
+                            <img alt="Profile large" class="w-full h-full object-cover"
+                                data-alt="High resolution professional avatar of Alex Thompson"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDTdgZQW3VrSjnzFMFbl7qjuGFlMb0rXOd0qjE0Nz2xCWf8GURLQ3hrUbWH9bBlO3Rb3A-FBOmZXlcufJfkvc9cWsfcUcI4LP6bWBgvB3pFJuW4o84jNZMZOL2jZ5W8b1oDKRWUJNPgKWYO9iWrUjyzhePduK4hgE5oZc7IaMTVOlTM92ugkQbwt0O0L-dHbajfjWwXsJ73xQ2WwSpeq8sOgPwIGEe3wxMkhDvZGtEpF81LgjIAjhQxEhPLgVM4LmeOsSZkZSiC5WAY" />
+                        </div>
+                    </div>
+                    <button
+                        class="absolute bottom-0 right-0 bg-primary text-background-dark p-2 rounded-full shadow-lg hover:scale-105 transition-transform">
+                        <span class="material-symbols-outlined text-sm">edit</span>
+                    </button>
+                </div>
+                <h2 class="text-3xl font-bold dark:text-white">Alex Thompson</h2>
+                <p class="text-slate-500 dark:text-primary/70 font-medium">alex.t@trustlens.ai</p>
+                <div class="mt-6 flex gap-3">
+                    <button
+                        class="px-6 py-2.5 rounded-lg bg-primary text-background-dark font-bold text-sm hover:opacity-90 transition-opacity">
+                        Edit Profile
+                    </button>
+                    <a href="{{ url_for('logout') }}"
+                        class="px-6 py-2.5 rounded-lg bg-red-500/10 text-red-500 border border-red-500/20 font-bold text-sm hover:bg-red-500/20 transition-colors flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">logout</span> Logout
+                    </a>
+                </div>
+            </section>
+            <!-- Stats Grid -->
+            <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div
+                    class="p-6 rounded-xl border border-white/5 bg-white dark:bg-card-dark hover:border-primary/30 transition-all">
+                    <div class="flex items-center justify-between mb-4">
+                        <span
+                            class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">search_check</span>
+                        <span class="text-xs font-bold text-primary uppercase tracking-wider">+12% Monthly</span>
+                    </div>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Scans</p>
+                    <p class="text-3xl font-bold dark:text-white mt-1">1,284</p>
+                </div>
+                <div
+                    class="p-6 rounded-xl border border-white/5 bg-white dark:bg-card-dark hover:border-primary/30 transition-all">
+                    <div class="flex items-center justify-between mb-4">
+                        <span
+                            class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">verified_user</span>
+                        <span class="text-xs font-bold text-primary uppercase tracking-wider">Top 5% User</span>
+                    </div>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Avg Trust Score</p>
+                    <p class="text-3xl font-bold dark:text-white mt-1">88%</p>
+                </div>
+                <div
+                    class="p-6 rounded-xl border border-white/5 bg-white dark:bg-card-dark hover:border-primary/30 transition-all">
+                    <div class="flex items-center justify-between mb-4">
+                        <span
+                            class="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">event_available</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Today</span>
+                    </div>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Last Analysis</p>
+                    <p class="text-2xl font-bold dark:text-white mt-1">Oct 24, 2023</p>
+                </div>
+            </section>
+            <!-- Settings / Account Section -->
+            <section class="bg-white dark:bg-card-dark rounded-xl border border-white/5 overflow-hidden">
+                <div class="px-6 py-4 border-b border-primary/10">
+                    <h3 class="font-bold dark:text-white">Account Settings</h3>
+                </div>
+                <div class="divide-y divide-primary/10">
+                    <div
+                        class="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors cursor-pointer group">
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-background-dark transition-colors">
+                                <span class="material-symbols-outlined">person_outline</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold dark:text-slate-100">Personal Information</p>
+                                <p class="text-xs text-slate-500">Update your name, photo, and bio</p>
+                            </div>
+                        </div>
+                        <span
+                            class="material-symbols-outlined text-slate-500 group-hover:text-primary transition-colors">chevron_right</span>
+                    </div>
+                    <div
+                        class="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors cursor-pointer group">
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-background-dark transition-colors">
+                                <span class="material-symbols-outlined">security</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold dark:text-slate-100">Privacy &amp; Security</p>
+                                <p class="text-xs text-slate-500">2FA, password change, and data access</p>
+                            </div>
+                        </div>
+                        <span
+                            class="material-symbols-outlined text-slate-500 group-hover:text-primary transition-colors">chevron_right</span>
+                    </div>
+                    <div
+                        class="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors cursor-pointer group">
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-background-dark transition-colors">
+                                <span class="material-symbols-outlined">notifications</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold dark:text-slate-100">Notifications</p>
+                                <p class="text-xs text-slate-500">Manage alerts and scan results delivery</p>
+                            </div>
+                        </div>
+                        <span
+                            class="material-symbols-outlined text-slate-500 group-hover:text-primary transition-colors">chevron_right</span>
+                    </div>
+                    <div
+                        class="flex items-center justify-between p-4 hover:bg-primary/5 transition-colors cursor-pointer group">
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-background-dark transition-colors">
+                                <span class="material-symbols-outlined">payments</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold dark:text-slate-100">Billing &amp; Subscription</p>
+                                <p class="text-xs text-slate-500">Pro Plan • Renews Nov 12, 2023</p>
+                            </div>
+                        </div>
+                        <span
+                            class="material-symbols-outlined text-slate-500 group-hover:text-primary transition-colors">chevron_right</span>
+                    </div>
+                </div>
+            </section>
+            <!-- Logout Link (Mobile/Bottom) -->
+            <div class="mt-8 flex justify-center">
+                <a class="text-slate-500 hover:text-red-500 text-sm font-medium flex items-center gap-2 transition-colors"
+                    href="#">
+                    <span class="material-symbols-outlined text-lg">no_accounts</span> Delete Account
+                </a>
+            </div>
+        </main>
+        <!-- Bottom Navigation for Mobile -->
+        <nav
+            class="md:hidden fixed bottom-0 left-0 right-0 border-t border-white/5 bg-background-light dark:bg-background-dark/95 backdrop-blur-lg px-6 py-4 flex justify-between items-center z-50">
+            <a class="flex flex-col items-center gap-1 text-slate-500 hover:text-primary transition-colors"
+                href="{{ url_for('index') }}">
+                <span class="material-symbols-outlined">home</span>
+            </a>
+            <a class="flex flex-col items-center gap-1 text-slate-500 hover:text-primary transition-colors"
+                href="{{ url_for('analyze') }}">
+                <span class="material-symbols-outlined">analytics</span>
+            </a>
+            <a class="flex flex-col items-center gap-1 bg-primary text-background-dark p-2 rounded-xl -mt-8 shadow-[0_0_20px_rgba(68,237,38,0.3)]"
+                href="{{ url_for('analyze') }}">
+                <span class="material-symbols-outlined">add</span>
+            </a>
+            <a class="flex flex-col items-center gap-1 text-slate-500 hover:text-primary transition-colors"
+                href="{{ url_for('leaderboard') }}">
+                <span class="material-symbols-outlined">leaderboard</span>
+            </a>
+            <a class="flex flex-col items-center gap-1 text-primary" href="{{ url_for('profile') }}">
+                <span class="material-symbols-outlined">person</span>
+            </a>
+        </nav>
+    </div>
+</body>
+
+</html>

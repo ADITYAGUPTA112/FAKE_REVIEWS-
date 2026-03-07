@@ -10,6 +10,14 @@ import uuid
 app = Flask(__name__)
 app.secret_key = "super_secret_mockup_key"  # Needed for session
 
+# Firebase web API key (for client-side auth in templates)
+# Set this in your .env or environment variables as FIREBASE_WEB_API_KEY
+FIREBASE_WEB_API_KEY = os.environ.get("FIREBASE_WEB_API_KEY", "AIzaSyCFZukdrr5sehQ2NRvtrzRnIm0qog2AiDQ")
+
+@app.context_processor
+def inject_firebase_key():
+    return dict(firebase_api_key=FIREBASE_WEB_API_KEY)
+
 # Configuration for Image Uploads
 UPLOAD_FOLDER = 'static/uploads/avatars'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
@@ -40,7 +48,13 @@ else:
 def index():
     if "user_id" not in session:
         return redirect(url_for("login"))
-    return render_template("index.html")
+    return render_template("home.html")
+
+@app.route("/analyze", methods=["GET"])
+def analyze():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    return render_template("analyze.html")
 
 @app.route("/login", methods=["GET"])
 def login():
@@ -129,7 +143,19 @@ def logout():
 def history():
     if "user_id" not in session:
         return redirect(url_for("login"))
-    return render_template("history.html")
+    return render_template("scan.html")
+
+@app.route("/leaderboard", methods=["GET"])
+def leaderboard():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    return render_template("leaderboard.html")
+
+@app.route("/profile", methods=["GET"])
+def profile():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    return render_template("profile.html")
 
 @app.route("/api/history", methods=["GET"])
 def api_history():

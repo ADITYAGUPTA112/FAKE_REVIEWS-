@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>TrustLens AI | Product Trust Leaderboard</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#26eded",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#0a0a0a",
+                        "surface-dark": "#1a1a1a",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.75rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light text-slate-900 dark:text-slate-100 min-h-screen dark:bg-[#0a0a0a]">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+        <div class="layout-container flex h-full grow flex-col">
+            <!-- Navigation Bar -->
+            <header
+                class="flex items-center justify-between whitespace-nowrap border-b border-solid border-primary/20 px-6 py-4 lg:px-20">
+                <div class="flex items-center gap-8">
+                    <div class="flex items-center gap-3 text-primary">
+                        <span class="material-symbols-outlined text-3xl">verified_user</span>
+                        <h2 class="text-slate-900 dark:text-slate-100 text-xl font-black leading-tight tracking-tight">
+                            TrustLens AI</h2>
+                    </div>
+                    <nav class="hidden md:flex items-center gap-8">
+                        <a class="text-slate-600 dark:text-slate-400 hover:text-primary transition-colors text-sm font-semibold"
+                            href="{{ url_for('index') }}">Home</a>
+                        <a class="text-slate-600 dark:text-slate-400 hover:text-primary transition-colors text-sm font-semibold"
+                            href="{{ url_for('analyze') }}">Analyze</a>
+                        <a class="text-slate-600 dark:text-slate-400 hover:text-primary transition-colors text-sm font-semibold"
+                            href="{{ url_for('history') }}">History</a>
+                        <a class="text-primary text-sm font-bold border-b-2 border-primary pb-1"
+                            href="{{ url_for('leaderboard') }}">Leaderboard</a>
+                    </nav>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div
+                        class="hidden sm:flex items-center bg-slate-200 dark:bg-slate-800/50 rounded-lg px-3 py-1.5 border border-primary/10">
+                        <span class="material-symbols-outlined text-slate-500 text-lg">search</span>
+                        <input
+                            class="bg-transparent border-none focus:ring-0 text-sm placeholder:text-slate-500 w-40 lg:w-64"
+                            placeholder="Search ASIN..." type="text" />
+                    </div>
+                    <a href="{{ url_for('profile') }}"
+                        class="flex items-center justify-center rounded-lg h-10 px-4 bg-primary text-background-dark text-sm font-bold hover:brightness-110 transition-all">
+                        <span>Profile</span>
+                    </a>
+                    <a href="{{ url_for('logout') }}"
+                        class="flex items-center justify-center rounded-lg h-10 px-4 bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-sm font-bold hover:bg-slate-300 dark:hover:bg-slate-700 transition-all">
+                        <span class="material-symbols-outlined text-lg">logout</span>
+                    </a>
+                </div>
+            </header>
+            <main class="flex flex-1 flex-col py-8 px-6 lg:px-40">
+                <!-- Page Header -->
+                <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+                    <div class="max-w-2xl">
+                        <div
+                            class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-4">
+                            <span class="material-symbols-outlined text-primary text-sm">workspace_premium</span>
+                            <span class="text-primary text-xs font-bold uppercase tracking-wider">Verified
+                                Integrity</span>
+                        </div>
+                        <h1
+                            class="text-slate-900 dark:text-slate-100 text-4xl lg:text-5xl font-black leading-tight tracking-tight">
+                            Product Trust Leaderboard</h1>
+                        <p class="text-slate-600 dark:text-slate-400 text-lg mt-2">Global real-time ranking of product
+                            authenticity across major e-commerce platforms based on AI-powered review analysis.</p>
+                    </div>
+                    <div
+                        class="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800/50 rounded-xl border border-primary/10 shrink-0">
+                        <button
+                            class="px-4 py-2 rounded-lg text-sm font-bold bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-slate-100">Daily</button>
+                        <button
+                            class="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-primary transition-colors">Weekly</button>
+                        <button
+                            class="px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:text-primary transition-colors">Monthly</button>
+                    </div>
+                </div>
+                <!-- Legend / Filters -->
+                <div class="flex flex-wrap gap-4 mb-6">
+                    <button
+                        class="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-sm font-bold hover:bg-emerald-500/20 transition-all">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                        Trustworthy (90-100)
+                    </button>
+                    <button
+                        class="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-sm font-bold hover:bg-amber-500/20 transition-all">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                        Moderate (60-89)
+                    </button>
+                    <button
+                        class="flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-sm font-bold hover:bg-rose-500/20 transition-all">
+                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                        High Risk (0-59)
+                    </button>
+                </div>
+                <!-- Table Content -->
+                <div class="overflow-hidden rounded-xl border border-primary/20 bg-white shadow-xl shadow-primary/5">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 dark:bg-slate-900">
+                                    <th
+                                        class="px-6 py-4 text-slate-500 dark:text-slate-400 text-sm font-bold uppercase tracking-wider">
+                                        Rank</th>
+                                    <th
+                                        class="px-6 py-4 text-slate-500 dark:text-slate-400 text-sm font-bold uppercase tracking-wider">
+                                        Product ASIN</th>
+                                    <th
+                                        class="px-6 py-4 text-slate-500 dark:text-slate-400 text-sm font-bold uppercase tracking-wider">
+                                        Trust Score</th>
+                                    <th
+                                        class="px-6 py-4 text-slate-500 dark:text-slate-400 text-sm font-bold uppercase tracking-wider">
+                                        Fake Review %</th>
+                                    <th
+                                        class="px-6 py-4 text-slate-500 dark:text-slate-400 text-sm font-bold uppercase tracking-wider text-right">
+                                        Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                <!-- Rank 1 -->
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group">
+                                    <td class="px-6 py-6">
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-2xl font-black text-primary">#1</span>
+                                            <span
+                                                class="material-symbols-outlined text-amber-400">workspace_premium</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-6">
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="font-mono text-slate-900 dark:text-slate-100 font-bold">B08N5WRWNW</span>
+                                            <span class="text-xs text-slate-500">Electronics &amp; Gadgets</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-6">
+                                        <div class="flex items-center gap-2">
+                                            <div
+                                                class="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
+                                                98/100
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-6">
+                                        <div class="flex items-center gap-3">
+                                            <div
+                                                class="flex-1 max-w-[100px] h-2 rounded-full bg-slate-200 dark:bg-slate-800">
+                                                <div class="h-full rounded-full bg-emerald-500" style="width: 2%;">
+                                                </div>
+                                            </div>
+                                            <span class="text-slate-900 dark:text-slate-100 font-bold">2.1%</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-6 text-right">
+                                        <span
+                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500 text-emerald-950">TRUSTWORTHY</span>
+                                    </td>
+                                </tr>
+                                <!-- Rank 2 -->
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                    <td class="px-6 py-6">
+                                        <span
+                                            class="text-2xl font-black text-slate-300 dark:text-slate-700 group-hover:text-primary transition-colors">#2</span>
+                                    </td>
+                                    <td class="px-6 py-6">
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="font-mono text-slate-900 dark:text-slate-100 font-bold">B09G9FPHP6</span>
+                                            <span class="text-xs text-slate-500">Home &amp; Kitchen</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-6">
+                                        <div
+                                            class="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30 w-fit">
+                                            92/100
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-6">
+                                        <div class="flex items-center gap-3">
+                                            <div
+                                                class="flex-1 max-w-[100px] h-2 rounded-full bg-slate-200 dark:bg-slate-800">
+                                                <div class="h-full rounded-full bg-emerald-500" style="width: 5%;">
+                                                </div>
+                                            </div>
+                                            <span class="text-slate-900 dark:text-slate-100 font-bold">4.8%</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-6 text-right">
+                                        <span
+                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500 text-emerald-950">TRUSTWORTHY</span>
+                                    </td>
+                                </tr>
+                                <!-- Rank 3 -->
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                    <td class="px-6 py-6">
+                                        <span
+                                            class="text-2xl font-black text-slate-300 dark:text-slate-700 group-hover:text-primary transition-colors">#3</span>
+                                    </td>
+                                    <td class="px-6 py-6">
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="font-mono text-slate-900 dark:text-slate-100 font-bold">B08X6VCH2B</span>
+                                            <span class="text-xs text-slate-500">Beauty &amp; Care</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-6">
+                                        <div
+                                            class="px-3 py-1 rounded-lg bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30 w-fit">
+                                            74/100
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-6">
+                                        <div class="flex items-center gap-3">
+                                            <div
+                                                class="flex-1 max-w-[100px] h-2 rounded-full bg-slate-200 dark:bg-slate-800">
+                                                <div class="h-full rounded-full bg-amber-500" style="width: 18%;"></div>
+                                            </div>
+                                            <span class="text-slate-900 dark:text-slate-100 font-bold">18.2%</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-6 text-right">
+                                        <span
+                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-amber-950">MODERATE</span>
+                                    </td>
+                                </tr>
+                                <!-- Rank 4 -->
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                    <td class="px-6 py-6">
+                                        <span
+                                            class="text-2xl font-black text-slate-300 dark:text-slate-700 group-hover:text-primary transition-colors">#4</span>
+                                    </td>
+                                    <td class="px-6 py-6">
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="font-mono text-slate-900 dark:text-slate-100 font-bold">B07ZPKN6Y5</span>
+                                            <span class="text-xs text-slate-500">Toys &amp; Games</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-6">
+                                        <div
+                                            class="px-3 py-1 rounded-lg bg-rose-500/20 text-rose-400 font-bold border border-rose-500/30 w-fit">
+                                            45/100
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-6">
+                                        <div class="flex items-center gap-3">
+                                            <div
+                                                class="flex-1 max-w-[100px] h-2 rounded-full bg-slate-200 dark:bg-slate-800">
+                                                <div class="h-full rounded-full bg-rose-500" style="width: 42%;"></div>
+                                            </div>
+                                            <span class="text-slate-900 dark:text-slate-100 font-bold">42.5%</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-6 text-right">
+                                        <span
+                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500 text-rose-950">HIGH
+                                            RISK</span>
+                                    </td>
+                                </tr>
+                                <!-- Rank 5 -->
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                                    <td class="px-6 py-6">
+                                        <span
+                                            class="text-2xl font-black text-slate-300 dark:text-slate-700 group-hover:text-primary transition-colors">#5</span>
+                                    </td>
+                                    <td class="px-6 py-6">
+                                        <div class="flex flex-col">
+                                            <span
+                                                class="font-mono text-slate-900 dark:text-slate-100 font-bold">B09B2Y9L3P</span>
+                                            <span class="text-xs text-slate-500">Sports &amp; Outdoor</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-6">
+                                        <div
+                                            class="px-3 py-1 rounded-lg bg-rose-500/20 text-rose-400 font-bold border border-rose-500/30 w-fit">
+                                            12/100
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-6">
+                                        <div class="flex items-center gap-3">
+                                            <div
+                                                class="flex-1 max-w-[100px] h-2 rounded-full bg-slate-200 dark:bg-slate-800">
+                                                <div class="h-full rounded-full bg-rose-700" style="width: 88%;"></div>
+                                            </div>
+                                            <span class="text-slate-900 dark:text-slate-100 font-bold">88.9%</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-6 text-right">
+                                        <span
+                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-700 text-rose-50">HIGH
+                                            RISK</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- Pagination Placeholder -->
+                    <div
+                        class="px-6 py-4 bg-slate-50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between dark:bg-slate-900">
+                        <p class="text-xs text-slate-500 font-medium">Showing 1 to 5 of 24,850 products</p>
+                        <div class="flex gap-2">
+                            <button
+                                class="size-8 flex items-center justify-center rounded bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500">
+                                <span class="material-symbols-outlined text-sm">chevron_left</span>
+                            </button>
+                            <button
+                                class="size-8 flex items-center justify-center rounded bg-primary text-background-dark font-bold text-xs">1</button>
+                            <button
+                                class="size-8 flex items-center justify-center rounded bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 hover:text-primary transition-colors text-xs">2</button>
+                            <button
+                                class="size-8 flex items-center justify-center rounded bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500 hover:text-primary transition-colors text-xs">3</button>
+                            <button
+                                class="size-8 flex items-center justify-center rounded bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500">
+                                <span class="material-symbols-outlined text-sm">chevron_right</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Features Section -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
+                    <div class="p-6 rounded-2xl bg-slate-100/50 border border-primary/5 dark:bg-[#1a1a1a]">
+                        <span class="material-symbols-outlined text-primary text-3xl mb-4">bolt</span>
+                        <h3 class="text-lg font-bold mb-2">Real-time Data</h3>
+                        <p class="text-sm text-slate-600 dark:text-slate-400">Our engines crawl thousands of reviews
+                            every minute to provide up-to-the-second trust metrics.</p>
+                    </div>
+                    <div class="p-6 rounded-2xl bg-slate-100/50 border border-primary/5 dark:bg-[#1a1a1a]">
+                        <span class="material-symbols-outlined text-primary text-3xl mb-4">psychology</span>
+                        <h3 class="text-lg font-bold mb-2">NLP Analysis</h3>
+                        <p class="text-sm text-slate-600 dark:text-slate-400">Deep semantic analysis identifies patterns
+                            in "incentivized" and "bot-generated" content.</p>
+                    </div>
+                    <div class="p-6 rounded-2xl bg-slate-100/50 border border-primary/5 dark:bg-[#1a1a1a]">
+                        <span class="material-symbols-outlined text-primary text-3xl mb-4">shield</span>
+                        <h3 class="text-lg font-bold mb-2">Risk Scoring</h3>
+                        <p class="text-sm text-slate-600 dark:text-slate-400">Proprietary algorithms weight reviewer
+                            history, purchase verification, and review velocity.</p>
+                    </div>
+                </div>
+            </main>
+            <!-- Footer -->
+            <footer class="border-t border-primary/10 py-10 px-6 lg:px-40 text-center">
+                <div class="flex flex-col items-center gap-4">
+                    <div class="flex items-center gap-2 text-primary opacity-50">
+                        <span class="material-symbols-outlined">verified_user</span>
+                        <span class="font-black">TrustLens AI</span>
+                    </div>
+                    <p class="text-xs text-slate-500">© 2024 TrustLens AI. Powered by Neural Semantic Integrity
+                        Analysis.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+</body>
+
+</html>

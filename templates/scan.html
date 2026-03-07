@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Scan History | TrustLens AI</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#26eded",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#0a0a0a",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.75rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(38, 237, 237, 0.1);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display">
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar Navigation -->
+        <aside
+            class="w-64 border-r border-primary/10 bg-background-light dark:bg-background-dark hidden md:flex flex-col">
+            <div class="p-6 flex items-center gap-3">
+                <div class="bg-primary p-1.5 rounded-lg">
+                    <span class="material-symbols-outlined text-background-dark font-bold">shield_with_heart</span>
+                </div>
+                <h1 class="text-xl font-black tracking-tight text-slate-900 dark:text-slate-100">TrustLens AI</h1>
+            </div>
+            <nav class="flex-1 px-4 space-y-2 mt-4">
+                <a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary"
+                    href="{{ url_for('index') }}"><span class="material-symbols-outlined text-[20px]">home</span> Home
+                </a>
+                <a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary"
+                    href="{{ url_for('analyze') }}">
+                    <span class="material-symbols-outlined">manage_search</span>
+                    <span class="font-medium">Analyze</span>
+                </a>
+                <a class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/20 text-primary border border-primary/20"
+                    href="{{ url_for('history') }}">
+                    <span class="material-symbols-outlined">history</span>
+                    <span class="font-medium">History</span>
+                </a>
+                <a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary"
+                    href="{{ url_for('leaderboard') }}">
+                    <span class="material-symbols-outlined">leaderboard</span>
+                    <span class="font-medium">Leaderboard</span>
+                </a>
+                <a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary"
+                    href="{{ url_for('profile') }}">
+                    <span class="material-symbols-outlined">person</span>
+                    <span class="font-medium">Profile</span>
+                </a>
+            </nav>
+            <div class="p-4 mt-auto">
+                <button
+                    class="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-red-500 hover:bg-red-500/10 transition-all">
+                    <span class="material-symbols-outlined">logout</span>
+                    <span class="font-medium">Logout</span>
+                </button>
+            </div>
+        </aside>
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top Navbar -->
+            <header
+                class="h-20 border-b border-primary/10 flex items-center justify-between px-8 bg-background-light/50 dark:bg-background-dark/50 backdrop-blur-md z-10">
+                <div class="flex items-center gap-4 flex-1 max-w-xl">
+                    <div class="relative w-full">
+                        <span
+                            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+                        <input
+                            class="w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-200 dark:bg-primary/5 border-none focus:ring-2 focus:ring-primary text-sm"
+                            placeholder="Search previous scans..." type="text" />
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button
+                        class="p-2.5 rounded-xl bg-slate-200 dark:bg-primary/10 text-slate-600 dark:text-primary transition-all">
+                        <span class="material-symbols-outlined">notifications</span>
+                    </button>
+                    <div class="h-10 w-10 rounded-full border-2 border-primary bg-cover bg-center"
+                        data-alt="User profile avatar circle"
+                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCR877XSIT5USYQs-TV3NTnIwyFBHDQE-5MAaXOFP_M_vwBrdQ1FCE6apvVYvudgH9mDp15WFA4znYeJoBOAt848Z31ceWHPHEqry0LOj1EYcT_h07WozBrPB7HxXI2XYCWT_weEAv6hmfLSsME0U7-63DbqPi8392jPDeLN2KY056rKhuppSih_EKZOYQ6OfXM2mkPZqH0GHDlFkigmDh3R0gLAzl2piy4zBCIUA2gOuZSJzdNZ1eXcrFjh4PN8VMNlT1II0YvudXZ')">
+                    </div>
+                </div>
+            </header>
+            <!-- Page Scrollable Content -->
+            <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                <div class="max-w-6xl mx-auto">
+                    <!-- Header Section -->
+                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+                        <div>
+                            <h2 class="text-4xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Scan
+                                History</h2>
+                            <p class="text-slate-500 dark:text-slate-400 mt-2">Manage and review your AI authenticity
+                                reports.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button
+                                class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all text-sm font-semibold">
+                                <span class="material-symbols-outlined text-[20px]">filter_list</span>
+                                <span>Filter</span>
+                            </button>
+                            <button
+                                class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all text-sm font-semibold">
+                                <span class="material-symbols-outlined text-[20px]">download</span>
+                                <span>Export</span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Category Pills -->
+                    <div class="flex gap-3 mb-8 overflow-x-auto pb-2">
+                        <button
+                            class="px-5 py-2 rounded-full bg-primary text-background-dark font-bold text-sm whitespace-nowrap">All
+                            Reports</button>
+                        <button
+                            class="px-5 py-2 rounded-full bg-slate-200 dark:bg-primary/5 text-slate-600 dark:text-slate-400 border border-transparent hover:border-primary/30 transition-all text-sm whitespace-nowrap">Verified
+                            Only</button>
+                        <button
+                            class="px-5 py-2 rounded-full bg-slate-200 dark:bg-primary/5 text-slate-600 dark:text-slate-400 border border-transparent hover:border-primary/30 transition-all text-sm whitespace-nowrap">High
+                            Risk</button>
+                        <button
+                            class="px-5 py-2 rounded-full bg-slate-200 dark:bg-primary/5 text-slate-600 dark:text-slate-400 border border-transparent hover:border-primary/30 transition-all text-sm whitespace-nowrap">Recently
+                            Updated</button>
+                    </div>
+                    <!-- Grid of Cards -->
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <!-- Card 1: Verified -->
+                        <div class="dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all group bg-[#1a1a1a]"
+                            style="background-color: #1a1a1a;">
+                            <div class="p-5 flex gap-5">
+                                <div
+                                    class="w-32 h-32 rounded-lg bg-slate-100 dark:bg-primary/10 flex-shrink-0 relative overflow-hidden">
+                                    <div class="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-500"
+                                        data-alt="Electronic product gadget on dark surface"
+                                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDp-qrrcsv9xobTEGbaqotsO9whuXCOdmL7mVs-LS9TqKc3tAvTuNxjwYlJAiw7L6M7YvCbM0cRzIUCWDMZVBQQ4qP6Em1nlqTPgIqv_a6y6VLEgp1l5bRiETFOtU53MQswB6K0JyYjLjmR0osZGyPvo4Y2wZTpubG7mTw3HgmiRbG8ScRrYHHod90xofogmMQYixZRnrrtpxGG5IcDYDhpBgmecQAG9dBd1DycGd2bJzJlQW1PipwXtMABfg83VGW1yG2yUCVwokGQ')">
+                                    </div>
+                                    <div
+                                        class="absolute top-2 right-2 bg-primary text-background-dark px-1.5 py-0.5 rounded text-[10px] font-black tracking-tighter">
+                                        VERIFIED</div>
+                                </div>
+                                <div class="flex-1 flex flex-col justify-between">
+                                    <div>
+                                        <div class="flex justify-between items-start">
+                                            <p class="text-primary text-xs font-bold uppercase tracking-widest mb-1">
+                                                Electronics</p>
+                                            <p class="text-slate-400 dark:text-slate-500 text-xs">Oct 24, 2023</p>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">ASIN:
+                                            B08N5KWB9H</h3>
+                                        <div class="flex gap-4 items-center">
+                                            <div class="flex flex-col">
+                                                <span class="text-[10px] text-slate-500 uppercase font-bold">Trust
+                                                    Score</span>
+                                                <span class="text-primary text-xl font-black">85%</span>
+                                            </div>
+                                            <div class="w-px h-8 bg-primary/10"></div>
+                                            <div class="flex flex-col">
+                                                <span class="text-[10px] text-slate-500 uppercase font-bold">Fake
+                                                    Reviews</span>
+                                                <span
+                                                    class="text-slate-900 dark:text-slate-100 text-xl font-black">12%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-end gap-3">
+                                        <button
+                                            class="text-xs font-bold text-slate-400 hover:text-primary transition-colors">Details</button>
+                                        <button
+                                            class="bg-primary text-background-dark px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-tight hover:brightness-110 transition-all">View
+                                            Report</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card 2: High Risk -->
+                        <div class="dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all group bg-[#1a1a1a]"
+                            style="background-color: #1a1a1a;">
+                            <div class="p-5 flex gap-5">
+                                <div
+                                    class="w-32 h-32 rounded-lg bg-slate-100 dark:bg-primary/10 flex-shrink-0 relative overflow-hidden">
+                                    <div class="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-500"
+                                        data-alt="Skincare product bottle abstract photo"
+                                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBrUyN09WdXhUVvfYNHyF__FNTcrfvoMvc75fJ_LPkj46uUXZ8KCWbU7U9T9GTWK58MPHK555Tc38-CaY8Y4MeNwxMiRfdp6mcD3R23jTjJCCPKt9wG69_RGYIhox4Ig6HAz_bBGEKMIC1eLCsaGhreKnX00FFFXlrio3gP81Z8gcco9TQL1FY_k-_OlTrPt4qFRDRh8QO5Ri3StjI7DLey3k9rbw7gNCYjbSsvmEY8Ta6nyFM6M5VPkrAhZgkCQgEbpW-TaYs3gHbD')">
+                                    </div>
+                                    <div
+                                        class="absolute top-2 right-2 bg-red-500 text-white px-1.5 py-0.5 rounded text-[10px] font-black tracking-tighter uppercase">
+                                        High Risk</div>
+                                </div>
+                                <div class="flex-1 flex flex-col justify-between">
+                                    <div>
+                                        <div class="flex justify-between items-start">
+                                            <p class="text-primary text-xs font-bold uppercase tracking-widest mb-1">
+                                                Beauty &amp; Health</p>
+                                            <p class="text-slate-400 dark:text-slate-500 text-xs">Oct 21, 2023</p>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">ASIN:
+                                            B07W5X1V2L</h3>
+                                        <div class="flex gap-4 items-center">
+                                            <div class="flex flex-col">
+                                                <span class="text-[10px] text-slate-500 uppercase font-bold">Trust
+                                                    Score</span>
+                                                <span class="text-red-500 text-xl font-black">22%</span>
+                                            </div>
+                                            <div class="w-px h-8 bg-primary/10"></div>
+                                            <div class="flex flex-col">
+                                                <span class="text-[10px] text-slate-500 uppercase font-bold">Fake
+                                                    Reviews</span>
+                                                <span
+                                                    class="text-slate-900 dark:text-slate-100 text-xl font-black">68%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-end gap-3">
+                                        <button
+                                            class="text-xs font-bold text-slate-400 hover:text-primary transition-colors">Details</button>
+                                        <button
+                                            class="bg-primary text-background-dark px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-tight hover:brightness-110 transition-all">View
+                                            Report</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card 3: Moderate -->
+                        <div class="dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all group bg-[#1a1a1a]"
+                            style="background-color: #1a1a1a;">
+                            <div class="p-5 flex gap-5">
+                                <div
+                                    class="w-32 h-32 rounded-lg bg-slate-100 dark:bg-primary/10 flex-shrink-0 relative overflow-hidden">
+                                    <div class="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-500"
+                                        data-alt="Modern office chair furniture item"
+                                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAlBGh1y-iJTL8kO04Iox87ZjBFAZY-8eZHh2_dYej41GXOnGtEfPWHWYQ3YyVDHx2ejR3df1fSMVik9sKcYFJ41HsvY_ppTwIK1WoEtEAn9siCOT_7odfXGgdO1ht_uSMUuVJ3mXJ4BTnluENMRz3OKEqp73HqYF16PyemLMsF_7WMwqJQDJlH9JwSkyP2mxjB7g12NujEgfW4Rn7unHsCeQJpxSJjwXlcyYiu8T9xvKb1iphWya4gRvo9RloRccVpxaqyq4B0TvOU')">
+                                    </div>
+                                    <div
+                                        class="absolute top-2 right-2 bg-yellow-500 text-background-dark px-1.5 py-0.5 rounded text-[10px] font-black tracking-tighter uppercase">
+                                        Moderate</div>
+                                </div>
+                                <div class="flex-1 flex flex-col justify-between">
+                                    <div>
+                                        <div class="flex justify-between items-start">
+                                            <p class="text-primary text-xs font-bold uppercase tracking-widest mb-1">
+                                                Home Office</p>
+                                            <p class="text-slate-400 dark:text-slate-500 text-xs">Oct 19, 2023</p>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">ASIN:
+                                            B09M2K6G6Y</h3>
+                                        <div class="flex gap-4 items-center">
+                                            <div class="flex flex-col">
+                                                <span class="text-[10px] text-slate-500 uppercase font-bold">Trust
+                                                    Score</span>
+                                                <span class="text-yellow-500 text-xl font-black">54%</span>
+                                            </div>
+                                            <div class="w-px h-8 bg-primary/10"></div>
+                                            <div class="flex flex-col">
+                                                <span class="text-[10px] text-slate-500 uppercase font-bold">Fake
+                                                    Reviews</span>
+                                                <span
+                                                    class="text-slate-900 dark:text-slate-100 text-xl font-black">34%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-end gap-3">
+                                        <button
+                                            class="text-xs font-bold text-slate-400 hover:text-primary transition-colors">Details</button>
+                                        <button
+                                            class="bg-primary text-background-dark px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-tight hover:brightness-110 transition-all">View
+                                            Report</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Card 4: Verified -->
+                        <div class="dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all group bg-[#1a1a1a]"
+                            style="background-color: #1a1a1a;">
+                            <div class="p-5 flex gap-5">
+                                <div
+                                    class="w-32 h-32 rounded-lg bg-slate-100 dark:bg-primary/10 flex-shrink-0 relative overflow-hidden">
+                                    <div class="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-500"
+                                        data-alt="Smartwatch fitness tracker tech device"
+                                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBKnDaLKdZW31OIg6bampbF5R3X7CJBIifwT2vtn740e3NcLUn-4bNbg7suCFOacaJLU3P8BYVoZfF48_bqEN14Vda3P_HedBXjh2r6a_IJ2KnO0hm_JuixSei36Y_6V1byHlJmONvGudZ9oIWJ3v01RhRNmr8qYPDEKck5KaOBcWlLJrsbqTE-NqtKBYzg987XmGNIYN42XYlgJluLXHZW22uDh_Dci-9OBYXhk-l9IDPY1YqHhBl0yqDYmu6304aw97IQ9KjrxlNr')">
+                                    </div>
+                                    <div
+                                        class="absolute top-2 right-2 bg-primary text-background-dark px-1.5 py-0.5 rounded text-[10px] font-black tracking-tighter">
+                                        VERIFIED</div>
+                                </div>
+                                <div class="flex-1 flex flex-col justify-between">
+                                    <div>
+                                        <div class="flex justify-between items-start">
+                                            <p class="text-primary text-xs font-bold uppercase tracking-widest mb-1">
+                                                Wearables</p>
+                                            <p class="text-slate-400 dark:text-slate-500 text-xs">Oct 15, 2023</p>
+                                        </div>
+                                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">ASIN:
+                                            B08K9W2J3S</h3>
+                                        <div class="flex gap-4 items-center">
+                                            <div class="flex flex-col">
+                                                <span class="text-[10px] text-slate-500 uppercase font-bold">Trust
+                                                    Score</span>
+                                                <span class="text-primary text-xl font-black">92%</span>
+                                            </div>
+                                            <div class="w-px h-8 bg-primary/10"></div>
+                                            <div class="flex flex-col">
+                                                <span class="text-[10px] text-slate-500 uppercase font-bold">Fake
+                                                    Reviews</span>
+                                                <span
+                                                    class="text-slate-900 dark:text-slate-100 text-xl font-black">4%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex justify-end gap-3">
+                                        <button
+                                            class="text-xs font-bold text-slate-400 hover:text-primary transition-colors">Details</button>
+                                        <button
+                                            class="bg-primary text-background-dark px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-tight hover:brightness-110 transition-all">View
+                                            Report</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Pagination -->
+                    <div class="mt-12 flex items-center justify-between border-t border-primary/10 pt-8">
+                        <button
+                            class="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-semibold">
+                            <span class="material-symbols-outlined">arrow_back</span>
+                            Previous
+                        </button>
+                        <div class="flex gap-2">
+                            <button class="h-10 w-10 rounded-lg bg-primary text-background-dark font-black">1</button>
+                            <button
+                                class="h-10 w-10 rounded-lg hover:bg-primary/10 text-slate-500 hover:text-primary transition-all font-bold">2</button>
+                            <button
+                                class="h-10 w-10 rounded-lg hover:bg-primary/10 text-slate-500 hover:text-primary transition-all font-bold">3</button>
+                            <span class="px-2 text-slate-500 self-center">...</span>
+                            <button
+                                class="h-10 w-10 rounded-lg hover:bg-primary/10 text-slate-500 hover:text-primary transition-all font-bold">12</button>
+                        </div>
+                        <button
+                            class="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-semibold">
+                            Next
+                            <span class="material-symbols-outlined">arrow_forward</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        async function loadHistory() {
+            const grid = document.querySelector('.grid.grid-cols-1.xl\\:grid-cols-2');
+            if (!grid) return;
+            try {
+                const res = await fetch('/api/history');
+                const data = await res.json();
+                if (!res.ok || !data.history || data.history.length === 0) return;
+
+                grid.innerHTML = data.history.map(item => {
+                    const asin = item.asin || 'N/A';
+                    const summary = item.summary || {};
+                    const chartData = item.chart_data || {};
+                    const total = (chartData.fake || 0) + (chartData.genuine || 0);
+                    const fakePct = total > 0 ? Math.round((chartData.fake / total) * 100) : 0;
+                    const trustScore = 100 - fakePct;
+                    const ts = item.timestamp ? new Date(item.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+                    const badge = trustScore >= 70 ? ['bg-primary', 'VERIFIED'] : trustScore >= 40 ? ['bg-yellow-500 text-black', 'MODERATE'] : ['bg-red-500', 'HIGH RISK'];
+                    const scoreColor = trustScore >= 70 ? 'text-primary' : trustScore >= 40 ? 'text-yellow-500' : 'text-red-500';
+
+                    const genPct = 100 - fakePct;
+                    return `<div class="rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all group" style="background-color:#1a1a1a;">
+          <div class="p-5 flex gap-5">
+            <!-- Product Image -->
+            <div class="w-28 h-28 rounded-xl flex-shrink-0 bg-slate-900 border border-primary/10 overflow-hidden flex items-center justify-center relative">
+              <img
+                src="https://images-na.ssl-images-amazon.com/images/P/${asin}.01._SCLZZZZZZZ_.jpg"
+                alt="Product ${asin}"
+                class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                onerror="this.onerror=null;this.src='';this.parentElement.innerHTML='<span style=\\'font-family:Material Symbols Outlined;font-size:40px;color:rgba(38,237,237,0.4)\\'>inventory_2</span>';"
+              />
+              <div class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[9px] font-black tracking-tighter text-white ${badge[0]}">${badge[1]}</div>
+            </div>
+            <!-- Details -->
+            <div class="flex-1 flex flex-col justify-between min-w-0">
+              <div>
+                <div class="flex justify-between items-start mb-1">
+                  <p class="text-primary text-[10px] font-bold uppercase tracking-widest">Amazon Product</p>
+                  <p class="text-slate-400 text-xs">${ts}</p>
+                </div>
+                <h3 class="text-base font-bold text-slate-100 mb-0.5 truncate">ASIN: ${asin}</h3>
+                <a href="https://www.amazon.com/dp/${asin}" target="_blank"
+                   class="text-[10px] text-primary/60 hover:text-primary transition-colors truncate block mb-2">
+                  amazon.com/dp/${asin} &#x2197;
+                </a>
+                <!-- Fake vs Genuine mini-bar -->
+                <div class="flex gap-1 mb-2 h-1.5 rounded-full overflow-hidden bg-slate-800">
+                  <div class="h-full bg-primary rounded-l-full" style="width:${genPct}%"></div>
+                  <div class="h-full bg-red-500 rounded-r-full" style="width:${fakePct}%"></div>
+                </div>
+                <div class="flex gap-4 items-center">
+                  <div class="flex flex-col">
+                    <span class="text-[9px] text-slate-500 uppercase font-bold">Trust</span>
+                    <span class="${scoreColor} text-lg font-black">${trustScore}%</span>
+                  </div>
+                  <div class="w-px h-7 bg-primary/10"></div>
+                  <div class="flex flex-col">
+                    <span class="text-[9px] text-slate-500 uppercase font-bold">Fake</span>
+                    <span class="text-red-400 text-lg font-black">${fakePct}%</span>
+                  </div>
+                  <div class="w-px h-7 bg-primary/10"></div>
+                  <div class="flex flex-col">
+                    <span class="text-[9px] text-slate-500 uppercase font-bold">Total</span>
+                    <span class="text-slate-300 text-lg font-black">${total}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="flex justify-end gap-2 mt-3">
+                <a href="/analyze" class="bg-primary text-background-dark px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-tight hover:brightness-110 transition-all">Re-Analyze</a>
+              </div>
+            </div>
+          </div>
+        </div>`;
+                }).join('');
+            } catch (e) {
+                console.warn('Could not load history:', e);
+            }
+        }
+        loadHistory();
+    </script>
+</body>
+
+</html>
