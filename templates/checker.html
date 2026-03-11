@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>TrustLens AI - Single Review Checker</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#26eded",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#0a0a0a",
+                        "card-dark": "#1a1a1a"
+                    },
+                    fontFamily: { "display": ["Inter", "sans-serif"] },
+                    borderRadius: { "DEFAULT": "0.75rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+
+        .glass-panel {
+            background: #1a1a1a;
+            border: 1px solid rgba(38, 237, 237, 0.1);
+        }
+
+        @keyframes spin-slow { to { transform: rotate(360deg); } }
+        .animate-spin-slow { animation: spin-slow 1.5s linear infinite; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fadein { animation: fadeIn 0.4s ease both; }
+
+        .word-pill-fake  { background: rgba(239,68,68,0.18); border: 1px solid rgba(239,68,68,0.4); color: #fca5a5; }
+        .word-pill-genuine { background: rgba(38,237,237,0.12); border: 1px solid rgba(38,237,237,0.35); color: #26eded; }
+
+        .risk-bar-fill { transition: width 1s cubic-bezier(.4,0,.2,1); }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen">
+
+    <!-- Navigation -->
+    <header class="border-b border-primary/20 bg-background-light/50 dark:bg-[#0a0a0a]/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-3xl">shield_with_heart</span>
+                    <span class="text-xl font-bold tracking-tight">TrustLens AI</span>
+                </div>
+                <nav class="hidden md:flex items-center gap-8">
+                    <a class="text-sm font-medium hover:text-primary transition-colors" href="{{ url_for('index') }}">Home</a>
+                    <a class="text-sm font-medium hover:text-primary transition-colors" href="{{ url_for('analyze') }}">Analyze</a>
+                    <a class="text-sm font-medium text-primary" href="{{ url_for('checker') }}">Review Checker</a>
+                    <a class="text-sm font-medium hover:text-primary transition-colors" href="{{ url_for('history') }}">History</a>
+                    <a class="text-sm font-medium hover:text-primary transition-colors" href="{{ url_for('leaderboard') }}">Leaderboard</a>
+                    <a class="text-sm font-medium hover:text-primary transition-colors" href="{{ url_for('profile') }}">Profile</a>
+                </nav>
+                <a href="{{ url_for('logout') }}"
+                    class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-background-dark font-bold text-sm hover:opacity-90 transition-opacity">
+                    <span class="material-symbols-outlined text-sm">logout</span>Logout
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+        <!-- Page Header -->
+        <div class="text-center mb-10 animate-fadein">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/15 border border-primary/30 mb-4">
+                <span class="material-symbols-outlined text-primary text-4xl">rate_review</span>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-black mb-3">Single Review Checker</h1>
+            <p class="text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
+                Paste any product review from <strong class="text-slate-300">any platform</strong> — Amazon, Flipkart, Yelp, Google — and our AI will instantly tell you if it looks fake.
+            </p>
+        </div>
+
+        <!-- Input Card -->
+        <div class="glass-panel rounded-2xl p-6 md:p-8 mb-8 border border-primary/20">
+            <label class="block text-sm font-semibold text-slate-400 mb-2 uppercase tracking-wider">Review Text</label>
+            <textarea id="review-input" rows="6"
+                class="w-full bg-slate-900 border border-primary/20 focus:border-primary focus:ring-2 focus:ring-primary/30 rounded-xl p-4 text-sm text-slate-200 placeholder-slate-600 resize-y outline-none transition-all"
+                placeholder="Paste a product review here…  e.g. 'This product is absolutely amazing! I received it free in exchange for a review. Five stars!!'"></textarea>
+
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
+                <span id="char-count" class="text-xs text-slate-600">0 characters</span>
+                <div class="flex gap-3">
+                    <button id="clear-btn"
+                        class="px-5 py-2.5 rounded-xl text-sm font-semibold border border-slate-700 text-slate-400 hover:border-red-500/40 hover:text-red-400 transition-all">
+                        Clear
+                    </button>
+                    <button id="check-btn"
+                        class="flex items-center gap-2 px-7 py-2.5 rounded-xl bg-primary text-background-dark text-sm font-bold hover:shadow-[0_0_20px_rgba(38,237,237,0.4)] transition-all">
+                        <span class="material-symbols-outlined text-lg">search_check</span>
+                        Check Review
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="hidden text-center py-16">
+            <span class="material-symbols-outlined text-primary text-5xl animate-spin-slow block mb-4">autorenew</span>
+            <p class="text-slate-400 text-sm uppercase tracking-widest">Analysing with AI…</p>
+        </div>
+
+        <!-- Error Banner -->
+        <div id="error-banner" class="hidden mb-6 p-4 rounded-xl bg-red-950/60 border border-red-500/40 text-red-300 text-sm flex items-center gap-3">
+            <span class="material-symbols-outlined text-red-400">error</span>
+            <span id="error-text"></span>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-section" class="hidden animate-fadein space-y-6">
+
+            <!-- Verdict Banner -->
+            <div id="verdict-banner"
+                class="glass-panel rounded-2xl p-6 border flex flex-col md:flex-row gap-6 items-center justify-between">
+                <div class="flex items-center gap-5">
+                    <div id="verdict-icon"
+                        class="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-4xl" id="verdict-symbol"></span>
+                    </div>
+                    <div>
+                        <p class="text-xs uppercase tracking-widest text-slate-500 mb-1">AI Verdict</p>
+                        <h2 id="verdict-label" class="text-2xl font-black"></h2>
+                        <p id="verdict-subtitle" class="text-sm text-slate-400 mt-0.5"></p>
+                    </div>
+                </div>
+                <!-- Risk Meter -->
+                <div class="w-full md:w-64">
+                    <div class="flex justify-between text-xs text-slate-400 mb-1">
+                        <span>Risk Score</span>
+                        <span id="risk-score-label" class="font-bold"></span>
+                    </div>
+                    <div class="h-3 rounded-full bg-slate-800 overflow-hidden">
+                        <div id="risk-bar" class="risk-bar-fill h-full rounded-full" style="width:0%"></div>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-slate-600 mt-1 uppercase tracking-wider">
+                        <span>Low</span><span>Medium</span><span>High</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div class="glass-panel rounded-xl p-5 border border-primary/10">
+                    <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">AI Confidence</p>
+                    <p id="stat-confidence" class="text-2xl font-black text-primary"></p>
+                </div>
+                <div class="glass-panel rounded-xl p-5 border border-primary/10">
+                    <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Heuristic Flags</p>
+                    <p id="stat-flags" class="text-2xl font-black"></p>
+                </div>
+                <div class="glass-panel rounded-xl p-5 border border-primary/10 col-span-2 md:col-span-1">
+                    <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Risk Level</p>
+                    <p id="stat-risk" class="text-2xl font-black"></p>
+                </div>
+            </div>
+
+            <!-- Heuristic Flags -->
+            <div id="flags-section" class="glass-panel rounded-2xl p-6 border border-primary/10">
+                <h3 class="text-base font-bold mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-yellow-400">flag</span>
+                    Heuristic Red-Flags
+                </h3>
+                <div id="flags-list" class="space-y-3"></div>
+                <p id="no-flags-msg" class="hidden text-sm text-slate-500 italic">No suspicious patterns detected by heuristics.</p>
+            </div>
+
+            <!-- LIME Explanation -->
+            <div id="lime-section" class="glass-panel rounded-2xl p-6 border border-primary/10">
+                <h3 class="text-base font-bold mb-1 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">psychology</span>
+                    AI Explanation – Key Words
+                </h3>
+                <p class="text-xs text-slate-500 mb-4">Words that most influenced the AI's decision (LIME attribution). Larger weight = stronger influence.</p>
+                <div id="lime-words" class="flex flex-wrap gap-2"></div>
+                <p id="no-lime-msg" class="hidden text-sm text-slate-500 italic mt-2">No LIME explanation available for this review.</p>
+            </div>
+
+        </div><!-- /results -->
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 py-8 px-6 bg-background-light/30 dark:bg-[#080808] mt-12">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">shield_with_heart</span>
+                <span class="font-bold">TrustLens AI</span>
+            </div>
+            <p class="text-slate-500 text-sm">© 2024 TrustLens AI. Ensuring review authenticity for everyone.</p>
+        </div>
+    </footer>
+
+    <script>
+        const reviewInput  = document.getElementById('review-input');
+        const checkBtn     = document.getElementById('check-btn');
+        const clearBtn     = document.getElementById('clear-btn');
+        const charCount    = document.getElementById('char-count');
+        const loadingState = document.getElementById('loading-state');
+        const errorBanner  = document.getElementById('error-banner');
+        const errorText    = document.getElementById('error-text');
+        const resultsSection = document.getElementById('results-section');
+
+        // ── character counter ──
+        reviewInput.addEventListener('input', () => {
+            charCount.textContent = `${reviewInput.value.length} characters`;
+        });
+
+        // ── clear ──
+        clearBtn.addEventListener('click', () => {
+            reviewInput.value = '';
+            charCount.textContent = '0 characters';
+            hideResults();
+            hideError();
+        });
+
+        function showLoading()  { loadingState.classList.remove('hidden'); hideResults(); hideError(); }
+        function hideLoading()  { loadingState.classList.add('hidden'); }
+        function hideResults()  { resultsSection.classList.add('hidden'); }
+        function hideError()    { errorBanner.classList.add('hidden'); }
+        function showError(msg) { errorText.textContent = msg; errorBanner.classList.remove('hidden'); }
+
+        function riskColor(score) {
+            if (score >= 70) return '#ef4444';
+            if (score >= 40) return '#f59e0b';
+            return '#26eded';
+        }
+        function riskLabel(score) {
+            if (score >= 70) return 'High';
+            if (score >= 40) return 'Medium';
+            return 'Low';
+        }
+        function severityColor(sev) {
+            if (sev === 'high')   return { bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.4)',   text: '#fca5a5',  dot: '#ef4444' };
+            if (sev === 'medium') return { bg: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.4)',  text: '#fcd34d',  dot: '#f59e0b' };
+            return                       { bg: 'rgba(100,116,139,0.12)', border: 'rgba(100,116,139,0.3)', text: '#94a3b8',  dot: '#64748b' };
+        }
+
+        // ── main check ──
+        checkBtn.addEventListener('click', async () => {
+            const text = reviewInput.value.trim();
+            if (!text) { reviewInput.focus(); return; }
+
+            showLoading();
+
+            try {
+                const res  = await fetch('/api/check_review', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                const data = await res.json();
+                hideLoading();
+
+                if (!res.ok || data.error) { showError(data.error || 'Analysis failed.'); return; }
+
+                renderResults(data);
+            } catch (err) {
+                hideLoading();
+                showError('Network error — please try again.');
+            }
+        });
+
+        function renderResults(data) {
+            const { prediction, confidence, explanation, flags, risk_score } = data;
+            const isFake = prediction === 'Fake';
+            const color  = isFake ? '#ef4444' : '#26eded';
+
+            // Verdict banner
+            const verdictBanner = document.getElementById('verdict-banner');
+            verdictBanner.style.borderColor = isFake ? 'rgba(239,68,68,0.4)' : 'rgba(38,237,237,0.25)';
+
+            const iconEl = document.getElementById('verdict-icon');
+            iconEl.style.background = isFake ? 'rgba(239,68,68,0.15)' : 'rgba(38,237,237,0.12)';
+            iconEl.style.border = `1px solid ${isFake ? 'rgba(239,68,68,0.4)' : 'rgba(38,237,237,0.3)'}`;
+
+            const symbolEl = document.getElementById('verdict-symbol');
+            symbolEl.textContent = isFake ? 'gpp_bad' : 'verified_user';
+            symbolEl.style.color = color;
+
+            document.getElementById('verdict-label').textContent = isFake ? '⚠ Fake Review Detected' : '✓ Looks Genuine';
+            document.getElementById('verdict-label').style.color = color;
+            document.getElementById('verdict-subtitle').textContent = isFake
+                ? 'This review shows synthetic patterns consistent with fake content.'
+                : 'This review appears authentic based on AI analysis.';
+
+            // Risk bar
+            const rBar = document.getElementById('risk-bar');
+            rBar.style.background = riskColor(risk_score);
+            setTimeout(() => { rBar.style.width = risk_score + '%'; }, 50);
+            document.getElementById('risk-score-label').textContent = risk_score + ' / 100';
+            document.getElementById('risk-score-label').style.color = riskColor(risk_score);
+
+            // Stats
+            document.getElementById('stat-confidence').textContent = confidence.toFixed(1) + '%';
+            document.getElementById('stat-flags').textContent = flags.length;
+            document.getElementById('stat-flags').style.color = flags.length > 0 ? '#f59e0b' : '#26eded';
+            const rl = riskLabel(risk_score);
+            document.getElementById('stat-risk').textContent = rl;
+            document.getElementById('stat-risk').style.color = riskColor(risk_score);
+
+            // Heuristic flags
+            const flagsList = document.getElementById('flags-list');
+            const noFlagsMsg = document.getElementById('no-flags-msg');
+            flagsList.innerHTML = '';
+            if (flags.length === 0) {
+                noFlagsMsg.classList.remove('hidden');
+            } else {
+                noFlagsMsg.classList.add('hidden');
+                flags.forEach(f => {
+                    const sc = severityColor(f.severity);
+                    const el = document.createElement('div');
+                    el.style.cssText = `padding:12px 14px; border-radius:12px; background:${sc.bg}; border:1px solid ${sc.border}; display:flex; align-items:flex-start; gap:10px;`;
+                    el.innerHTML = `
+                        <span style="width:8px;height:8px;border-radius:50%;background:${sc.dot};flex-shrink:0;margin-top:5px;"></span>
+                        <div>
+                            <span style="font-size:12px;font-weight:700;color:${sc.text};text-transform:uppercase;letter-spacing:0.05em;">${f.label}</span>
+                            <p style="font-size:13px;color:#94a3b8;margin-top:3px;">${f.description}</p>
+                        </div>`;
+                    flagsList.appendChild(el);
+                });
+            }
+
+            // LIME words
+            const limeWords = document.getElementById('lime-words');
+            const noLimeMsg = document.getElementById('no-lime-msg');
+            limeWords.innerHTML = '';
+            if (!explanation || explanation.length === 0) {
+                noLimeMsg.classList.remove('hidden');
+            } else {
+                noLimeMsg.classList.add('hidden');
+                const maxW = Math.max(...explanation.map(e => Math.abs(e.weight)));
+                explanation.forEach(e => {
+                    const pill = document.createElement('span');
+                    const normalised = maxW > 0 ? Math.abs(e.weight) / maxW : 0;
+                    const size = Math.round(11 + normalised * 6); // 11–17px
+                    pill.className = `px-3 py-1.5 rounded-full text-sm font-semibold ${e.weight > 0 ? 'word-pill-fake' : 'word-pill-genuine'}`;
+                    pill.style.fontSize = size + 'px';
+                    pill.title = `Weight: ${e.weight.toFixed(4)}`;
+                    pill.textContent = e.word;
+                    limeWords.appendChild(pill);
+                });
+            }
+
+            resultsSection.classList.remove('hidden');
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    </script>
+</body>
+</html>
