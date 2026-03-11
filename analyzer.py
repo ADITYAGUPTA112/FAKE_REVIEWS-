@@ -279,6 +279,125 @@ def analyze_product(asin, pages=3):
 
     return summary, df_results
 
+def get_review_flags(text):
+    """
+    Analyse a single review text for common heuristic red-flags associated
+    with fake / paid reviews.  Returns a list of flag dicts:
+        {"label": str, "description": str, "severity": "low"|"medium"|"high"}
+    """
+    flags = []
+    words = text.split()
+    word_count = len(words)
+    lower = text.lower()
+
+    # 1. Suspiciously short review
+    if word_count < 8:
+        flags.append({
+            "label": "Very Short Review",
+            "description": f"Only {word_count} word(s). Genuine reviews typically provide detail.",
+            "severity": "medium"
+        })
+
+    # 2. Excessive capitalisation
+    upper_words = [w for w in words if w.isupper() and len(w) > 2]
+    if len(upper_words) >= 3:
+        flags.append({
+            "label": "Excessive Caps",
+            "description": "Unusually high number of ALL-CAPS words — a common attention-seeking tactic.",
+            "severity": "low"
+        })
+
+    # 3. Excessive exclamation / question marks
+    exclaim_count = text.count('!') + text.count('?')
+    if exclaim_count >= 4:
+        flags.append({
+            "label": "Over-Punctuated",
+            "description": f"{exclaim_count} exclamation/question marks detected. Overly enthusiastic tone is a fake-review signal.",
+            "severity": "low"
+        })
+
+    # 4. Promotional / incentivised language
+    promo_keywords = [
+        "received free", "received this for free", "free product", "discount code",
+        "in exchange for", "promotional", "gifted", "sponsored", "i was given",
+        "sent to me", "provided for review", "complimentary", "received at a discount",
+        "i got this for free"
+    ]
+    for kw in promo_keywords:
+        if kw in lower:
+            flags.append({
+                "label": "Incentivised Language",
+                "description": f"Phrase '{kw}' suggests a paid or incentivised review.",
+                "severity": "high"
+            })
+            break
+
+    # 5. Generic / template phrases
+    generic_phrases = [
+        "highly recommend", "five stars", "best product ever", "love this product",
+        "great product", "amazing product", "works as described", "exactly as described",
+        "fast shipping", "worth every penny", "would definitely buy again", "two thumbs up"
+    ]
+    matched_generic = [p for p in generic_phrases if p in lower]
+    if len(matched_generic) >= 2:
+        flags.append({
+            "label": "Generic Phrases",
+            "description": f"Contains {len(matched_generic)} template-like phrases: {', '.join(matched_generic[:3])}.",
+            "severity": "medium"
+        })
+
+    # 6. Repetitive words
+    if word_count > 5:
+        from collections import Counter
+        content_words = [w.lower().strip('.,!?;:"\'') for w in words if len(w) > 3]
+        freq = Counter(content_words)
+        repeated = [(w, c) for w, c in freq.items() if c >= 4]
+        if repeated:
+            top = sorted(repeated, key=lambda x: -x[1])[0]
+            flags.append({
+                "label": "Word Repetition",
+                "description": f"Word '{top[0]}' appears {top[1]} times — possible bot-generated text.",
+                "severity": "medium"
+            })
+
+    # 7. No specific product mention (no numbers, model names, measurements, etc.)
+    has_specifics = bool(re.search(r'\b\d+\b', text))
+    if not has_specifics and word_count >= 20:
+        flags.append({
+            "label": "Lacks Specific Details",
+            "description": "No numbers or measurements found. Genuine reviews usually reference specific product details.",
+            "severity": "low"
+        })
+
+    return flags
+
+
+def check_single_review(text):
+    """
+    Analyse a single review text and return prediction, confidence, LIME
+    explanation and heuristic flags.
+    """
+    label, confidence = predict_review(text)
+    explanation = explain_review(text, label)
+    flags = get_review_flags(text)
+
+    # Compute a composite risk score (0–100) that blends model confidence and flag count
+    flag_severity_weights = {"low": 5, "medium": 10, "high": 20}
+    flag_score = sum(flag_severity_weights.get(f["severity"], 5) for f in flags)
+    if label == "Fake":
+        risk_score = min(100, round((confidence * 0.75) + min(flag_score, 25)))
+    else:
+        risk_score = min(100, round(((100 - confidence) * 0.5) + min(flag_score, 25)))
+
+    return {
+        "prediction": label,
+        "confidence": round(float(confidence), 2),
+        "explanation": explanation,
+        "flags": flags,
+        "risk_score": int(risk_score)
+    }
+
+
 def extract_domain(url_or_asin):
     url_or_asin = url_or_asin.strip()
     match = re.search(r"amazon\.([a-z\.]+)/", url_or_asin)

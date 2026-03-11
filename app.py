@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
 import os
-from analyzer import analyze_product
+from analyzer import analyze_product, check_single_review
 import json
 from werkzeug.utils import secure_filename
 import uuid
@@ -138,6 +138,30 @@ def logout():
     session.pop("user_name", None)
     session.pop("user_photo", None)
     return redirect(url_for("login"))
+
+@app.route("/checker", methods=["GET"])
+def checker():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    return render_template("checker.html")
+
+@app.route("/api/check_review", methods=["POST"])
+def check_review_api():
+    try:
+        data = request.json
+        text = (data.get("text") or "").strip()
+        if not text:
+            return jsonify({"error": "No review text provided."}), 400
+        if len(text) < 5:
+            return jsonify({"error": "Review text is too short to analyse."}), 400
+
+        result = check_single_review(text)
+        return jsonify(result)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route("/history", methods=["GET"])
 def history():
