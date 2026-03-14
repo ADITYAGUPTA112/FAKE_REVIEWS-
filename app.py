@@ -8,7 +8,7 @@ from werkzeug.utils import secure_filename
 import uuid
 
 app = Flask(__name__)
-app.secret_key = "super_secret_mockup_key"  # Needed for session
+app.secret_key = "262ad8b51b449946485141e9ee2521a8d0120bd6b0ba609c667ed3a3d56d0495"  # Needed for session
 
 # Firebase web API key (for client-side auth in templates)
 # Set this in your .env or environment variables as FIREBASE_WEB_API_KEY
@@ -197,7 +197,8 @@ def analyze_api():
         if not asin:
             return jsonify({"error": "No ASIN or URL provided."}), 400
 
-        pages = int(data.get("pages", 1))
+        pages = int(data.get("pages", 5))
+        pages = max(1, min(pages, 20))
         
         summary, df_results = analyze_product(asin, pages)
         
@@ -213,17 +214,25 @@ def analyze_api():
                 "review":     df_results["review"].tolist(),
                 "prediction": df_results["prediction"].tolist(),
                 "confidence": [round(float(c), 1) for c in df_results["confidence"].tolist()],
+                "fake_probability": [round(float(c), 1) for c in df_results["fake_probability"].tolist()] if "fake_probability" in df_results.columns else [],
                 "date":       df_results["date"].tolist() if "date" in df_results.columns else ["" for _ in range(len(df_results))],
                 "explanation": df_results["explanation"].tolist() if "explanation" in df_results.columns else [[] for _ in range(len(df_results))]
             }
         else:
             fake_count = 0
             genuine_count = 0
-            results = {"review": [], "prediction": [], "confidence": [], "date": [], "explanation": []}
+            results = {"review": [], "prediction": [], "confidence": [], "fake_probability": [], "date": [], "explanation": []}
+
+        # Use probability-based risk for trust score visuals so it does not lock to 100%
+        fake_score = float(summary.get("avg_fake_probability", 0.0))
+        fake_score = round(max(0.0, min(100.0, fake_score)), 1)
+        genuine_score = round(100.0 - fake_score, 1)
             
         chart_data = {
             "fake": fake_count,
             "genuine": genuine_count,
+            "fake_score": fake_score,
+            "genuine_score": genuine_score,
         }
         
         # Save analysis to Firebase Firestore if connected

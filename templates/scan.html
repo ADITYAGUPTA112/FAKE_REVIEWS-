@@ -55,6 +55,30 @@
             background: rgba(38, 237, 237, 0.1);
             border-radius: 10px;
         }
+
+        .report-card-bg {
+            background-color: #1a1a1a;
+        }
+
+        .profile-avatar-bg {
+            background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCR877XSIT5USYQs-TV3NTnIwyFBHDQE-5MAaXOFP_M_vwBrdQ1FCE6apvVYvudgH9mDp15WFA4znYeJoBOAt848Z31ceWHPHEqry0LOj1EYcT_h07WozBrPB7HxXI2XYCWT_weEAv6hmfLSsME0U7-63DbqPi8392jPDeLN2KY056rKhuppSih_EKZOYQ6OfXM2mkPZqH0GHDlFkigmDh3R0gLAzl2piy4zBCIUA2gOuZSJzdNZ1eXcrFjh4PN8VMNlT1II0YvudXZ');
+        }
+
+        .prod-bg-1 {
+            background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDp-qrrcsv9xobTEGbaqotsO9whuXCOdmL7mVs-LS9TqKc3tAvTuNxjwYlJAiw7L6M7YvCbM0cRzIUCWDMZVBQQ4qP6Em1nlqTPgIqv_a6y6VLEgp1l5bRiETFOtU53MQswB6K0JyYjLjmR0osZGyPvo4Y2wZTpubG7mTw3HgmiRbG8ScRrYHHod90xofogmMQYixZRnrrtpxGG5IcDYDhpBgmecQAG9dBd1DycGd2bJzJlQW1PipwXtMABfg83VGW1yG2yUCVwokGQ');
+        }
+
+        .prod-bg-2 {
+            background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBrUyN09WdXhUVvfYNHyF__FNTcrfvoMvc75fJ_LPkj46uUXZ8KCWbU7U9T9GTWK58MPHK555Tc38-CaY8Y4MeNwxMiRfdp6mcD3R23jTjJCCPKt9wG69_RGYIhox4Ig6HAz_bBGEKMIC1eLCsaGhreKnX00FFFXlrio3gP81Z8gcco9TQL1FY_k-_OlTrPt4qFRDRh8QO5Ri3StjI7DLey3k9rbw7gNCYjbSsvmEY8Ta6nyFM6M5VPkrAhZgkCQgEbpW-TaYs3gHbD');
+        }
+
+        .prod-bg-3 {
+            background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAlBGh1y-iJTL8kO04Iox87ZjBFAZY-8eZHh2_dYej41GXOnGtEfPWHWYQ3YyVDHx2ejR3df1fSMVik9sKcYFJ41HsvY_ppTwIK1WoEtEAn9siCOT_7odfXGgdO1ht_uSMUuVJ3mXJ4BTnluENMRz3OKEqp73HqYF16PyemLMsF_7WMwqJQDJlH9JwSkyP2mxjB7g12NujEgfW4Rn7unHsCeQJpxSJjwXlcyYiu8T9xvKb1iphWya4gRvo9RloRccVpxaqyq4B0TvOU');
+        }
+
+        .prod-bg-4 {
+            background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBKnDaLKdZW31OIg6bampbF5R3X7CJBIifwT2vtn740e3NcLUn-4bNbg7suCFOacaJLU3P8BYVoZfF48_bqEN14Vda3P_HedBXjh2r6a_IJ2KnO0hm_JuixSei36Y_6V1byHlJmONvGudZ9oIWJ3v01RhRNmr8qYPDEKck5KaOBcWlLJrsbqTE-NqtKBYzg987XmGNIYN42XYlgJluLXHZW22uDh_Dci-9OBYXhk-l9IDPY1YqHhBl0yqDYmu6304aw97IQ9KjrxlNr');
+        }
     </style>
 </head>
 
@@ -122,9 +146,8 @@
                         class="p-2.5 rounded-xl bg-slate-200 dark:bg-primary/10 text-slate-600 dark:text-primary transition-all">
                         <span class="material-symbols-outlined">notifications</span>
                     </button>
-                    <div class="h-10 w-10 rounded-full border-2 border-primary bg-cover bg-center"
-                        data-alt="User profile avatar circle"
-                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCR877XSIT5USYQs-TV3NTnIwyFBHDQE-5MAaXOFP_M_vwBrdQ1FCE6apvVYvudgH9mDp15WFA4znYeJoBOAt848Z31ceWHPHEqry0LOj1EYcT_h07WozBrPB7HxXI2XYCWT_weEAv6hmfLSsME0U7-63DbqPi8392jPDeLN2KY056rKhuppSih_EKZOYQ6OfXM2mkPZqH0GHDlFkigmDh3R0gLAzl2piy4zBCIUA2gOuZSJzdNZ1eXcrFjh4PN8VMNlT1II0YvudXZ')">
+                    <div class="h-10 w-10 rounded-full border-2 border-primary bg-cover bg-center profile-avatar-bg"
+                        data-alt="User profile avatar circle">
                     </div>
                 </div>
             </header>
@@ -170,14 +193,12 @@
                     <!-- Grid of Cards -->
                     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                         <!-- Card 1: Verified -->
-                        <div class="dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all group bg-[#1a1a1a]"
-                            style="background-color: #1a1a1a;">
+                        <div class="dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all group bg-[#1a1a1a] report-card-bg">
                             <div class="p-5 flex gap-5">
                                 <div
                                     class="w-32 h-32 rounded-lg bg-slate-100 dark:bg-primary/10 flex-shrink-0 relative overflow-hidden">
-                                    <div class="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-500"
-                                        data-alt="Electronic product gadget on dark surface"
-                                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDp-qrrcsv9xobTEGbaqotsO9whuXCOdmL7mVs-LS9TqKc3tAvTuNxjwYlJAiw7L6M7YvCbM0cRzIUCWDMZVBQQ4qP6Em1nlqTPgIqv_a6y6VLEgp1l5bRiETFOtU53MQswB6K0JyYjLjmR0osZGyPvo4Y2wZTpubG7mTw3HgmiRbG8ScRrYHHod90xofogmMQYixZRnrrtpxGG5IcDYDhpBgmecQAG9dBd1DycGd2bJzJlQW1PipwXtMABfg83VGW1yG2yUCVwokGQ')">
+                                    <div class="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-500 prod-bg-1"
+                                        data-alt="Electronic product gadget on dark surface">
                                     </div>
                                     <div
                                         class="absolute top-2 right-2 bg-primary text-background-dark px-1.5 py-0.5 rounded text-[10px] font-black tracking-tighter">
@@ -218,14 +239,12 @@
                             </div>
                         </div>
                         <!-- Card 2: High Risk -->
-                        <div class="dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all group bg-[#1a1a1a]"
-                            style="background-color: #1a1a1a;">
+                        <div class="dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all group bg-[#1a1a1a] report-card-bg">
                             <div class="p-5 flex gap-5">
                                 <div
                                     class="w-32 h-32 rounded-lg bg-slate-100 dark:bg-primary/10 flex-shrink-0 relative overflow-hidden">
-                                    <div class="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-500"
-                                        data-alt="Skincare product bottle abstract photo"
-                                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBrUyN09WdXhUVvfYNHyF__FNTcrfvoMvc75fJ_LPkj46uUXZ8KCWbU7U9T9GTWK58MPHK555Tc38-CaY8Y4MeNwxMiRfdp6mcD3R23jTjJCCPKt9wG69_RGYIhox4Ig6HAz_bBGEKMIC1eLCsaGhreKnX00FFFXlrio3gP81Z8gcco9TQL1FY_k-_OlTrPt4qFRDRh8QO5Ri3StjI7DLey3k9rbw7gNCYjbSsvmEY8Ta6nyFM6M5VPkrAhZgkCQgEbpW-TaYs3gHbD')">
+                                    <div class="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-500 prod-bg-2"
+                                        data-alt="Skincare product bottle abstract photo">
                                     </div>
                                     <div
                                         class="absolute top-2 right-2 bg-red-500 text-white px-1.5 py-0.5 rounded text-[10px] font-black tracking-tighter uppercase">
@@ -266,14 +285,12 @@
                             </div>
                         </div>
                         <!-- Card 3: Moderate -->
-                        <div class="dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all group bg-[#1a1a1a]"
-                            style="background-color: #1a1a1a;">
+                        <div class="dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all group bg-[#1a1a1a] report-card-bg">
                             <div class="p-5 flex gap-5">
                                 <div
                                     class="w-32 h-32 rounded-lg bg-slate-100 dark:bg-primary/10 flex-shrink-0 relative overflow-hidden">
-                                    <div class="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-500"
-                                        data-alt="Modern office chair furniture item"
-                                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAlBGh1y-iJTL8kO04Iox87ZjBFAZY-8eZHh2_dYej41GXOnGtEfPWHWYQ3YyVDHx2ejR3df1fSMVik9sKcYFJ41HsvY_ppTwIK1WoEtEAn9siCOT_7odfXGgdO1ht_uSMUuVJ3mXJ4BTnluENMRz3OKEqp73HqYF16PyemLMsF_7WMwqJQDJlH9JwSkyP2mxjB7g12NujEgfW4Rn7unHsCeQJpxSJjwXlcyYiu8T9xvKb1iphWya4gRvo9RloRccVpxaqyq4B0TvOU')">
+                                    <div class="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-500 prod-bg-3"
+                                        data-alt="Modern office chair furniture item">
                                     </div>
                                     <div
                                         class="absolute top-2 right-2 bg-yellow-500 text-background-dark px-1.5 py-0.5 rounded text-[10px] font-black tracking-tighter uppercase">
@@ -314,14 +331,12 @@
                             </div>
                         </div>
                         <!-- Card 4: Verified -->
-                        <div class="dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all group bg-[#1a1a1a]"
-                            style="background-color: #1a1a1a;">
+                        <div class="dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all group bg-[#1a1a1a] report-card-bg">
                             <div class="p-5 flex gap-5">
                                 <div
                                     class="w-32 h-32 rounded-lg bg-slate-100 dark:bg-primary/10 flex-shrink-0 relative overflow-hidden">
-                                    <div class="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-500"
-                                        data-alt="Smartwatch fitness tracker tech device"
-                                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBKnDaLKdZW31OIg6bampbF5R3X7CJBIifwT2vtn740e3NcLUn-4bNbg7suCFOacaJLU3P8BYVoZfF48_bqEN14Vda3P_HedBXjh2r6a_IJ2KnO0hm_JuixSei36Y_6V1byHlJmONvGudZ9oIWJ3v01RhRNmr8qYPDEKck5KaOBcWlLJrsbqTE-NqtKBYzg987XmGNIYN42XYlgJluLXHZW22uDh_Dci-9OBYXhk-l9IDPY1YqHhBl0yqDYmu6304aw97IQ9KjrxlNr')">
+                                    <div class="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-500 prod-bg-4"
+                                        data-alt="Smartwatch fitness tracker tech device">
                                     </div>
                                     <div
                                         class="absolute top-2 right-2 bg-primary text-background-dark px-1.5 py-0.5 rounded text-[10px] font-black tracking-tighter">
@@ -403,7 +418,10 @@
                     const summary = item.summary || {};
                     const chartData = item.chart_data || {};
                     const total = (chartData.fake || 0) + (chartData.genuine || 0);
-                    const fakePct = total > 0 ? Math.round((chartData.fake / total) * 100) : 0;
+                    const scoreFromChart = typeof chartData.fake_score === 'number' ? chartData.fake_score : null;
+                    const scoreFromSummary = typeof summary.avg_fake_probability === 'number' ? summary.avg_fake_probability : null;
+                    const fallbackPct = total > 0 ? (chartData.fake / total) * 100 : 0;
+                    const fakePct = Math.max(0, Math.min(100, scoreFromChart ?? scoreFromSummary ?? fallbackPct));
                     const trustScore = 100 - fakePct;
                     const ts = item.timestamp ? new Date(item.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
                     const badge = trustScore >= 70 ? ['bg-primary', 'VERIFIED'] : trustScore >= 40 ? ['bg-yellow-500 text-black', 'MODERATE'] : ['bg-red-500', 'HIGH RISK'];
@@ -442,12 +460,12 @@
                 <div class="flex gap-4 items-center">
                   <div class="flex flex-col">
                     <span class="text-[9px] text-slate-500 uppercase font-bold">Trust</span>
-                    <span class="${scoreColor} text-lg font-black">${trustScore}%</span>
+                                        <span class="${scoreColor} text-lg font-black">${trustScore.toFixed(1)}%</span>
                   </div>
                   <div class="w-px h-7 bg-primary/10"></div>
                   <div class="flex flex-col">
-                    <span class="text-[9px] text-slate-500 uppercase font-bold">Fake</span>
-                    <span class="text-red-400 text-lg font-black">${fakePct}%</span>
+                                        <span class="text-[9px] text-slate-500 uppercase font-bold">Fake Risk</span>
+                                        <span class="text-red-400 text-lg font-black">${fakePct.toFixed(1)}%</span>
                   </div>
                   <div class="w-px h-7 bg-primary/10"></div>
                   <div class="flex flex-col">

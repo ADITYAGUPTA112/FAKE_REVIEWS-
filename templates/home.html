@@ -90,14 +90,14 @@
                                     </p>
                                 </div>
                                 <div class="flex flex-wrap gap-4">
-                                    <button
+                                    <a href="{{ url_for('analyze') }}"
                                         class="flex min-w-[160px] cursor-pointer items-center justify-center rounded-xl h-12 md:h-14 px-8 bg-primary text-background-dark text-base md:text-lg font-bold leading-normal shadow-[0_0_20px_rgba(68,237,38,0.3)] hover:shadow-[0_0_30px_rgba(68,237,38,0.5)] transition-all">
                                         <span class="truncate">Start Analysis</span>
-                                    </button>
-                                    <button
+                                    </a>
+                                    <a href="#how-it-works"
                                         class="flex min-w-[160px] cursor-pointer items-center justify-center rounded-xl h-12 md:h-14 px-8 bg-primary/10 border border-primary/30 text-primary text-base md:text-lg font-bold leading-normal hover:bg-primary/20 transition-all">
                                         <span class="truncate">How it works</span>
-                                    </button>
+                                    </a>
                                 </div>
                             </div>
                             <div class="w-full lg:w-1/2 flex justify-center">
@@ -106,6 +106,7 @@
                                     <div class="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent z-10">
                                     </div>
                                     <img class="w-full h-full object-cover grayscale opacity-80"
+                                        alt="AI dashboard preview"
                                         data-alt="Futuristic dashboard with data visualization and AI analysis charts"
                                         src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiOe1K5V1AK9dJfUcXNbM3gt5-_OPG6X1nkodou_YJH5cH3Z54o0DXwPC13IF8OlDMVxo5lPWn-4OPpsvxWHk4KP225pjtvaLk9sWrvd9JgtV4ILp4szniVyWuqaAeqWmlMgd-GJuLZhvIv2V4OsXarCr48J3eK5La05riNKLmPeJHxYERiA61cKqX_FmuHWwJ6-gBC2AaHhqWP3FueJuI7wtWY64in2KB7kcH-JhlXLy2S_c5ae5FzzZce68vCkwOcXju1a4eN6uW" />
                                 </div>
@@ -181,7 +182,7 @@
                         </div>
                     </div>
                     <!-- How It Works Section -->
-                    <div class="py-16 mb-20">
+                    <div class="py-16 mb-20" id="how-it-works">
                         <h2
                             class="text-slate-900 dark:text-white text-3xl font-black leading-tight tracking-tight mb-12 text-center">
                             How It Works</h2>

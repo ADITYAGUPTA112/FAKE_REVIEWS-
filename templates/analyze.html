@@ -42,6 +42,7 @@
         .glass-panel {
             background: #1a1a1a;
             border: 1px solid rgba(38, 237, 237, 0.1);
+            -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
         }
 
@@ -134,7 +135,7 @@
                         Logout
                     </a>
                     <div class="w-10 h-10 rounded-full bg-primary/20 border border-primary/40 overflow-hidden">
-                        <img class="w-full h-full object-cover" data-alt="User profile avatar placeholder"
+                        <img class="w-full h-full object-cover" alt="User profile avatar" data-alt="User profile avatar placeholder"
                             src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDgnPjA7r2W5CWosZDqPeHjZYmCgnPZ-0_xhdzD5GyD-uNWGDcuQKmUls3Mib1gPaPYypkoNJv0Bs9__rc1TiNnRi3kX9gBn1aM58Gvj9lbBVp2F1JYT-ffBIAmPHw1yKE_AV8opNZe4FznX6LNoXJledHsO-54QPHC3ijRfrqS5tRj9UTjECdUJgRPIeudKnALwCvO-UmovMOYLq4Uz8M8AkWO36Pyuj0jRhI--QTeGUmFprw0px4l-omqBImPhtN76Dft11mJOO4" />
                     </div>
                 </div>
@@ -208,10 +209,8 @@
                                 <span id="pd-fake-label" class="text-red-400">Fake: —</span>
                             </div>
                             <div class="w-full h-3 rounded-full bg-slate-800 overflow-hidden flex">
-                                <div id="pd-genuine-bar" class="h-full bg-primary transition-all duration-700"
-                                    style="width:0%"></div>
-                                <div id="pd-fake-bar" class="h-full bg-red-500 transition-all duration-700"
-                                    style="width:0%"></div>
+                                <div id="pd-genuine-bar" class="h-full w-0 bg-primary transition-all duration-700"></div>
+                                <div id="pd-fake-bar" class="h-full w-0 bg-red-500 transition-all duration-700"></div>
                             </div>
                         </div>
                     </div>
@@ -459,10 +458,19 @@
             reviewsSection.classList.remove('loading-hidden');
         }
 
+        function resolveRiskPercentages(chartData) {
+            if (typeof chartData.fake_score === 'number' && typeof chartData.genuine_score === 'number') {
+                const fakePct = Math.max(0, Math.min(100, Number(chartData.fake_score)));
+                return { fakePct, genPct: 100 - fakePct };
+            }
+            const total = (chartData.fake || 0) + (chartData.genuine || 0);
+            const fakePct = total > 0 ? +((chartData.fake / total) * 100).toFixed(1) : 0;
+            return { fakePct, genPct: 100 - fakePct };
+        }
+
         function showProductPanel(asin, chartData) {
             const total = (chartData.fake || 0) + (chartData.genuine || 0);
-            const fakePct = total > 0 ? ((chartData.fake / total) * 100).toFixed(1) : 0;
-            const genPct = 100 - parseFloat(fakePct);
+            const { fakePct, genPct } = resolveRiskPercentages(chartData);
 
             // Amazon image CDN (works for most ASINs without auth)
             productImg.src = `https://images-na.ssl-images-amazon.com/images/P/${asin}.01._SCLZZZZZZZ_.jpg`;
@@ -476,7 +484,7 @@
             productLink.textContent = `amazon.com/dp/${asin} ↗`;
 
             pdGenuineLabel.textContent = `Genuine: ${chartData.genuine || 0} reviews (${genPct.toFixed(1)}%)`;
-            pdFakeLabel.textContent = `Fake: ${chartData.fake || 0} reviews (${fakePct}%)`;
+            pdFakeLabel.textContent = `Fake Risk: ${fakePct.toFixed(1)}%`;
 
             // Animate bars after paint
             setTimeout(() => {
@@ -574,9 +582,7 @@
 
         function updateCharts(data) {
             const { chart_data, results } = data;
-            const total = (chart_data.fake || 0) + (chart_data.genuine || 0);
-            const fakePct = total > 0 ? +((chart_data.fake / total) * 100).toFixed(1) : 0;
-            const genPct = 100 - fakePct;
+            const { fakePct, genPct } = resolveRiskPercentages(chart_data);
             const trustScore = Math.round(genPct);
 
             // Update doughnut
@@ -609,12 +615,12 @@
         function renderStats(data) {
             const { summary, chart_data } = data;
             const total = (chart_data.fake || 0) + (chart_data.genuine || 0);
-            const fakePct = total > 0 ? ((chart_data.fake / total) * 100).toFixed(1) : 0;
+            const { fakePct } = resolveRiskPercentages(chart_data);
             const conf = summary ? (summary.confidence || summary.avg_confidence || 'N/A') : 'N/A';
 
             const cards = statsSection.querySelectorAll('.glass-panel');
             if (cards[0]) cards[0].querySelector('.text-3xl').textContent = total.toLocaleString();
-            if (cards[1]) { cards[1].querySelector('.text-3xl').textContent = `${fakePct}%`; cards[1].querySelector('.text-xs').textContent = parseFloat(fakePct) > 30 ? 'High Risk Detected' : 'Low Risk'; }
+            if (cards[1]) { cards[1].querySelector('.text-3xl').textContent = `${fakePct.toFixed(1)}%`; cards[1].querySelector('.text-xs').textContent = fakePct > 30 ? 'High Risk Detected' : 'Low Risk'; }
             if (cards[2]) cards[2].querySelector('.text-3xl').textContent = (chart_data.genuine || 0).toLocaleString();
             if (cards[3]) cards[3].querySelector('.text-3xl').textContent = conf !== 'N/A' ? `${parseFloat(conf).toFixed(1)}%` : 'N/A';
 
@@ -690,7 +696,7 @@
                 const res = await fetch('/api/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ asin, pages: 1 })
+                    body: JSON.stringify({ asin, pages: 10 })
                 });
                 const data = await res.json();
                 hideLoader(timer);
