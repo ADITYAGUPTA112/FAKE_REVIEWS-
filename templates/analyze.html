@@ -497,6 +497,7 @@
 
         // ── Chart instances (created once, updated on each analysis) ──
         let donutChart = null;
+        let histChart = null;
 
         function initCharts() {
             // ── Histogram: confidence score distribution ──
@@ -631,7 +632,10 @@
         function reviewCard(review, prediction, confidence, date, explanation) {
             const isFake = prediction === 'Fake';
             const tags = Array.isArray(explanation) ? explanation.slice(0, 3) : [];
-            const tagHtml = tags.map(t => `<span class="text-xs px-2 py-1 ${isFake ? 'bg-red-950/60 text-red-300 rounded-full border border-red-500/30' : 'bg-slate-800 text-primary/80 rounded-full border border-primary/20'}">${t}</span>`).join('');
+            const tagHtml = tags.map(t => {
+                const label = (t && typeof t === 'object') ? (t.word || '') : String(t || '');
+                return `<span class="text-xs px-2 py-1 ${isFake ? 'bg-red-950/60 text-red-300 rounded-full border border-red-500/30' : 'bg-slate-800 text-primary/80 rounded-full border border-primary/20'}">${label}</span>`;
+            }).join('');
             return `
     <div class="p-6 rounded-xl ${isFake ? 'review-fake' : 'review-genuine'}" style="${isFake ? 'background:rgba(239,68,68,0.09);' : 'background:#1a1a1a;'}">
       <div class="flex flex-col md:flex-row gap-6">
@@ -696,7 +700,7 @@
                 const res = await fetch('/api/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ asin, pages: 10 })
+                    body: JSON.stringify({ asin, pages: 15 })
                 });
                 const data = await res.json();
                 hideLoader(timer);

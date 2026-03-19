@@ -7,6 +7,17 @@ optimizer.pt
 rng_state.pth
 scheduler.pt
 
+# Large Model Directories
+model/
+roberta_checkpoints/
+models/
+roberta_logs/
+roberta_checkpoints/
+analysis_results.csv
+error.txt
+error_out.txt
+1.1.0
+
 # Python
 __pycache__/
 *.py[cod]
