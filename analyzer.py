@@ -180,8 +180,8 @@ def explain_review(text, label):
     if not MODELS_LOADED:
         return []
     try:
-        exp = explainer.explain_instance(text, get_prediction_probs,
-                                          num_features=5, num_samples=100)
+        exp = explainer.explain_instance(text, get_prediction_probs, labels=(0, 1),
+                                          num_features=5, num_samples=50)
         idx = 0 if label == "Fake" else 1
         return [{"word": w, "weight": float(wt)} for w, wt in exp.as_list(label=idx)]
     except Exception as e:

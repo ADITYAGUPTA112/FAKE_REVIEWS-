@@ -700,7 +700,7 @@
                 const res = await fetch('/api/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ asin, pages: 15 })
+                    body: JSON.stringify({ asin, pages: 50 })
                 });
                 const data = await res.json();
                 hideLoader(timer);
