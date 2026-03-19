@@ -181,7 +181,7 @@ def explain_review(text: str, label: str):
         return []
     try:
         exp = explainer.explain_instance(
-            text, get_prediction_probs, num_features=5, num_samples=100
+            text, get_prediction_probs, labels=(0, 1), num_features=5, num_samples=50
         )
         target_idx = 0 if label == "Fake" else 1
         return [{"word": w, "weight": float(wt)}
