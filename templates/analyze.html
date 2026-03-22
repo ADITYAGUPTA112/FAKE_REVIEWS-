@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html class="dark" lang="en">
 
@@ -46,7 +46,7 @@
             backdrop-filter: blur(10px);
         }
 
-        /* ── Fake review red highlight ── */
+        /* â”€â”€ Fake review red highlight â”€â”€ */
         .review-fake {
             background: rgba(239, 68, 68, 0.09) !important;
             border: 1px solid rgba(239, 68, 68, 0.35) !important;
@@ -182,7 +182,7 @@
             </div>
         </div>
 
-        <!-- ── Product Details Panel (shown after analysis) ── -->
+        <!-- â”€â”€ Product Details Panel (shown after analysis) â”€â”€ -->
         <div class="loading-hidden mb-8" id="product-panel">
             <div class="glass-panel rounded-xl border border-primary/20 p-6">
                 <div class="flex flex-col md:flex-row gap-6 items-start">
@@ -198,15 +198,30 @@
                             <span class="text-xs text-slate-400 uppercase tracking-widest font-bold">Amazon
                                 Product</span>
                         </div>
-                        <h2 class="text-xl font-bold mb-1" id="product-asin-title">ASIN: —</h2>
+                        <h2 class="text-xl font-bold mb-1" id="product-title">Product: â€”</h2>
+                        <p class="text-xs text-slate-400 mb-1" id="product-asin-title">ASIN: â€”</p>
                         <a id="product-link" href="#" target="_blank"
                             class="text-xs text-primary/70 hover:text-primary underline underline-offset-2 transition-colors mb-4 inline-block">Open
-                            on Amazon ↗</a>
+                            on Amazon â†—</a>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-300 mb-3">
+                            <div class="rounded-lg border border-primary/20 bg-slate-900/40 px-3 py-2">
+                                <span class="text-slate-400">Marketplace:</span>
+                                <span class="font-semibold ml-1" id="product-marketplace">-</span>
+                            </div>
+                            <div class="rounded-lg border border-primary/20 bg-slate-900/40 px-3 py-2">
+                                <span class="text-slate-400">Rating:</span>
+                                <span class="font-semibold ml-1" id="product-rating-meta">-</span>
+                            </div>
+                            <div class="rounded-lg border border-primary/20 bg-slate-900/40 px-3 py-2">
+                                <span class="text-slate-400">Global Ratings:</span>
+                                <span class="font-semibold ml-1" id="product-ratings-total-meta">-</span>
+                            </div>
+                        </div>
                         <!-- Fake vs Genuine Bar -->
                         <div class="mt-3">
                             <div class="flex justify-between text-xs text-slate-400 mb-1">
-                                <span id="pd-genuine-label">Genuine: —</span>
-                                <span id="pd-fake-label" class="text-red-400">Fake: —</span>
+                                <span id="pd-genuine-label">Genuine: â€”</span>
+                                <span id="pd-fake-label" class="text-red-400">Fake: â€”</span>
                             </div>
                             <div class="w-full h-3 rounded-full bg-slate-800 overflow-hidden flex">
                                 <div id="pd-genuine-bar" class="h-full w-0 bg-primary transition-all duration-700"></div>
@@ -221,37 +236,122 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="stats-dashboard">
             <div class="glass-panel p-6 rounded-xl border-l-4 border-l-primary">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Reviews</span>
-                    <span class="material-symbols-outlined text-primary/60">reviews</span>
+                    <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Genuine Score</span>
+                    <span class="material-symbols-outlined text-primary/60">verified</span>
                 </div>
-                <div class="text-3xl font-bold">12,482</div>
-                <div class="text-xs text-primary mt-1">+124 from yesterday</div>
+                <div class="text-3xl font-bold" id="stat-total-reviews">0%</div>
+                <div class="text-xs text-primary mt-1" id="stat-total-diff">Authentic likelihood</div>
             </div>
             <div class="glass-panel p-6 rounded-xl border-l-4 border-l-red-500">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Fake Review %</span>
+                    <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Fake Score</span>
                     <span class="material-symbols-outlined text-red-500/60">warning</span>
                 </div>
-                <div class="text-3xl font-bold text-red-500">24.8%</div>
-                <div class="text-xs text-slate-400 mt-1">High Risk Detected</div>
+                <div class="text-3xl font-bold text-red-500" id="stat-fraud-risk">24.8%</div>
+                <div class="text-xs text-slate-400 mt-1" id="stat-risk-label">Suspicious likelihood</div>
             </div>
             <div class="glass-panel p-6 rounded-xl border-l-4 border-l-blue-500">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Genuine Reviews</span>
+                    <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Model Confidence</span>
                     <span class="material-symbols-outlined text-blue-500/60">verified</span>
                 </div>
-                <div class="text-3xl font-bold text-blue-500">9,386</div>
-                <div class="text-xs text-slate-400 mt-1">Verified patterns</div>
+                <div class="text-3xl font-bold text-blue-500" id="stat-genuine-count">0%</div>
+                <div class="text-xs text-slate-400 mt-1">Prediction confidence</div>
             </div>
-            <div class="glass-panel p-6 rounded-xl border-l-4 border-l-primary">
+            <div class="glass-panel p-6 rounded-xl border-l-4 border-l-amber-500">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">AI Confidence</span>
-                    <span class="material-symbols-outlined text-primary/60">psychology</span>
+                    <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Review Rings</span>
+                    <span class="material-symbols-outlined text-amber-500/60">hub</span>
                 </div>
-                <div class="text-3xl font-bold">98.2%</div>
-                <div class="text-xs text-primary mt-1">Advanced Neural Analysis</div>
+                <div class="text-3xl font-bold text-amber-500" id="stat-ring-count">0</div>
+                <div class="text-xs text-slate-400 mt-1" id="stat-ring-label">Suspicious clusters</div>
             </div>
         </div>
+
+        <!-- Advanced Insights Section -->
+        <section class="loading-hidden mb-12" id="advanced-insights-section">
+            <h2 class="text-2xl font-bold mb-6">Advanced Analysis Insights</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Behavior Insights -->
+                <div class="glass-panel p-6 rounded-xl border border-primary/20">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="material-symbols-outlined text-primary">groups</span>
+                        <h3 class="font-bold">Reviewer Behavior</h3>
+                    </div>
+                    <div id="behavior-stats-container" class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-slate-400">High Velocity Bots</span>
+                            <span class="px-2 py-0.5 rounded bg-red-500/10 text-red-500 text-xs font-bold border border-red-500/20" id="val-velocity">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-slate-400">Dormant Bursts</span>
+                            <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 text-xs font-bold border border-amber-500/20" id="val-burst">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-slate-400">Extreme Patters</span>
+                            <span class="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-bold border border-primary/20" id="val-pattern">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sentiment Integrity -->
+                <div class="glass-panel p-6 rounded-xl border border-primary/20">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="material-symbols-outlined text-primary">sentiment_dissatisfied</span>
+                        <h3 class="font-bold">Sentiment Integrity</h3>
+                    </div>
+                    <div class="text-center py-2">
+                        <div class="text-4xl font-bold text-red-400 mb-1" id="val-mismatch-pct">0%</div>
+                        <p class="text-xs text-slate-500 uppercase tracking-widest">Rating Mismatches</p>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-4 italic leading-relaxed">Reviews where text emotional tone contradicts the star rating.</p>
+                </div>
+
+                <!-- Trust Graph Overview -->
+                <div class="glass-panel p-6 rounded-xl border border-primary/20">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="material-symbols-outlined text-primary">account_tree</span>
+                        <h3 class="font-bold">Trust Network</h3>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-slate-400">Network Nodes</span>
+                            <span class="font-bold" id="graph-nodes">0</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-slate-400">Edges (Reviews)</span>
+                            <span class="font-bold" id="graph-edges">0</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-slate-400">Max Cluster Score</span>
+                            <span class="font-bold text-amber-500" id="graph-cluster-score">0.0</span>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-4 italic" id="network-v2-status">Realtime network detector idle.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Product Intelligence Updates -->
+        <section class="loading-hidden mb-12" id="recent-updates-section">
+            <h2 class="text-2xl font-bold mb-6">Recent Product Intelligence</h2>
+            <div class="grid grid-cols-1 gap-6">
+                <div class="glass-panel p-6 rounded-xl border border-primary/20">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">timeline</span>
+                            <h3 class="font-bold">12-Month Trust Trend</h3>
+                        </div>
+                        <span id="trend-status" class="text-xs text-slate-400">No data yet</span>
+                    </div>
+                    <div class="h-64">
+                        <canvas id="trust-trend-chart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
         <!-- Visual Analytics Section -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12" id="visual-analytics">
             <!-- Fake vs Genuine Doughnut -->
@@ -405,7 +505,7 @@
                 <a class="hover:text-primary" href="#">API Documentation</a>
                 <a class="hover:text-primary" href="#">Contact Support</a>
             </div>
-            <p class="text-[10px] text-slate-600 uppercase tracking-widest">© 2026 TrustLens AI. All rights reserved.
+            <p class="text-[10px] text-slate-600 uppercase tracking-widest">Â© 2026 TrustLens AI. All rights reserved.
             </p>
         </div>
     </footer>
@@ -427,11 +527,16 @@
             return m ? m[1] : input.trim();
         }
 
+        const advancedInsightsSection = document.getElementById('advanced-insights-section');
+        const recentUpdatesSection = document.getElementById('recent-updates-section');
+
         function showLoader() {
             searchSection.classList.add('loading-hidden');
             statsSection.classList.add('loading-hidden');
             visualSection.classList.add('loading-hidden');
             reviewsSection.classList.add('loading-hidden');
+            advancedInsightsSection.classList.add('loading-hidden');
+            recentUpdatesSection.classList.add('loading-hidden');
             loadingState.classList.remove('loading-hidden');
             progressBar.classList.remove('animate-progress');
             void progressBar.offsetWidth;
@@ -442,8 +547,12 @@
 
         const productPanel = document.getElementById('product-panel');
         const productImg = document.getElementById('product-img');
+        const productTitle = document.getElementById('product-title');
         const productAsinTitle = document.getElementById('product-asin-title');
         const productLink = document.getElementById('product-link');
+        const productMarketplace = document.getElementById('product-marketplace');
+        const productRatingMeta = document.getElementById('product-rating-meta');
+        const productRatingsTotalMeta = document.getElementById('product-ratings-total-meta');
         const pdGenuineLabel = document.getElementById('pd-genuine-label');
         const pdFakeLabel = document.getElementById('pd-fake-label');
         const pdGenuineBar = document.getElementById('pd-genuine-bar');
@@ -456,6 +565,8 @@
             statsSection.classList.remove('loading-hidden');
             visualSection.classList.remove('loading-hidden');
             reviewsSection.classList.remove('loading-hidden');
+            advancedInsightsSection.classList.remove('loading-hidden');
+            recentUpdatesSection.classList.remove('loading-hidden');
         }
 
         function resolveRiskPercentages(chartData) {
@@ -468,23 +579,51 @@
             return { fakePct, genPct: 100 - fakePct };
         }
 
-        function showProductPanel(asin, chartData) {
-            const total = (chartData.fake || 0) + (chartData.genuine || 0);
+        function showProductPanel(asin, chartData, summary = {}, rawInput = '') {
             const { fakePct, genPct } = resolveRiskPercentages(chartData);
+            const title = (summary && summary.product_title) ? String(summary.product_title) : `Amazon Product (${asin})`;
+            const ratingValue = summary ? summary.product_rating : null;
+            const ratingRaw = (() => {
+                if (ratingValue === null || ratingValue === undefined || String(ratingValue).trim() === "") return NaN;
+                const m = String(ratingValue).match(/[\d.]+/);
+                return m ? Number(m[0]) : NaN;
+            })();
+            const ratingsTotal = (() => {
+                const value = summary ? summary.product_reviews_total : null;
+                if (value === null || value === undefined || String(value).trim() === "") return NaN;
+                const m = String(value).replace(/,/g, "").match(/\d+/);
+                return m ? Number(m[0]) : NaN;
+            })();
+            let marketplaceHost = 'amazon.com';
+            try {
+                if (rawInput && /^https?:\/\//i.test(rawInput)) {
+                    marketplaceHost = new URL(rawInput).hostname.replace(/^www\./i, '');
+                }
+            } catch (e) { }
+
+            productTitle.textContent = title;
+            productAsinTitle.textContent = `ASIN: ${asin}`;
+            productMarketplace.textContent = marketplaceHost;
+            productRatingMeta.textContent = Number.isFinite(ratingRaw) ? `${ratingRaw.toFixed(1)} / 5.0` : '-';
+            productRatingsTotalMeta.textContent = Number.isFinite(ratingsTotal) && ratingsTotal > 0
+                ? ratingsTotal.toLocaleString()
+                : '-';
 
             // Amazon image CDN (works for most ASINs without auth)
-            productImg.src = `https://images-na.ssl-images-amazon.com/images/P/${asin}.01._SCLZZZZZZZ_.jpg`;
+            const summaryImage = (summary && summary.product_image) ? String(summary.product_image).trim() : '';
+            productImg.src = summaryImage || `https://images-na.ssl-images-amazon.com/images/P/${asin}.01._SCLZZZZZZZ_.jpg`;
             productImg.onerror = () => {
                 productImg.src = `https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=${asin}&Format=_AC_SL160_`;
                 productImg.onerror = () => { productImg.style.display = 'none'; };
             };
-            productAsinTitle.textContent = `ASIN: ${asin}`;
-            const amzUrl = `https://www.amazon.com/dp/${asin}`;
+            const amzUrl = (rawInput && /amazon\./i.test(rawInput))
+                ? rawInput
+                : `https://www.${marketplaceHost}/dp/${asin}`;
             productLink.href = amzUrl;
-            productLink.textContent = `amazon.com/dp/${asin} ↗`;
+            productLink.textContent = `${marketplaceHost}/dp/${asin} â†—`;
 
-            pdGenuineLabel.textContent = `Genuine: ${chartData.genuine || 0} reviews (${genPct.toFixed(1)}%)`;
-            pdFakeLabel.textContent = `Fake Risk: ${fakePct.toFixed(1)}%`;
+            pdGenuineLabel.textContent = `Genuine: ${genPct.toFixed(1)}%`;
+            pdFakeLabel.textContent = `Fake: ${fakePct.toFixed(1)}%`;
 
             // Animate bars after paint
             setTimeout(() => {
@@ -495,14 +634,15 @@
             productPanel.classList.remove('loading-hidden');
         }
 
-        // ── Chart instances (created once, updated on each analysis) ──
+        // â”€â”€ Chart instances (created once, updated on each analysis) â”€â”€
         let donutChart = null;
         let histChart = null;
+        let trustTrendChart = null;
 
         function initCharts() {
-            // ── Histogram: confidence score distribution ──
+            // â”€â”€ Histogram: confidence score distribution â”€â”€
             const hCtx = document.getElementById('histogram-chart').getContext('2d');
-            const bins = ['0–10', '10–20', '20–30', '30–40', '40–50', '50–60', '60–70', '70–80', '80–90', '90–100'];
+            const bins = ['0â€“10', '10â€“20', '20â€“30', '30â€“40', '40â€“50', '50â€“60', '60â€“70', '70â€“80', '80â€“90', '90â€“100'];
             histChart = new Chart(hCtx, {
                 type: 'bar',
                 data: {
@@ -555,7 +695,7 @@
                 }
             });
 
-            // ── Doughnut: Fake vs Genuine ──
+            // â”€â”€ Doughnut: Fake vs Genuine â”€â”€
             const dCtx = document.getElementById('donut-chart').getContext('2d');
             donutChart = new Chart(dCtx, {
                 type: 'doughnut',
@@ -579,21 +719,166 @@
                     animation: { duration: 800, easing: 'easeInOutQuart' }
                 }
             });
+
+            const tCtx = document.getElementById('trust-trend-chart').getContext('2d');
+            trustTrendChart = new Chart(tCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Trust Score',
+                            data: [],
+                            borderColor: '#26eded',
+                            backgroundColor: 'rgba(38,237,237,0.15)',
+                            tension: 0.25,
+                            pointRadius: 3,
+                            spanGaps: true
+                        },
+                        {
+                            label: 'Fraud Risk',
+                            data: [],
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239,68,68,0.12)',
+                            tension: 0.25,
+                            pointRadius: 3,
+                            spanGaps: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8', boxWidth: 10 } }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#64748b', font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.06)' }
+                        },
+                        y: {
+                            min: 0,
+                            max: 100,
+                            ticks: { color: '#64748b', font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.08)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function updateTrustTrend(productId, platform = 'amazon', fallbackFraudScore = null) {
+            const status = document.getElementById('trend-status');
+            if (!productId) {
+                status.textContent = 'Missing product id';
+                return;
+            }
+            status.textContent = 'Loading...';
+            try {
+                const res = await fetch(`/api/trust-history?product_id=${encodeURIComponent(productId)}&platform=${encodeURIComponent(platform)}&months=12`);
+                const data = await res.json();
+                if (!res.ok || data.error) throw new Error(data.error || 'Failed to fetch trend');
+                const history = data.history || [];
+                const hasPoints = history.some(h =>
+                    h && (
+                        (h.trust_score !== null && h.trust_score !== undefined) ||
+                        (h.fraud_score !== null && h.fraud_score !== undefined)
+                    )
+                );
+                if (hasPoints) {
+                    trustTrendChart.data.labels = history.map(h => h.month || '');
+                    trustTrendChart.data.datasets[0].data = history.map(h => h.trust_score);
+                    trustTrendChart.data.datasets[1].data = history.map(h => h.fraud_score);
+                    trustTrendChart.update();
+                    status.textContent = 'Updated';
+                    return;
+                }
+                throw new Error('No non-null history points');
+            } catch (err) {
+                if (Number.isFinite(Number(fallbackFraudScore))) {
+                    const now = new Date();
+                    const mm = String(now.getMonth() + 1).padStart(2, '0');
+                    const label = `${now.getFullYear()}-${mm}`;
+                    const fraud = Math.max(0, Math.min(100, Number(fallbackFraudScore)));
+                    trustTrendChart.data.labels = [label];
+                    trustTrendChart.data.datasets[0].data = [100 - fraud];
+                    trustTrendChart.data.datasets[1].data = [fraud];
+                    trustTrendChart.update();
+                    status.textContent = 'Using current run only';
+                } else {
+                    status.textContent = 'No history yet';
+                }
+            }
+        }
+
+        async function refreshReviewerNetworkRealtime(data, asin) {
+            const statusEl = document.getElementById('network-v2-status');
+            try {
+                if (!data || !data.results || !data.results.review || !data.results.review.length) {
+                    statusEl.textContent = 'Realtime network detector: no data';
+                    return;
+                }
+                const rows = data.results.review.map((review, i) => {
+                    const rawUser = (data.results.user_name && data.results.user_name[i]) ? String(data.results.user_name[i]).trim() : '';
+                    return {
+                        user_id: rawUser && rawUser.toLowerCase() !== 'unknown' ? rawUser : `anon_${i + 1}`,
+                        product_id: asin,
+                        timestamp: (data.results.date && data.results.date[i]) ? data.results.date[i] : new Date().toISOString(),
+                        rating: 5
+                    };
+                });
+
+                const uniqueUsers = [...new Set(rows.map(r => r.user_id))];
+                if (uniqueUsers.length < 3) {
+                    statusEl.textContent = 'Realtime detector: limited user identities';
+                    return;
+                }
+                const res = await fetch('/api/reviewer-network', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        reviews: rows,
+                        min_nodes: 3,
+                        min_density: 0.35,
+                        min_shared_products: 1,
+                        min_co_review_events: 1,
+                        time_window: '72h'
+                    })
+                });
+                const network = await res.json();
+                if (!res.ok || network.error) throw new Error(network.error || 'Network API failed');
+                const summary = network.graph_summary || {};
+                const clusters = network.suspicious_clusters || [];
+                document.getElementById('graph-nodes').textContent = summary.total_nodes || 0;
+                document.getElementById('graph-edges').textContent = summary.total_edges || 0;
+                document.getElementById('stat-ring-count').textContent = clusters.length;
+                const maxScore = clusters.length ? Math.max(...clusters.map(c => Number(c.risk_score || 0))) : 0;
+                document.getElementById('graph-cluster-score').textContent = (maxScore / 100).toFixed(2);
+                statusEl.textContent = clusters.length
+                    ? `Realtime detector flagged ${clusters.length} cluster(s)`
+                    : 'Realtime detector found no suspicious clusters';
+            } catch (err) {
+                statusEl.textContent = 'Realtime network detector unavailable';
+            }
         }
 
         function updateCharts(data) {
-            const { chart_data, results } = data;
+            const { chart_data, results, advanced_analysis } = data;
             const { fakePct, genPct } = resolveRiskPercentages(chart_data);
-            const trustScore = Math.round(genPct);
+            
+            // Use combined score if available
+            const fraudScore = (advanced_analysis && advanced_analysis.combined_fraud_score) ? advanced_analysis.combined_fraud_score : fakePct;
+            const trustScore = Math.round(100 - fraudScore);
 
             // Update doughnut
-            donutChart.data.datasets[0].data = [genPct, fakePct];
+            donutChart.data.datasets[0].data = [100 - fraudScore, fraudScore];
             donutChart.update();
             document.getElementById('donut-center-score').textContent = trustScore;
             document.getElementById('donut-center-label').textContent =
                 trustScore >= 80 ? 'Trusted' : trustScore >= 55 ? 'Fair' : 'High Risk';
             document.getElementById('donut-caption').textContent =
-                `${chart_data.genuine || 0} genuine · ${chart_data.fake || 0} fake`;
+                `Genuine ${(100 - fraudScore).toFixed(1)}% · Fake ${fraudScore.toFixed(1)}%`;
 
             // Build histogram bins
             if (results && results.review) {
@@ -611,41 +896,105 @@
             }
         }
 
+        function renderAdvancedInsights(data) {
+            const adv = data.advanced_analysis || {};
+            const quality = adv.data_quality || {};
+            const totalReviews = (data.results && data.results.review) ? data.results.review.length : 0;
+            
+            // 1. Behavior
+            let vel = 0, burst = 0, pattern = 0;
+            if (adv.behavior_anomalies) {
+                Object.values(adv.behavior_anomalies).forEach(u => {
+                    if (u.velocity_flag) vel++;
+                    if (u.dormant_burst) burst++;
+                    if (u.rating_pattern_flag) pattern++;
+                });
+            }
+            document.getElementById('val-velocity').textContent = vel;
+            document.getElementById('val-burst').textContent = burst;
+            document.getElementById('val-pattern').textContent = pattern;
+
+            // 2. Sentiment Mismatch
+            let mismatches = 0;
+            if (adv.sentiment_mismatches) {
+                mismatches = adv.sentiment_mismatches.filter(m => m.is_mismatch).length;
+            }
+            const mismatchPct = totalReviews > 0 ? ((mismatches / totalReviews) * 100).toFixed(1) : '0.0';
+            document.getElementById('val-mismatch-pct').textContent = `${mismatchPct}%`;
+
+            // 3. Graph
+            const rings = adv.review_rings || {};
+            const netStatus = document.getElementById('network-v2-status');
+            document.getElementById('stat-ring-count').textContent = (rings.suspicious_clusters || []).length;
+            document.getElementById('graph-nodes').textContent = (rings.graph_summary && rings.graph_summary.total_users) || 0;
+            document.getElementById('graph-edges').textContent = (rings.graph_summary && rings.graph_summary.total_edges) || 0;
+            document.getElementById('graph-cluster-score').textContent = Number(rings.overall_graph_score || 0).toFixed(2);
+            if (rings.note) {
+                netStatus.textContent = rings.note;
+            } else if (quality.network_reliable === false) {
+                netStatus.textContent = 'Estimated from limited reviewer identity data';
+            }
+        }
+
         // Initialise charts on page load
         initCharts();
         function renderStats(data) {
-            const { summary, chart_data } = data;
-            const total = (chart_data.fake || 0) + (chart_data.genuine || 0);
+            const { summary, chart_data, advanced_analysis } = data;
             const { fakePct } = resolveRiskPercentages(chart_data);
-            const conf = summary ? (summary.confidence || summary.avg_confidence || 'N/A') : 'N/A';
+            const quality = (advanced_analysis && advanced_analysis.data_quality) ? advanced_analysis.data_quality : {};
+            const coverageWarning = data.warning || (summary && summary.coverage_warning);
+            
+            // Use combined risk score
+            const fraudRisk = (advanced_analysis && advanced_analysis.combined_fraud_score) ? advanced_analysis.combined_fraud_score : fakePct;
+            const genuineRisk = Math.max(0, 100 - fraudRisk);
+            const conf = summary ? Number(summary.confidence || summary.avg_confidence || NaN) : NaN;
 
-            const cards = statsSection.querySelectorAll('.glass-panel');
-            if (cards[0]) cards[0].querySelector('.text-3xl').textContent = total.toLocaleString();
-            if (cards[1]) { cards[1].querySelector('.text-3xl').textContent = `${fakePct.toFixed(1)}%`; cards[1].querySelector('.text-xs').textContent = fakePct > 30 ? 'High Risk Detected' : 'Low Risk'; }
-            if (cards[2]) cards[2].querySelector('.text-3xl').textContent = (chart_data.genuine || 0).toLocaleString();
-            if (cards[3]) cards[3].querySelector('.text-3xl').textContent = conf !== 'N/A' ? `${parseFloat(conf).toFixed(1)}%` : 'N/A';
+            document.getElementById('stat-total-reviews').textContent = `${genuineRisk.toFixed(1)}%`;
+            document.getElementById('stat-fraud-risk').textContent = `${fraudRisk.toFixed(1)}%`;
+            document.getElementById('stat-risk-label').textContent = 'Suspicious likelihood';
+            document.getElementById('stat-genuine-count').textContent = Number.isFinite(conf) ? `${conf.toFixed(1)}%` : 'N/A';
+            if (coverageWarning) {
+                document.getElementById('stat-total-diff').textContent = coverageWarning;
+            } else {
+                document.getElementById('stat-total-diff').textContent =
+                    quality.sample_size_warning ? 'Low sample size' : 'Authentic likelihood';
+            }
 
             // Update Chart.js charts with real data
             updateCharts(data);
+            renderAdvancedInsights(data);
         }
 
-        function reviewCard(review, prediction, confidence, date, explanation) {
+        function reviewCard(review, prediction, confidence, date, explanation, behavioralResults, sentimentMismatch) {
             const isFake = prediction === 'Fake';
-            const tags = Array.isArray(explanation) ? explanation.slice(0, 3) : [];
-            const tagHtml = tags.map(t => {
+            
+            // Create tags from LIME explanation
+            let tags = Array.isArray(explanation) ? explanation.slice(0, 3) : [];
+            let tagHtml = tags.map(t => {
                 const label = (t && typeof t === 'object') ? (t.word || '') : String(t || '');
                 return `<span class="text-xs px-2 py-1 ${isFake ? 'bg-red-950/60 text-red-300 rounded-full border border-red-500/30' : 'bg-slate-800 text-primary/80 rounded-full border border-primary/20'}">${label}</span>`;
             }).join('');
+
+            // Add behavioral tags if user is flagged
+            if (behavioralResults) {
+                if (behavioralResults.velocity_flag) 
+                    tagHtml += `<span class="text-xs px-2 py-1 bg-amber-950/60 text-amber-300 rounded-full border border-amber-500/30">High Velocity Bot</span>`;
+                if (behavioralResults.dormant_burst)
+                    tagHtml += `<span class="text-xs px-2 py-1 bg-amber-950/60 text-amber-300 rounded-full border border-amber-500/30">Dormant Burst</span>`;
+            }
+
             return `
     <div class="p-6 rounded-xl ${isFake ? 'review-fake' : 'review-genuine'}" style="${isFake ? 'background:rgba(239,68,68,0.09);' : 'background:#1a1a1a;'}">
       <div class="flex flex-col md:flex-row gap-6">
         <div class="flex-grow">
-          <div class="flex items-center gap-3 mb-3">
+          <div class="flex items-center flex-wrap gap-3 mb-3">
             ${isFake
                     ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-600 text-white text-[10px] font-bold uppercase tracking-wider">&#xe002; Fake Review</span>`
                     : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary text-black text-[10px] font-bold uppercase tracking-wider">&#xe86c; Genuine</span>`
                 }
-            <span class="text-sm text-slate-500">${date || ''}</span>
+            ${sentimentMismatch ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 text-black text-[10px] font-bold uppercase tracking-wider">&#xe002; Rating Mismatch</span>` : ''}
+            ${(behavioralResults && behavioralResults.behavior_score > 0) ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-400 text-black text-[10px] font-bold uppercase tracking-wider">&#xef64; Bot Behavior</span>` : ''}
+            <span class="text-sm text-slate-500 ml-auto">${date || ''}</span>
           </div>
           <p class="text-sm leading-relaxed mb-4" style="color:${isFake ? '#fca5a5' : '#cbd5e1'}">${review}</p>
           <div class="flex flex-wrap gap-2">${tagHtml}</div>
@@ -656,32 +1005,38 @@
           <div class="w-full bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
             <div style="width:${confidence}%;height:100%;background:${isFake ? '#ef4444' : '#26eded'}"></div>
           </div>
-          ${isFake ? '<div style="margin-top:8px;font-size:10px;color:#f87171;font-weight:700;text-transform:uppercase;letter-spacing:0.1em">⚠ Suspicious</div>' : ''}
+          ${isFake ? '<div style="margin-top:8px;font-size:10px;color:#f87171;font-weight:700;text-transform:uppercase;letter-spacing:0.1em">âš  Suspicious</div>' : ''}
         </div>
       </div>
     </div>`;
         }
 
         function renderReviews(data) {
-            const { results } = data;
+            const { results, advanced_analysis } = data;
             if (!results || !results.review || results.review.length === 0) return;
             const container = reviewsSection.querySelector('.grid.grid-cols-1.gap-6');
             if (!container) return;
 
-            const pageSize = 10;
-            container.innerHTML = results.review.slice(0, pageSize).map((r, i) =>
-                reviewCard(r, results.prediction[i], results.confidence[i], results.date[i], results.explanation[i])
-            ).join('');
+            const behaviorMap = (advanced_analysis && advanced_analysis.behavior_anomalies) ? advanced_analysis.behavior_anomalies : {};
+            const mismatches = (advanced_analysis && advanced_analysis.sentiment_mismatches) ? advanced_analysis.sentiment_mismatches : [];
 
-            // Use the uniquely-id'd button — avoids accidentally selecting Sort/Filter buttons
+            const pageSize = 10;
+            const getCardHtml = (limit) => results.review.slice(0, limit).map((r, i) => {
+                const user = results.user_name ? results.user_name[i] : null; // We need to make sure user_name is in results
+                const bRes = behaviorMap[user] || null;
+                const mMismatach = mismatches[i] ? mismatches[i].is_mismatch : false;
+                return reviewCard(r, results.prediction[i], results.confidence[i], results.date[i], results.explanation[i], bRes, mMismatach);
+            }).join('');
+
+            container.innerHTML = getCardHtml(pageSize);
+
+            // Use the uniquely-id'd button â€” avoids accidentally selecting Sort/Filter buttons
             const more = document.getElementById('load-more-btn');
             if (more) {
                 if (results.review.length > pageSize) {
                     more.classList.remove('hidden');
                     more.onclick = () => {
-                        container.innerHTML = results.review.map((r, i) =>
-                            reviewCard(r, results.prediction[i], results.confidence[i], results.date[i], results.explanation[i])
-                        ).join('');
+                        container.innerHTML = getCardHtml(results.review.length);
                         more.classList.add('hidden');
                     };
                 } else {
@@ -694,13 +1049,19 @@
             const raw = urlInput.value.trim();
             if (!raw) { urlInput.focus(); return; }
             const asin = extractAsin(raw);
+            const productRef = /amazon\./i.test(raw) ? raw : asin;
+            const reviewLimit = 10000;
             const timer = showLoader();
 
             try {
                 const res = await fetch('/api/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ asin, pages: 50 })
+                    body: JSON.stringify({
+                        asin: productRef,
+                        review_limit: reviewLimit,
+                        pages: Math.ceil(reviewLimit / 10)
+                    })
                 });
                 const data = await res.json();
                 hideLoader(timer);
@@ -711,7 +1072,15 @@
                 }
                 renderStats(data);
                 renderReviews(data);
-                showProductPanel(asin, data.chart_data);
+                showProductPanel(asin, data.chart_data, data.summary || {}, raw);
+                const chartFraud = data.chart_data && Number.isFinite(Number(data.chart_data.fake_score))
+                    ? Number(data.chart_data.fake_score)
+                    : 0;
+                const advFraud = data.advanced_analysis && Number.isFinite(Number(data.advanced_analysis.combined_fraud_score))
+                    ? Number(data.advanced_analysis.combined_fraud_score)
+                    : chartFraud;
+                await updateTrustTrend(asin, 'amazon', advFraud);
+                await refreshReviewerNetworkRealtime(data, asin);
             } catch (e) {
                 hideLoader(timer);
                 alert('Analysis failed: ' + e.message);
@@ -721,3 +1090,4 @@
 </body>
 
 </html>
+
