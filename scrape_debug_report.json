@@ -1,0 +1,102 @@
+{
+  "run_at": "2026-03-23T06:02:11.236752+00:00",
+  "target": "https://www.amazon.in/dp/B08N5WRWNW",
+  "output_csv": "C:\\fake reviews\\scraped_training_reviews.csv",
+  "product": {
+    "title": "Apple 2020 MacBook Pro (13.3-inch/33.78 cm, M1 chip with 8\u2011core CPU and 8\u2011core GPU, 8GB RAM, 512GB SSD) - Space Grey",
+    "thumbnail": "https://m.media-amazon.com/images/I/313CFbI-YjL._SX342_SY445_QL70_ML2_.jpg",
+    "rating": 4.6,
+    "reviews_total": 868
+  },
+  "rows_written": 14,
+  "diagnostics": {
+    "target": "https://www.amazon.in/dp/B08N5WRWNW",
+    "started_at": "2026-03-23T06:01:22.419743+00:00",
+    "sources": [
+      {
+        "source": "metadata@amazon.in",
+        "status": "ok",
+        "count": 6,
+        "duration_sec": 5.11,
+        "error": "",
+        "title": "Apple 2020 MacBook Pro (13.3-inch/33.78 cm, M1 chip with 8\u2011core CPU and 8\u2011core GPU, 8GB RAM, 512GB SSD) - Space Grey",
+        "reviews_total": 868,
+        "logs": ""
+      },
+      {
+        "source": "scrapingdog",
+        "status": "skipped",
+        "count": 0,
+        "duration_sec": 0.0,
+        "error": "SCRAPINGDOG_KEY not set."
+      },
+      {
+        "source": "serpapi_probe",
+        "status": "error",
+        "count": 0,
+        "duration_sec": 1.504,
+        "error": "Unsupported `amazon_reviews` search engine.",
+        "hint": "Your SerpAPI account/region does not support engine=amazon_reviews. Use direct scraping/ScrapingDog or switch to a supported SerpAPI plan.",
+        "enabled": true
+      },
+      {
+        "source": "serpapi",
+        "status": "skipped",
+        "count": 0,
+        "duration_sec": 0.0,
+        "error": "Unsupported `amazon_reviews` search engine.",
+        "hint": "Your SerpAPI account/region does not support engine=amazon_reviews. Use direct scraping/ScrapingDog or switch to a supported SerpAPI plan."
+      },
+      {
+        "source": "serpapi_amazon_product",
+        "status": "ok",
+        "count": 6,
+        "duration_sec": 0.997,
+        "error": "",
+        "logs": "[INFO] SerpAPI amazon_product fallback total: 6"
+      },
+      {
+        "source": "rapidapi_amazon_reviews",
+        "status": "warning",
+        "count": 0,
+        "duration_sec": 5.028,
+        "error": "",
+        "logs": "[WARN] RapidAPI product-reviews status=403 country=IN page=1\n[WARN] RapidAPI product-reviews status=429 country=US page=1\n[INFO] RapidAPI product-reviews total: 0"
+      },
+      {
+        "source": "rapidapi_amazon_top",
+        "status": "warning",
+        "count": 0,
+        "duration_sec": 4.567,
+        "error": "",
+        "logs": "[WARN] RapidAPI amazon top status=403 country=IN\n[WARN] RapidAPI amazon top status=429 country=US\n[INFO] RapidAPI amazon top reviews total: 0"
+      },
+      {
+        "source": "direct",
+        "status": "warning",
+        "count": 0,
+        "duration_sec": 31.594,
+        "error": "",
+        "logs": "[INFO] Direct sort=helpful: +0 -> total=0\n[WARN] Amazon bot challenge detected sort=helpful page=2\n[INFO] No more reviews sort=helpful at page=3\n[INFO] Direct sort=recent: +0 -> total=0\n[INFO] No more reviews sort=recent at page=2\n[INFO] Direct sort=critical: +0 -> total=0\n[WARN] Amazon bot challenge detected sort=critical page=2\n[INFO] No more reviews sort=critical at page=3\n[INFO] Direct sort=positive: +0 -> total=0\n[INFO] No more reviews sort=positive at page=2\n[INFO] Direct sort=one_star: +0 -> total=0\n[INFO] No more reviews sort=one_star at page=2\n[INFO] Direct sort=five_star: +0 -> total=0\n[INFO] No more reviews sort=five_star at page=2\n[INFO] Direct scrape total: 0 reviews for ASIN=B08N5WRWNW\n"
+      },
+      {
+        "source": "metadata_snippet",
+        "status": "ok",
+        "count": 6,
+        "duration_sec": 0.0,
+        "error": ""
+      }
+    ],
+    "platform": "amazon",
+    "asin": "B08N5WRWNW",
+    "domain_candidates": [
+      "amazon.in"
+    ],
+    "domain": "amazon.in",
+    "target_reviews": 868,
+    "ended_at": "2026-03-23T06:02:11.219619+00:00",
+    "total_collected": 6,
+    "live_collected": 0,
+    "fallback_collected": 12
+  }
+}

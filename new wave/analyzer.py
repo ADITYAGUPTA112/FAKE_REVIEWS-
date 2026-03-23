@@ -61,8 +61,8 @@ SERP_API_KEY = (
     or os.getenv("262ad8b51b449946485141e9ee2521a8d0120bd6b0ba609c667ed3a3d56d0495")
     or ""
 ).strip()
-SCRAPINGDOG_KEY = ""
-RAPIDAPI_KEY = ""
+SCRAPINGDOG_KEY = (os.getenv("SCRAPINGDOG_KEY") or "").strip()
+RAPIDAPI_KEY = (os.getenv("RAPIDAPI_KEY") or "").strip()
 GENUINE_THRESHOLD = 0.60
 MAX_REVIEWS = 10000
 BATCH_SIZE = 256
@@ -142,8 +142,11 @@ def _load_models() -> None:
     if not MODELS.loaded:
         print("[WARN] Base models missing; using heuristic fallback.")
 
-
-_load_models()
+_SKIP_MODEL_LOAD = str(os.getenv("ANALYZER_SKIP_MODEL_LOAD", "")).strip().lower() in {"1", "true", "yes"}
+if _SKIP_MODEL_LOAD:
+    print("[INFO] ANALYZER_SKIP_MODEL_LOAD enabled - skipping model loading.")
+else:
+    _load_models()
 
 
 def clean_text(text: str) -> str:
@@ -1261,18 +1264,34 @@ def _parse_timestamp(date_text: str) -> pd.Timestamp:
 
 def detect_reviewer_behavior_anomalies(df_reviews: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
     """
-    Returns:
+    Timeline-based reviewer anomaly detector using native Pandas logic.
+
+    Rules:
+      1) High Velocity: >5 reviews posted inside any rolling 1-hour window.
+      2) Dormant Burst: a 90+ day inactivity gap followed by >=3 five-star reviews on the reactivation day.
+      3) Rating Pattern: user only leaves extreme ratings (1 or 5), with no 2/3/4, across >=5 reviews.
+
+    Returns only flagged users:
       {
-        user_name: {
+        user_id: {
           velocity_flag: bool,
           dormant_burst: bool,
           rating_pattern_flag: bool,
           behavior_score: float [0,1],
+          is_suspicious: bool,
+          max_reviews_in_1h: int,
+          min_time_gap_minutes: float | None,
         }
       }
     """
-    if detect_reviewer_anomalies is None or df_reviews.empty:
+    if df_reviews is None or df_reviews.empty:
         return {}
+
+    velocity_threshold = 5
+    velocity_window = pd.Timedelta(hours=1)
+    dormancy_gap = pd.Timedelta(days=90)
+    dormant_burst_min_reviews = 3
+    extremism_min_reviews = 5
 
     required = {"user_id", "product_id", "timestamp", "rating"}
     normalized = df_reviews.copy()
@@ -1303,25 +1322,78 @@ def detect_reviewer_behavior_anomalies(df_reviews: pd.DataFrame) -> Dict[str, Di
     else:
         normalized = normalized[["user_id", "product_id", "timestamp", "rating"]].copy()
 
-    try:
-        res = detect_reviewer_anomalies(normalized)
-    except Exception as exc:
-        print(f"[WARN] Behavior detector failed: {exc}")
-        return {}
-
     out: Dict[str, Dict[str, Any]] = {}
-    if res is None or res.empty:
+    if normalized.empty:
         return out
 
-    for _, row in res.iterrows():
-        user = str(row.get("user_id", "unknown"))
-        flags = row.get("flags", []) or []
-        flag_types = {str(f.get("flag_type", "")) for f in flags if isinstance(f, dict)}
-        out[user] = {
-            "velocity_flag": "HIGH_VELOCITY" in flag_types,
-            "dormant_burst": "DORMANT_BURST" in flag_types,
-            "rating_pattern_flag": "RATING_EXTREMISM" in flag_types,
-            "behavior_score": round(float(row.get("risk_score", 0)) / 100.0, 3),
+    normalized["user_id"] = normalized["user_id"].fillna("").astype(str).str.strip()
+    normalized = normalized[
+        ~normalized["user_id"].str.lower().isin({"", "unknown", "none", "nan"})
+    ].copy()
+    if normalized.empty:
+        return out
+
+    normalized["timestamp"] = pd.to_datetime(normalized["timestamp"], errors="coerce", utc=True)
+    normalized = normalized.dropna(subset=["timestamp"]).copy()
+    if normalized.empty:
+        return out
+    normalized["timestamp"] = normalized["timestamp"].dt.tz_convert(None)
+    normalized["rating"] = pd.to_numeric(normalized["rating"], errors="coerce").fillna(3).clip(1, 5).astype(int)
+    normalized = normalized.sort_values(["user_id", "timestamp"]).reset_index(drop=True)
+    normalized["time_gap"] = normalized.groupby("user_id")["timestamp"].diff()
+
+    for user_id, group in normalized.groupby("user_id", sort=False):
+        group = group.sort_values("timestamp").copy()
+        if group.empty:
+            continue
+
+        # A) HIGH_VELOCITY: rolling count in a 1-hour window.
+        rolling_counts = pd.Series(1, index=group["timestamp"]).rolling(velocity_window).sum()
+        max_reviews_in_window = int(rolling_counts.max()) if not rolling_counts.empty else 0
+        velocity_flag = bool(max_reviews_in_window > velocity_threshold)
+
+        # B) DORMANT_BURST: long inactivity then many 5-star reviews on one day.
+        dormant_burst_flag = False
+        dormant_candidates = group[group["time_gap"] >= dormancy_gap]
+        for _, resumed_row in dormant_candidates.iterrows():
+            burst_day = resumed_row["timestamp"].normalize()
+            same_day_mask = group["timestamp"].dt.normalize() == burst_day
+            five_star_count = int((group.loc[same_day_mask, "rating"] == 5).sum())
+            if five_star_count >= dormant_burst_min_reviews:
+                dormant_burst_flag = True
+                break
+
+        # C) RATING_PATTERN: only 1-star/5-star ratings with no middle values.
+        ratings = set(group["rating"].dropna().astype(int).unique().tolist())
+        has_extreme = bool(ratings & {1, 5})
+        has_middle = bool(ratings & {2, 3, 4})
+        rating_pattern_flag = bool(len(group) >= extremism_min_reviews and has_extreme and not has_middle)
+
+        score = 0
+        if velocity_flag:
+            score += 50
+        if dormant_burst_flag:
+            score += 35
+        if rating_pattern_flag:
+            score += 30
+        score = min(score, 100)
+        if score <= 0:
+            continue
+
+        min_gap = group["time_gap"].dropna().min()
+        min_gap_minutes = (
+            round(float(min_gap.total_seconds()) / 60.0, 2)
+            if pd.notna(min_gap)
+            else None
+        )
+        out[str(user_id)] = {
+            "velocity_flag": velocity_flag,
+            "dormant_burst": dormant_burst_flag,
+            "rating_pattern_flag": rating_pattern_flag,
+            "behavior_score": round(score / 100.0, 3),
+            "is_suspicious": True,
+            "max_reviews_in_1h": int(max_reviews_in_window),
+            "min_time_gap_minutes": min_gap_minutes,
         }
     return out
 
@@ -1654,11 +1726,6 @@ def analyze_product(asin: str, pages: int = 50, max_reviews: int = MAX_REVIEWS) 
     product_total = _safe_int(product_details.get("reviews_total", 0), 0)
     coverage_ratio = float(total / product_total) if product_total > 0 else None
     coverage_warning = None
-    if coverage_ratio is not None and coverage_ratio < 0.25:
-        coverage_warning = (
-            f"Fetched {total} textual reviews out of ~{product_total} ratings. "
-            "This can happen when many ratings have no text or sources are rate-limited."
-        )
 
     summary = {
         "total_reviews": int(total),

@@ -288,8 +288,12 @@
                             <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 text-xs font-bold border border-amber-500/20" id="val-burst">0</span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span class="text-sm text-slate-400">Extreme Patters</span>
+                            <span class="text-sm text-slate-400">Extreme Rating Patterns</span>
                             <span class="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-bold border border-primary/20" id="val-pattern">0</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-slate-400">Flagged Reviewers</span>
+                            <span class="px-2 py-0.5 rounded bg-red-500/10 text-red-400 text-xs font-bold border border-red-500/20" id="val-flagged-users">0</span>
                         </div>
                     </div>
                 </div>
@@ -902,17 +906,26 @@
             const totalReviews = (data.results && data.results.review) ? data.results.review.length : 0;
             
             // 1. Behavior
-            let vel = 0, burst = 0, pattern = 0;
+            let vel = 0, burst = 0, pattern = 0, flaggedUsers = 0;
             if (adv.behavior_anomalies) {
                 Object.values(adv.behavior_anomalies).forEach(u => {
                     if (u.velocity_flag) vel++;
                     if (u.dormant_burst) burst++;
                     if (u.rating_pattern_flag) pattern++;
+                    const hasAnyFlag = Boolean(
+                        u.is_suspicious ||
+                        u.velocity_flag ||
+                        u.dormant_burst ||
+                        u.rating_pattern_flag
+                    );
+                    if (hasAnyFlag) flaggedUsers++;
                 });
             }
             document.getElementById('val-velocity').textContent = vel;
             document.getElementById('val-burst').textContent = burst;
             document.getElementById('val-pattern').textContent = pattern;
+            const flaggedNode = document.getElementById('val-flagged-users');
+            if (flaggedNode) flaggedNode.textContent = flaggedUsers;
 
             // 2. Sentiment Mismatch
             let mismatches = 0;
@@ -965,6 +978,12 @@
             renderAdvancedInsights(data);
         }
 
+        function normalizeBehaviorKey(value) {
+            const key = String(value || '').trim().toLowerCase();
+            if (!key || key === 'unknown' || key === 'none' || key === 'nan') return null;
+            return key;
+        }
+
         function reviewCard(review, prediction, confidence, date, explanation, behavioralResults, sentimentMismatch) {
             const isFake = prediction === 'Fake';
             
@@ -981,6 +1000,14 @@
                     tagHtml += `<span class="text-xs px-2 py-1 bg-amber-950/60 text-amber-300 rounded-full border border-amber-500/30">High Velocity Bot</span>`;
                 if (behavioralResults.dormant_burst)
                     tagHtml += `<span class="text-xs px-2 py-1 bg-amber-950/60 text-amber-300 rounded-full border border-amber-500/30">Dormant Burst</span>`;
+                if (behavioralResults.rating_pattern_flag)
+                    tagHtml += `<span class="text-xs px-2 py-1 bg-amber-950/60 text-amber-300 rounded-full border border-amber-500/30">Extreme Rating Pattern</span>`;
+                if (Number.isFinite(Number(behavioralResults.max_reviews_in_1h))) {
+                    tagHtml += `<span class="text-xs px-2 py-1 bg-slate-900 text-slate-200 rounded-full border border-slate-700">${Number(behavioralResults.max_reviews_in_1h)} reviews / 1h</span>`;
+                }
+                if (behavioralResults.min_time_gap_minutes !== null && Number.isFinite(Number(behavioralResults.min_time_gap_minutes))) {
+                    tagHtml += `<span class="text-xs px-2 py-1 bg-slate-900 text-slate-200 rounded-full border border-slate-700">Min gap ${Number(behavioralResults.min_time_gap_minutes).toFixed(1)}m</span>`;
+                }
             }
 
             return `
@@ -993,7 +1020,7 @@
                     : `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary text-black text-[10px] font-bold uppercase tracking-wider">&#xe86c; Genuine</span>`
                 }
             ${sentimentMismatch ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500 text-black text-[10px] font-bold uppercase tracking-wider">&#xe002; Rating Mismatch</span>` : ''}
-            ${(behavioralResults && behavioralResults.behavior_score > 0) ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-400 text-black text-[10px] font-bold uppercase tracking-wider">&#xef64; Bot Behavior</span>` : ''}
+            ${(behavioralResults && (behavioralResults.behavior_score > 0 || behavioralResults.is_suspicious)) ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-400 text-black text-[10px] font-bold uppercase tracking-wider">&#xef64; Bot Behavior</span>` : ''}
             <span class="text-sm text-slate-500 ml-auto">${date || ''}</span>
           </div>
           <p class="text-sm leading-relaxed mb-4" style="color:${isFake ? '#fca5a5' : '#cbd5e1'}">${review}</p>
@@ -1017,13 +1044,19 @@
             const container = reviewsSection.querySelector('.grid.grid-cols-1.gap-6');
             if (!container) return;
 
-            const behaviorMap = (advanced_analysis && advanced_analysis.behavior_anomalies) ? advanced_analysis.behavior_anomalies : {};
+            const rawBehaviorMap = (advanced_analysis && advanced_analysis.behavior_anomalies) ? advanced_analysis.behavior_anomalies : {};
+            const behaviorMap = {};
+            Object.keys(rawBehaviorMap).forEach(k => {
+                const nk = normalizeBehaviorKey(k);
+                if (nk) behaviorMap[nk] = rawBehaviorMap[k];
+            });
             const mismatches = (advanced_analysis && advanced_analysis.sentiment_mismatches) ? advanced_analysis.sentiment_mismatches : [];
 
             const pageSize = 10;
             const getCardHtml = (limit) => results.review.slice(0, limit).map((r, i) => {
-                const user = results.user_name ? results.user_name[i] : null; // We need to make sure user_name is in results
-                const bRes = behaviorMap[user] || null;
+                const user = results.user_name ? results.user_name[i] : null;
+                const normalizedUser = normalizeBehaviorKey(user);
+                const bRes = normalizedUser ? (behaviorMap[normalizedUser] || null) : null;
                 const mMismatach = mismatches[i] ? mismatches[i].is_mismatch : false;
                 return reviewCard(r, results.prediction[i], results.confidence[i], results.date[i], results.explanation[i], bRes, mMismatach);
             }).join('');
