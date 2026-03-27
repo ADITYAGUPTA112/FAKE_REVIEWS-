@@ -214,6 +214,8 @@ def add_cors_headers(response):
 # Firebase init
 cred_path = "firebase-credentials.json"
 db = None
+USE_MOCK_AUTH = False
+
 if os.path.exists(cred_path):
     try:
         cred = credentials.Certificate(cred_path)
@@ -222,8 +224,10 @@ if os.path.exists(cred_path):
         print("Firebase initialized.")
     except Exception as e:
         print(f"Warning: Firebase init failed: {e}")
+        USE_MOCK_AUTH = True
 else:
-    print(f"Warning: '{cred_path}' not found.")
+    print(f"Warning: '{cred_path}' not found. Using MOCK_AUTH mode.")
+    USE_MOCK_AUTH = True
 
 # =============================================================================
 # ROUTES
@@ -279,25 +283,48 @@ def session_login():
         id_token = data.get("idToken")
         if not id_token:
             return jsonify({"error": "No token provided"}), 400
-        decoded = auth.verify_id_token(id_token)
-        uid     = decoded["uid"]
-        session["user_id"]    = uid
-        session["user_name"]  = decoded.get("name") or decoded.get("email", "User")
-        session["user_photo"] = decoded.get("picture")
-        if db:
-            try:
-                db.collection("users").document(uid).set({
-                    "uid":         uid,
-                    "email":       decoded.get("email"),
-                    "displayName": session["user_name"],
-                    "photoURL":    session["user_photo"],
-                    "lastLogin":   firestore.SERVER_TIMESTAMP,
-                }, merge=True)
-            except Exception as e:
-                print(f"Firestore write error: {e}")
-        return jsonify({"status": "success"})
+        
+        # --- Bypass for Local Development ---
+        if USE_MOCK_AUTH and id_token == "local-dev-mock-token":
+            uid = "abc123mock"
+            session["user_id"]    = uid
+            session["user_name"]  = "Developer"
+            session["user_photo"] = None
+            return jsonify({"status": "success"})
+        # ------------------------------------
+
+        try:
+            decoded = auth.verify_id_token(id_token)
+            uid     = decoded["uid"]
+            session["user_id"]    = uid
+            session["user_name"]  = decoded.get("name") or decoded.get("email", "User")
+            session["user_photo"] = decoded.get("picture")
+            if db:
+                try:
+                    db.collection("users").document(uid).set({
+                        "uid":         uid,
+                        "email":       decoded.get("email"),
+                        "displayName": session["user_name"],
+                        "photoURL":    session["user_photo"],
+                        "lastLogin":   firestore.SERVER_TIMESTAMP,
+                    }, merge=True)
+                except Exception as e:
+                    print(f"Firestore write error: {e}")
+            return jsonify({"status": "success"})
+        except Exception as e:
+            if USE_MOCK_AUTH:
+                print(f"Bypassing real auth failure: {e}")
+                uid = "abc123mock"
+                session["user_id"]    = uid
+                session["user_name"]  = "Developer (Mock)"
+                session["user_photo"] = None
+                return jsonify({"status": "success"})
+            
+            print(f"Login error: {e}")
+            return jsonify({"error": "Invalid token"}), 401
     except Exception as e:
-        return jsonify({"error": "Invalid token"}), 401
+        print(f"Outer login error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
 
 @app.route("/api/uploadAvatar", methods=["POST"])
 def upload_avatar():

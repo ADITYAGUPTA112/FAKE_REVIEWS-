@@ -96,10 +96,12 @@
                     </button>
                 </form>
                 <div class="mt-6 pt-6 border-t border-slate-100 dark:border-primary/10 text-center">
-                    <p class="text-slate-500 dark:text-slate-400 text-sm">
+                    <p class="text-slate-500 dark:text-slate-400 text-sm mb-4">
                         Don't have an account? <a class="text-primary font-bold hover:underline ml-1"
                             href="{{ url_for('register') }}">Register now</a>
                     </p>
+                    <button class="text-xs text-primary/50 hover:text-primary transition-colors font-mono" 
+                            id="dev-bypass-btn" type="button">[ DEV BYPASS ]</button>
                 </div>
             </div>
         </div>
@@ -174,6 +176,16 @@
             }
             btn.disabled = false;
             btnText.textContent = 'Login to Dashboard';
+        });
+
+        document.getElementById('dev-bypass-btn')?.addEventListener('click', async () => {
+            const res = await fetch('/api/sessionLogin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken: 'local-dev-mock-token' })
+            });
+            if (res.ok) { window.location.href = '/'; }
+            else { showError('Mock login failed. Check server logs.'); }
         });
     </script>
 </body>

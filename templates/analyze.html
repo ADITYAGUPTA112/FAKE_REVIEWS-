@@ -1,20 +1,18 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html class="dark" lang="en">
 
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>TrustLens AI - Product Analysis</title>
+    <title>Obsidian Lens – Forensic Review Intelligence</title>
+    <meta name="description" content="AI-powered forensic analysis terminal for detecting fake product reviews using advanced NLP and network analysis." />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
-        rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap"
-        rel="stylesheet" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-        rel="stylesheet" />
+    <script src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -35,74 +33,27 @@
         }
     </script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-
-        .glass-panel {
-            background: #1a1a1a;
-            border: 1px solid rgba(38, 237, 237, 0.1);
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
-        }
-
-        /* â”€â”€ Fake review red highlight â”€â”€ */
-        .review-fake {
-            background: rgba(239, 68, 68, 0.09) !important;
-            border: 1px solid rgba(239, 68, 68, 0.35) !important;
-            border-left: 4px solid #ef4444 !important;
-        }
-
-        .review-fake .review-text {
-            color: #fca5a5;
-        }
-
-        .review-genuine {
-            background: #1a1a1a;
-            border: 1px solid rgba(38, 237, 237, 0.15);
-            border-left: 4px solid #26eded;
-        }
-
-        @keyframes scan {
-            0% {
-                transform: translateY(-100%);
-                opacity: 0;
-            }
-
-            50% {
-                opacity: 1;
-            }
-
-            100% {
-                transform: translateY(100%);
-                opacity: 0;
-            }
-        }
-
-        .scanner-line {
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #26eded, transparent);
-            box-shadow: 0 0 15px #26eded;
-            animation: scan 2s linear infinite;
-        }
-
-        .loading-hidden {
-            display: none !important;
-        }
-
-        @keyframes progressFill {
-            from {
-                width: 0%;
-            }
-
-            to {
-                width: 100%;
-            }
-        }
-
-        .animate-progress {
-            animation: progressFill 4s linear forwards;
-        }
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono-code { font-family: 'JetBrains Mono', monospace; }
+        .glass-panel { background: rgba(15,15,20,0.85); border: 1px solid rgba(38,237,237,0.08); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+        .glass-panel-elevated { background: rgba(20,20,28,0.92); border: 1px solid rgba(38,237,237,0.12); backdrop-filter: blur(20px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+        .review-fake { background: rgba(239,68,68,0.07) !important; border: 1px solid rgba(239,68,68,0.25) !important; border-left: 4px solid #ef4444 !important; }
+        .review-fake .review-text { color: #fca5a5; }
+        .review-genuine { background: rgba(15,15,20,0.85); border: 1px solid rgba(38,237,237,0.12); border-left: 4px solid #26eded; }
+        @keyframes scan { 0% { transform: translateY(-100%); opacity:0; } 50% { opacity:1; } 100% { transform: translateY(100%); opacity:0; } }
+        .scanner-line { height:2px; background: linear-gradient(90deg, transparent, #26eded, transparent); box-shadow: 0 0 20px #26eded, 0 0 60px rgba(38,237,237,0.3); animation: scan 2s linear infinite; }
+        .loading-hidden { display: none !important; }
+        @keyframes progressFill { from { width:0%; } to { width:100%; } }
+        .animate-progress { animation: progressFill 4s linear forwards; }
+        @keyframes pulse-glow { 0%,100% { box-shadow: 0 0 5px rgba(38,237,237,0.2); } 50% { box-shadow: 0 0 20px rgba(38,237,237,0.5), 0 0 40px rgba(38,237,237,0.2); } }
+        .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+        .forensic-marker { animation: fadeSlideIn 0.4s ease-out forwards; opacity: 0; }
+        @keyframes fadeSlideIn { from { opacity:0; transform: translateX(-10px); } to { opacity:1; transform: translateX(0); } }
+        .stat-card { transition: all 0.3s ease; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+        #network-graph-container { background: radial-gradient(ellipse at center, rgba(38,237,237,0.03) 0%, transparent 70%); }
+        .obsidian-input { background: rgba(10,10,15,0.9); border: 1px solid rgba(38,237,237,0.15); transition: all 0.3s ease; }
+        .obsidian-input:focus { border-color: rgba(38,237,237,0.5); box-shadow: 0 0 0 3px rgba(38,237,237,0.1), 0 0 20px rgba(38,237,237,0.1); }
     </style>
 </head>
 
@@ -114,8 +65,8 @@
             <div class="flex items-center justify-between h-16">
                 <div class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-primary text-3xl">shield_with_heart</span>
-                    <span class="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">TrustLens
-                        AI</span>
+                    <span class="text-xl font-black tracking-tight text-slate-900 dark:text-slate-100">Obsidian<span class="text-primary">Lens</span></span>
+                    <span class="text-[9px] font-mono-code text-primary/50 bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20 ml-1 hidden sm:inline">FORENSIC</span>
                 </div>
                 <nav class="hidden md:flex items-center gap-8">
                     <a class="text-sm font-medium hover:text-primary transition-colors"
@@ -145,10 +96,9 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Search/Analysis Input Section -->
         <section class="mb-12" id="search-section">
-            <div class="glass-panel p-8 rounded-xl border border-primary/30 text-center max-w-4xl mx-auto">
-                <h1 class="text-3xl font-bold mb-2">Analyze Product Authenticity</h1>
-                <p class="text-slate-500 dark:text-slate-400 mb-6">Enter an Amazon URL or ASIN to identify fake reviews
-                    and suspicious patterns.</p>
+            <div class="glass-panel-elevated p-8 rounded-xl border border-primary/30 text-center max-w-4xl mx-auto">
+                <h1 class="text-3xl font-black mb-2">Forensic Review Scanner</h1>
+                <p class="text-slate-500 dark:text-slate-400 mb-6 font-mono-code text-xs">// Enter an Amazon URL or ASIN to begin deep forensic analysis</p>
                 <div class="flex flex-col md:flex-row gap-3">
                     <div class="relative flex-grow">
                         <span
@@ -234,7 +184,7 @@
         </div>
         <!-- Stats Dashboard -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="stats-dashboard">
-            <div class="glass-panel p-6 rounded-xl border-l-4 border-l-primary">
+            <div class="glass-panel p-6 rounded-xl border-l-4 border-l-primary stat-card">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Genuine Score</span>
                     <span class="material-symbols-outlined text-primary/60">verified</span>
@@ -242,7 +192,7 @@
                 <div class="text-3xl font-bold" id="stat-total-reviews">0%</div>
                 <div class="text-xs text-primary mt-1" id="stat-total-diff">Authentic likelihood</div>
             </div>
-            <div class="glass-panel p-6 rounded-xl border-l-4 border-l-red-500">
+            <div class="glass-panel p-6 rounded-xl border-l-4 border-l-red-500 stat-card">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Fake Score</span>
                     <span class="material-symbols-outlined text-red-500/60">warning</span>
@@ -250,7 +200,7 @@
                 <div class="text-3xl font-bold text-red-500" id="stat-fraud-risk">24.8%</div>
                 <div class="text-xs text-slate-400 mt-1" id="stat-risk-label">Suspicious likelihood</div>
             </div>
-            <div class="glass-panel p-6 rounded-xl border-l-4 border-l-blue-500">
+            <div class="glass-panel p-6 rounded-xl border-l-4 border-l-blue-500 stat-card">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Model Confidence</span>
                     <span class="material-symbols-outlined text-blue-500/60">verified</span>
@@ -258,7 +208,7 @@
                 <div class="text-3xl font-bold text-blue-500" id="stat-genuine-count">0%</div>
                 <div class="text-xs text-slate-400 mt-1">Prediction confidence</div>
             </div>
-            <div class="glass-panel p-6 rounded-xl border-l-4 border-l-amber-500">
+            <div class="glass-panel p-6 rounded-xl border-l-4 border-l-amber-500 stat-card">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Review Rings</span>
                     <span class="material-symbols-outlined text-amber-500/60">hub</span>
@@ -268,70 +218,38 @@
             </div>
         </div>
 
-        <!-- Advanced Insights Section -->
-        <section class="loading-hidden mb-12" id="advanced-insights-section">
-            <h2 class="text-2xl font-bold mb-6">Advanced Analysis Insights</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Behavior Insights -->
-                <div class="glass-panel p-6 rounded-xl border border-primary/20">
-                    <div class="flex items-center gap-3 mb-4">
-                        <span class="material-symbols-outlined text-primary">groups</span>
-                        <h3 class="font-bold">Reviewer Behavior</h3>
-                    </div>
-                    <div id="behavior-stats-container" class="space-y-4">
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-slate-400">High Velocity Bots</span>
-                            <span class="px-2 py-0.5 rounded bg-red-500/10 text-red-500 text-xs font-bold border border-red-500/20" id="val-velocity">0</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-slate-400">Dormant Bursts</span>
-                            <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-500 text-xs font-bold border border-amber-500/20" id="val-burst">0</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-slate-400">Extreme Rating Patterns</span>
-                            <span class="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-bold border border-primary/20" id="val-pattern">0</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-slate-400">Flagged Reviewers</span>
-                            <span class="px-2 py-0.5 rounded bg-red-500/10 text-red-400 text-xs font-bold border border-red-500/20" id="val-flagged-users">0</span>
-                        </div>
+
+        <!-- Hidden placeholders for JS compatibility -->
+        <div id="advanced-insights-section" class="hidden">
+            <span id="val-velocity"></span><span id="val-burst"></span><span id="val-pattern"></span>
+            <span id="val-flagged-users"></span><span id="val-mismatch-pct"></span>
+            <span id="graph-nodes"></span><span id="graph-edges"></span><span id="graph-cluster-score"></span>
+            <span id="network-v2-status"></span>
+        </div>
+
+        <!-- Interactive Network Graph Visualization -->
+        <section class="loading-hidden mb-12" id="network-graph-section">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary text-2xl">hub</span>
+                    <h2 class="text-2xl font-bold">Reviewer Coordination Network</h2>
+                </div>
+                <span id="network-graph-status" class="text-xs text-slate-500 font-mono-code">IDLE</span>
+            </div>
+            <div class="glass-panel-elevated rounded-xl border border-primary/15 overflow-hidden">
+                <div id="network-graph-container" class="w-full" style="height: 420px; position: relative;">
+                    <div class="flex flex-col items-center justify-center h-full opacity-50">
+                        <span class="material-symbols-outlined text-5xl text-primary/30 mb-3">hub</span>
+                        <p class="text-sm text-slate-500">Run analysis to visualize reviewer networks</p>
                     </div>
                 </div>
-
-                <!-- Sentiment Integrity -->
-                <div class="glass-panel p-6 rounded-xl border border-primary/20">
-                    <div class="flex items-center gap-3 mb-4">
-                        <span class="material-symbols-outlined text-primary">sentiment_dissatisfied</span>
-                        <h3 class="font-bold">Sentiment Integrity</h3>
+                <div class="px-6 py-3 border-t border-primary/10 flex items-center justify-between">
+                    <div class="flex items-center gap-4 text-xs text-slate-500">
+                        <span>Nodes: <span class="text-slate-300 font-bold" id="graph-nodes-v2">0</span></span>
+                        <span>Edges: <span class="text-slate-300 font-bold" id="graph-edges-v2">0</span></span>
+                        <span>Clusters: <span class="text-red-400 font-bold" id="graph-clusters-v2">0</span></span>
                     </div>
-                    <div class="text-center py-2">
-                        <div class="text-4xl font-bold text-red-400 mb-1" id="val-mismatch-pct">0%</div>
-                        <p class="text-xs text-slate-500 uppercase tracking-widest">Rating Mismatches</p>
-                    </div>
-                    <p class="text-[10px] text-slate-400 mt-4 italic leading-relaxed">Reviews where text emotional tone contradicts the star rating.</p>
-                </div>
-
-                <!-- Trust Graph Overview -->
-                <div class="glass-panel p-6 rounded-xl border border-primary/20">
-                    <div class="flex items-center gap-3 mb-4">
-                        <span class="material-symbols-outlined text-primary">account_tree</span>
-                        <h3 class="font-bold">Trust Network</h3>
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-slate-400">Network Nodes</span>
-                            <span class="font-bold" id="graph-nodes">0</span>
-                        </div>
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-slate-400">Edges (Reviews)</span>
-                            <span class="font-bold" id="graph-edges">0</span>
-                        </div>
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-slate-400">Max Cluster Score</span>
-                            <span class="font-bold text-amber-500" id="graph-cluster-score">0.0</span>
-                        </div>
-                    </div>
-                    <p class="text-[10px] text-slate-400 mt-4 italic" id="network-v2-status">Realtime network detector idle.</p>
+                    <span class="text-[10px] text-slate-600 uppercase tracking-widest font-mono-code">vis.js network engine</span>
                 </div>
             </div>
         </section>
@@ -500,9 +418,9 @@
         <div class="max-w-7xl mx-auto px-4 text-center">
             <div class="flex items-center justify-center gap-2 mb-4">
                 <span class="material-symbols-outlined text-primary text-2xl">shield_with_heart</span>
-                <span class="text-lg font-bold">TrustLens AI</span>
+                <span class="text-lg font-black">Obsidian<span class="text-primary">Lens</span></span>
             </div>
-            <p class="text-slate-500 text-sm mb-6">Securing the digital marketplace with advanced AI auditing.</p>
+            <p class="text-slate-500 text-sm mb-6">Forensic-grade review intelligence for the digital marketplace.</p>
             <div class="flex justify-center gap-8 mb-8 text-sm text-slate-400">
                 <a class="hover:text-primary" href="#">Terms of Service</a>
                 <a class="hover:text-primary" href="#">Privacy Policy</a>
@@ -524,7 +442,7 @@
         const statusText = document.getElementById('status-text');
         const progressBar = document.getElementById('progress-bar');
 
-        const statuses = ['Fetching Reviews...', 'Analyzing Natural Language...', 'Calculating Trust Score...', 'Identifying Patterns...'];
+        const statuses = ['Initializing Forensic Engine...', 'Scraping Review Data...', 'Running NLP Analysis...', 'Calculating Trust Score...', 'Scanning Reviewer Networks...', 'Building Risk Profile...'];
 
         function extractAsin(input) {
             const m = input.match(/(?:dp|product|ASIN)\/([A-Z0-9]{10})/i) || input.match(/\b([A-Z0-9]{10})\b/);
@@ -533,6 +451,7 @@
 
         const advancedInsightsSection = document.getElementById('advanced-insights-section');
         const recentUpdatesSection = document.getElementById('recent-updates-section');
+        const networkGraphSection = document.getElementById('network-graph-section');
 
         function showLoader() {
             searchSection.classList.add('loading-hidden');
@@ -541,6 +460,7 @@
             reviewsSection.classList.add('loading-hidden');
             advancedInsightsSection.classList.add('loading-hidden');
             recentUpdatesSection.classList.add('loading-hidden');
+            if (networkGraphSection) networkGraphSection.classList.add('loading-hidden');
             loadingState.classList.remove('loading-hidden');
             progressBar.classList.remove('animate-progress');
             void progressBar.offsetWidth;
@@ -571,6 +491,7 @@
             reviewsSection.classList.remove('loading-hidden');
             advancedInsightsSection.classList.remove('loading-hidden');
             recentUpdatesSection.classList.remove('loading-hidden');
+            if (networkGraphSection) networkGraphSection.classList.remove('loading-hidden');
         }
 
         function resolveRiskPercentages(chartData) {
@@ -1114,12 +1035,33 @@
                     : chartFraud;
                 await updateTrustTrend(asin, 'amazon', advFraud);
                 await refreshReviewerNetworkRealtime(data, asin);
+                // Render interactive network graph
+                if (window.ForensicGraph && data.advanced_analysis) {
+                    const rings = data.advanced_analysis.review_rings || {};
+                    const graphStatus = document.getElementById('network-graph-status');
+                    try {
+                        const fg = new ForensicGraph('network-graph-container');
+                        fg.render(rings);
+                        const gs = rings.graph_summary || {};
+                        const el1 = document.getElementById('graph-nodes-v2');
+                        const el2 = document.getElementById('graph-edges-v2');
+                        const el3 = document.getElementById('graph-clusters-v2');
+                        if (el1) el1.textContent = gs.total_users || gs.total_nodes || 0;
+                        if (el2) el2.textContent = gs.total_edges || 0;
+                        if (el3) el3.textContent = (rings.suspicious_clusters || []).length;
+                        if (graphStatus) graphStatus.textContent = 'RENDERED';
+                    } catch (e) {
+                        console.warn('Network graph render failed:', e);
+                        if (graphStatus) graphStatus.textContent = 'ERROR';
+                    }
+                }
             } catch (e) {
                 hideLoader(timer);
                 alert('Analysis failed: ' + e.message);
             }
         });
     </script>
+    <script src="/static/js/forensic_graph.js"></script>
 </body>
 
 </html>
