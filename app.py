@@ -8,7 +8,7 @@ from analyzer import analyze_product
 import json
 from werkzeug.utils import secure_filename
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import pandas as pd
 
 from product_intelligence import (
@@ -34,6 +34,9 @@ LOCAL_SCAN_HISTORY_FILE = "scan_history_local.jsonl"
 TRAINING_DATA_CANDIDATES = ["fake reviews dataset.csv", "scraped_training_reviews.csv"]
 _HOME_METRICS_CACHE = {"key": None, "payload": None}
 _GLOBAL_CATEGORY_CACHE = {"key": None, "rows": [], "data_source": "none"}
+DEFAULT_AVATAR_URL = (
+    "https://lh3.googleusercontent.com/aida-public/AB6AXuBdi-P-pYGbwKCGyQeR-ewKR2hOIv7_NdiX301B0Kb913TQmlFjJNwWMICwFvIluwmozxWn7Jg-hf7OIIQeLXhWj-h8aadKRhnliFfLEht3B6ECeskiKiHi7LNZgvaOvuyCY-BS_A8hwypI_WFdSKIAb8Qh95TilDHaRdM6VQSRGtqUYDXHBfo0bu8559XF0d-E5JJ_qddJcXkuVrJc3hW_GFI2i0ZDF8sXDAilqj3LOXVHpMXGs0AsFiL_d5OsPgoGtJOVjZ5EGHMS"
+)
 
 
 def _safe_float(value, default=None):
@@ -901,6 +904,189 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def _to_utc_datetime(value):
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
+    try:
+        parsed = pd.to_datetime(value, errors="coerce", utc=True)
+        if pd.isna(parsed):
+            return None
+        if isinstance(parsed, pd.Timestamp):
+            return parsed.to_pydatetime()
+    except Exception:
+        return None
+    return None
+
+
+def _extract_profile_scan_metrics(item: dict) -> tuple[float | None, datetime | None, str]:
+    chart_data = item.get("chart_data") if isinstance(item, dict) else {}
+    chart_data = chart_data if isinstance(chart_data, dict) else {}
+    summary = item.get("summary") if isinstance(item, dict) else {}
+    summary = summary if isinstance(summary, dict) else {}
+    advanced = summary.get("advanced_analysis") if isinstance(summary.get("advanced_analysis"), dict) else {}
+
+    fraud_score = _safe_float(chart_data.get("fake_score"), None)
+    if fraud_score is None:
+        fraud_score = _safe_float(advanced.get("combined_fraud_score"), None)
+    if fraud_score is None:
+        fraud_score = _safe_float(summary.get("avg_fake_probability"), None)
+
+    trust_score = None
+    if fraud_score is not None:
+        trust_score = round(max(0.0, min(100.0, 100.0 - float(fraud_score))), 1)
+
+    timestamp = _to_utc_datetime(item.get("timestamp"))
+    product_id = str(
+        item.get("asin")
+        or item.get("product_id")
+        or summary.get("asin")
+        or summary.get("product_id")
+        or ""
+    ).strip()
+    return trust_score, timestamp, product_id
+
+
+def _build_profile_view_data(user_id: str) -> dict:
+    user_id = str(user_id or "").strip()
+    default_name = str(session.get("user_name") or "TrustLens User").strip() or "TrustLens User"
+    display_name = default_name
+    email = ""
+    avatar_url = str(session.get("user_photo") or "").strip()
+
+    if "@" in default_name and " " not in default_name:
+        email = default_name
+
+    if db is not None and user_id:
+        try:
+            user_doc = db.collection("users").document(user_id).get()
+            if user_doc.exists:
+                user_data = user_doc.to_dict() or {}
+                db_display_name = str(user_data.get("displayName") or "").strip()
+                db_email = str(user_data.get("email") or "").strip()
+                db_avatar = str(user_data.get("photoURL") or "").strip()
+                if db_display_name:
+                    display_name = db_display_name
+                if db_email:
+                    email = db_email
+                if db_avatar:
+                    avatar_url = db_avatar
+        except Exception as exc:
+            print(f"[WARN] Profile user lookup failed: {exc}")
+
+    if not avatar_url:
+        avatar_url = DEFAULT_AVATAR_URL
+    if not email:
+        email = "Email not available"
+
+    history_items: list[dict] = []
+    data_source = "none"
+
+    if db is not None and user_id:
+        try:
+            docs = db.collection("scans").where("user_id", "==", user_id).limit(500).stream()
+            firestore_rows: list[dict] = []
+            for doc in docs:
+                payload = doc.to_dict() or {}
+                ts = payload.get("timestamp")
+                if ts is not None and hasattr(ts, "isoformat"):
+                    payload["timestamp"] = ts.isoformat()
+                firestore_rows.append(payload)
+            if firestore_rows:
+                history_items = firestore_rows
+                data_source = "firestore_scans"
+        except Exception as exc:
+            print(f"[WARN] Profile firestore scan read failed: {exc}")
+
+    if not history_items:
+        local_rows = _load_local_scan_history(user_id=user_id, limit=500)
+        if local_rows:
+            history_items = local_rows
+            data_source = "local_scan_log"
+
+    if not history_items:
+        legacy_rows = _load_legacy_trust_history_as_scans(limit=500)
+        if legacy_rows:
+            history_items = legacy_rows
+            data_source = "local_trust_csv"
+
+    trust_scores: list[float] = []
+    timestamps: list[datetime] = []
+    products: set[str] = set()
+
+    for item in history_items:
+        trust_score, ts, product_id = _extract_profile_scan_metrics(item)
+        if trust_score is not None:
+            trust_scores.append(float(trust_score))
+        if ts is not None:
+            timestamps.append(ts)
+        if product_id:
+            products.add(product_id)
+
+    total_scans = int(len(history_items))
+    unique_products = int(len(products))
+    avg_trust = round((sum(trust_scores) / len(trust_scores)), 1) if trust_scores else 0.0
+
+    now_utc = datetime.now(timezone.utc)
+    thirty_days_ago = now_utc - timedelta(days=30)
+    sixty_days_ago = now_utc - timedelta(days=60)
+    recent_30 = sum(1 for ts in timestamps if ts >= thirty_days_ago)
+    previous_30 = sum(1 for ts in timestamps if sixty_days_ago <= ts < thirty_days_ago)
+
+    if recent_30 == 0 and previous_30 == 0:
+        monthly_change_text = "No 30d activity"
+    elif previous_30 == 0:
+        monthly_change_text = f"+{recent_30} new scans"
+    else:
+        delta_pct = ((recent_30 - previous_30) / previous_30) * 100.0
+        monthly_change_text = f"{delta_pct:+.0f}% vs last 30d"
+
+    last_scan_at = max(timestamps) if timestamps else None
+    if last_scan_at is None:
+        last_analysis_text = "No scans yet"
+        activity_label = "No activity"
+    else:
+        last_analysis_text = last_scan_at.strftime("%d %b %Y, %I:%M %p UTC")
+        gap = now_utc - last_scan_at
+        if gap < timedelta(days=1):
+            activity_label = "Active today"
+        elif gap < timedelta(days=2):
+            activity_label = "Active 1 day ago"
+        else:
+            activity_label = f"Active {gap.days} days ago"
+
+    if avg_trust >= 85:
+        trust_tier_text = "High confidence pattern"
+    elif avg_trust >= 70:
+        trust_tier_text = "Stable pattern"
+    elif avg_trust >= 55:
+        trust_tier_text = "Needs review"
+    else:
+        trust_tier_text = "High risk pattern"
+
+    return {
+        "user_id": user_id,
+        "name": display_name,
+        "email": email,
+        "avatar_url": avatar_url,
+        "total_scans": total_scans,
+        "total_scans_text": _format_int(total_scans),
+        "avg_trust": avg_trust,
+        "avg_trust_text": f"{avg_trust:.1f}%",
+        "monthly_change_text": monthly_change_text,
+        "trust_tier_text": trust_tier_text,
+        "last_analysis_text": last_analysis_text,
+        "activity_label": activity_label,
+        "unique_products": unique_products,
+        "unique_products_text": _format_int(unique_products),
+        "plan_text": "Community Plan - No billing configured",
+        "data_source": data_source,
+    }
+
+
 @app.after_request
 def add_cors_headers(response):
     # Allows browser extension requests to Flask APIs.
@@ -989,7 +1175,8 @@ def leaderboard_api():
 def profile():
     if "user_id" not in session:
         return redirect(url_for("login"))
-    return render_template("profile.html")
+    user_id = str(session.get("user_id", "") or "").strip()
+    return render_template("profile.html", profile_data=_build_profile_view_data(user_id))
 
 @app.route("/logout")
 def logout():
@@ -997,6 +1184,63 @@ def logout():
     session.pop("user_name", None)
     session.pop("user_photo",None)
     return redirect(url_for("login"))
+
+
+@app.route("/api/profile", methods=["GET", "POST"])
+def api_profile():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_id = str(session.get("user_id", "") or "").strip()
+
+    if request.method == "GET":
+        return jsonify({"profile": _build_profile_view_data(user_id)})
+
+    data = request.get_json(silent=True) or {}
+    display_name = re.sub(r"\s+", " ", str(data.get("display_name") or "").strip())[:80]
+    photo_url = str(data.get("photo_url") or "").strip()[:600]
+
+    if display_name:
+        session["user_name"] = display_name
+    if photo_url:
+        session["user_photo"] = photo_url
+
+    if db is not None:
+        update_payload = {"uid": user_id, "updatedAt": firestore.SERVER_TIMESTAMP}
+        if display_name:
+            update_payload["displayName"] = display_name
+        if photo_url:
+            update_payload["photoURL"] = photo_url
+        try:
+            db.collection("users").document(user_id).set(update_payload, merge=True)
+        except Exception as exc:
+            print(f"[WARN] Profile update firestore write failed: {exc}")
+
+    return jsonify({"status": "success", "profile": _build_profile_view_data(user_id)})
+
+
+@app.route("/api/profile/delete-request", methods=["POST"])
+def api_profile_delete_request():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_id = str(session.get("user_id", "") or "").strip()
+    if db is not None and user_id:
+        try:
+            db.collection("users").document(user_id).set(
+                {
+                    "deleteRequested": True,
+                    "deleteRequestedAt": firestore.SERVER_TIMESTAMP,
+                },
+                merge=True,
+            )
+        except Exception as exc:
+            print(f"[WARN] Delete request flag write failed: {exc}")
+
+    session.pop("user_id", None)
+    session.pop("user_name", None)
+    session.pop("user_photo", None)
+    return jsonify({"status": "success", "redirect": url_for("login")})
 
 # Auth
 @app.route("/api/sessionLogin", methods=["POST"])
@@ -1060,8 +1304,27 @@ def upload_avatar():
         ext      = file.filename.rsplit(".", 1)[1].lower()
         filename = secure_filename(f"avatar_{session['user_id']}_{uuid.uuid4().hex[:8]}.{ext}")
         file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
-        return jsonify({"status": "success",
-                        "url": url_for("static", filename=f"uploads/avatars/{filename}")})
+        avatar_url = url_for("static", filename=f"uploads/avatars/{filename}")
+        session["user_photo"] = avatar_url
+        if db is not None:
+            try:
+                db.collection("users").document(str(session.get("user_id"))).set(
+                    {
+                        "uid": str(session.get("user_id")),
+                        "photoURL": avatar_url,
+                        "updatedAt": firestore.SERVER_TIMESTAMP,
+                    },
+                    merge=True,
+                )
+            except Exception as exc:
+                print(f"[WARN] Avatar firestore write failed: {exc}")
+        return jsonify(
+            {
+                "status": "success",
+                "url": avatar_url,
+                "profile": _build_profile_view_data(str(session.get("user_id", "") or "")),
+            }
+        )
     return jsonify({"error": "File type not allowed"}), 400
 
 @app.route("/api/history", methods=["GET"])
