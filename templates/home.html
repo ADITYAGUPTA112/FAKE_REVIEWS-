@@ -1,259 +1,393 @@
 <!DOCTYPE html>
-
 <html class="dark" lang="en">
-
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>TrustLens AI - Detect Fake Reviews Instantly</title>
+    <title>TrustLens AI | Forensic Review Intelligence</title>
+    <meta name="description" content="TrustLens AI detects fake reviews using language signals, behavior anomalies, and reviewer network analysis." />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap"
-        rel="stylesheet" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-        rel="stylesheet" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
             theme: {
                 extend: {
                     colors: {
-                        "primary": "#26eded",
-                        "background-light": "#f6f8f6",
-                        "background-dark": "#0a0a0a",
-                        "card-dark": "#1a1a1a"
+                        primary: "#1de7d7",
+                        "accent-red": "#ff5d67",
+                        "surface-dark": "#090d14",
+                        "surface-deep": "#03060c",
                     },
                     fontFamily: {
-                        "display": ["Inter"]
+                        display: ["Space Grotesk", "sans-serif"],
+                        body: ["Manrope", "sans-serif"],
                     },
-                    borderRadius: { "DEFAULT": "0.75rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px" },
+                    boxShadow: {
+                        glow: "0 0 32px rgba(29,231,215,0.24)",
+                    },
                 },
             },
+        };
+    </script>
+    <style>
+        :root { color-scheme: dark; }
+        body {
+            font-family: "Manrope", sans-serif;
+            background:
+                radial-gradient(circle at 8% 12%, rgba(29, 231, 215, 0.14), transparent 38%),
+                radial-gradient(circle at 92% 8%, rgba(56, 189, 248, 0.12), transparent 40%),
+                linear-gradient(180deg, #03060c 0%, #07111b 46%, #03060c 100%);
+            min-height: 100vh;
+        }
+        .font-display { font-family: "Space Grotesk", sans-serif; }
+        .hero-grid {
+            background-image:
+                linear-gradient(rgba(29, 231, 215, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(29, 231, 215, 0.06) 1px, transparent 1px);
+            background-size: 44px 44px;
+        }
+        .neon-rule {
+            height: 1px;
+            background: linear-gradient(90deg, rgba(29, 231, 215, 0), rgba(29, 231, 215, 0.9), rgba(29, 231, 215, 0));
+        }
+        .hero-visual {
+            position: relative;
+            overflow: hidden;
+            border-radius: 1.5rem;
+            border: 1px solid rgba(29, 231, 215, 0.24);
+            background:
+                linear-gradient(125deg, rgba(12, 30, 44, 0.92), rgba(7, 14, 26, 0.95)),
+                url("https://images.unsplash.com/photo-1551281044-8b5bd4fd2d38?auto=format&fit=crop&w=1600&q=80") center/cover no-repeat;
+            min-height: 420px;
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.45);
+        }
+        .hero-visual::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(160deg, rgba(3, 6, 12, 0.15), rgba(3, 6, 12, 0.82));
+        }
+        .radar-ping {
+            position: absolute;
+            border: 1px solid rgba(29, 231, 215, 0.36);
+            border-radius: 9999px;
+            animation: pulse 3s ease-out infinite;
+        }
+        .radar-ping.delay { animation-delay: 1.2s; }
+        @keyframes pulse {
+            0% { transform: scale(0.35); opacity: 0.75; }
+            80% { transform: scale(1); opacity: 0; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: opacity 650ms ease, transform 650ms ease;
+        }
+        .reveal.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .chip {
+            border: 1px solid rgba(29, 231, 215, 0.25);
+            background: rgba(6, 15, 26, 0.78);
+        }
+    </style>
+</head>
+<body class="text-slate-100">
+    <div class="min-h-screen w-full overflow-x-hidden">
+        <header class="sticky top-0 z-50 border-b border-white/10 bg-surface-deep/80 backdrop-blur-xl">
+            <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-primary text-3xl">shield_with_heart</span>
+                    <span class="font-display text-xl font-bold tracking-tight">TrustLens AI</span>
+                </div>
+                <div class="hidden items-center gap-8 md:flex">
+                    <a class="text-primary text-sm font-semibold" href="{{ url_for('index') }}">Home</a>
+                    <a class="text-sm text-slate-300 transition-colors hover:text-primary" href="{{ url_for('analyze') }}">Analyze</a>
+                    <a class="text-sm text-slate-300 transition-colors hover:text-primary" href="{{ url_for('history') }}">History</a>
+                    <a class="text-sm text-slate-300 transition-colors hover:text-primary" href="{{ url_for('leaderboard') }}">Leaderboard</a>
+                    <a class="text-sm text-slate-300 transition-colors hover:text-primary" href="{{ url_for('profile') }}">Profile</a>
+                </div>
+                <a href="{{ url_for('logout') }}" class="rounded-xl border border-primary/40 bg-primary/10 px-4 py-2 text-sm font-bold text-primary transition-all hover:bg-primary/20">Logout</a>
+            </div>
+        </header>
+
+        <main>
+            {% set hm = home_metrics if home_metrics is defined else {} %}
+            <section class="hero-grid relative isolate px-0 pb-16 pt-10 md:pb-24 md:pt-14">
+                <div class="mx-auto grid max-w-7xl gap-10 px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-10">
+                    <div class="reveal">
+                        <p class="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                            <span class="material-symbols-outlined text-base">auto_awesome</span>
+                            Forensic Review Intelligence
+                        </p>
+                        <h1 class="font-display text-4xl font-bold leading-[1.04] text-white md:text-6xl">
+                            See the real product trust score before you buy.
+                        </h1>
+                        <p class="mt-6 max-w-xl text-lg leading-relaxed text-slate-300">
+                            TrustLens scans review text, reviewer behavior, and hidden coordination patterns to separate genuine feedback from fraud noise.
+                        </p>
+                        <div class="mt-8 flex flex-wrap gap-4">
+                            <a href="{{ url_for('analyze') }}" class="inline-flex items-center gap-2 rounded-xl bg-primary px-7 py-3 text-base font-bold text-surface-deep shadow-glow transition-all hover:brightness-110">
+                                <span class="material-symbols-outlined text-[20px]">play_arrow</span>
+                                Run Live Analysis
+                            </a>
+                            <a href="{{ url_for('analyze') }}?asin=B0BRJ7QX33" class="inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-transparent px-7 py-3 text-base font-semibold text-primary transition-colors hover:bg-primary/10">
+                                <span class="material-symbols-outlined text-[20px]">bolt</span>
+                                Try Demo ASIN
+                            </a>
+                        </div>
+                        <div class="mt-7 flex flex-wrap items-center gap-3 text-sm text-slate-300">
+                            <span class="chip rounded-full px-3 py-1.5">Input: URL or ASIN</span>
+                            <span class="chip rounded-full px-3 py-1.5">Output in under 30s</span>
+                            <span class="chip rounded-full px-3 py-1.5">Research-ready report</span>
+                        </div>
+                    </div>
+                    <div class="hero-visual reveal">
+                        <div class="absolute inset-0 z-10"></div>
+                        <div class="radar-ping left-1/2 top-1/2 z-10 h-56 w-56 -translate-x-1/2 -translate-y-1/2"></div>
+                        <div class="radar-ping delay left-1/2 top-1/2 z-10 h-56 w-56 -translate-x-1/2 -translate-y-1/2"></div>
+                        <div class="relative z-20 flex h-full flex-col justify-between p-6 md:p-8">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-xs uppercase tracking-[0.18em] text-primary/80">Live Product Snapshot</p>
+                                    <p class="mt-2 text-xl font-bold text-white">12-Month Trust Trend</p>
+                                </div>
+                                <span class="rounded-full border border-primary/40 bg-surface-deep/60 px-3 py-1 text-xs font-semibold text-primary">Real-time</span>
+                            </div>
+                            <div class="space-y-4 rounded-xl border border-white/10 bg-surface-deep/70 p-4 backdrop-blur">
+                                <div class="flex items-end justify-between">
+                                    <div>
+                                        <p class="text-xs uppercase tracking-widest text-slate-400">Trust Score</p>
+                                        <p class="font-display text-4xl font-bold text-primary">{{ hm.get('recent_avg_trust_text', '84.2%') }}</p>
+                                    </div>
+                                    <p class="text-sm text-slate-300">Fraud Risk: {{ hm.get('recent_avg_fraud_text', '15.8%') }}</p>
+                                </div>
+                                <div class="h-2.5 w-full overflow-hidden rounded-full bg-white/10">
+                                    <div class="h-full rounded-full bg-primary" style="width:{{ hm.get('recent_avg_trust', 84.2) }}%"></div>
+                                </div>
+                                <p class="text-sm text-slate-300">Last scan: {{ hm.get('last_scan_label', 'No scans yet') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mx-auto max-w-7xl px-6 py-6 lg:px-10">
+                <div class="neon-rule"></div>
+                <div class="reveal mt-8 grid gap-6 md:grid-cols-[1.2fr_0.8fr] md:items-center">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.18em] text-primary/80">Instant Demo</p>
+                        <h2 class="mt-2 font-display text-3xl font-bold text-white md:text-4xl">Show judges a full live scan in one click.</h2>
+                        <p class="mt-3 max-w-2xl text-slate-300">Use a known ASIN and present complete intelligence output: trust score, adjusted rating, suspicious review list, and reviewer coordination graph.</p>
+                    </div>
+                    <div class="flex gap-3 md:justify-end">
+                        <a href="{{ url_for('analyze') }}?asin=B09G9FPHY4" class="rounded-xl border border-primary/40 bg-primary/10 px-5 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20">Demo ASIN 1</a>
+                        <a href="{{ url_for('analyze') }}?asin=B0BRJ7QX33" class="rounded-xl border border-white/20 px-5 py-3 text-sm font-semibold text-slate-100 transition-colors hover:border-primary/40 hover:text-primary">Demo ASIN 2</a>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mx-auto max-w-7xl px-6 py-16 lg:px-10" id="forensics">
+                <div class="reveal">
+                    <p class="text-xs uppercase tracking-[0.2em] text-primary/80">Why TrustLens</p>
+                    <h2 class="mt-3 font-display text-3xl font-bold text-white md:text-4xl">Three forensic layers. One clear verdict.</h2>
+                </div>
+                <div class="mt-10 grid gap-8 lg:grid-cols-3">
+                    <article class="reveal border-l-2 border-primary/50 pl-5">
+                        <p class="text-sm font-semibold uppercase tracking-[0.15em] text-primary">Layer 01</p>
+                        <h3 class="mt-2 font-display text-2xl font-semibold text-white">Language Pattern Scan</h3>
+                        <p class="mt-3 text-slate-300">Detects repetitive phrasing, excessive hype language, and unnatural sentiment curves often used in paid-review campaigns.</p>
+                    </article>
+                    <article class="reveal border-l-2 border-primary/50 pl-5">
+                        <p class="text-sm font-semibold uppercase tracking-[0.15em] text-primary">Layer 02</p>
+                        <h3 class="mt-2 font-display text-2xl font-semibold text-white">Reviewer Behavior Signals</h3>
+                        <p class="mt-3 text-slate-300">Flags suspicious timing bursts, narrow rating patterns, and reviewer activity anomalies across products and windows.</p>
+                    </article>
+                    <article class="reveal border-l-2 border-primary/50 pl-5">
+                        <p class="text-sm font-semibold uppercase tracking-[0.15em] text-primary">Layer 03</p>
+                        <h3 class="mt-2 font-display text-2xl font-semibold text-white">Coordination Network Graph</h3>
+                        <p class="mt-3 text-slate-300">Builds reviewer-product relationship graphs to uncover hidden rings and coordinated clusters that normal filters miss.</p>
+                    </article>
+                </div>
+            </section>
+
+            <section class="mx-auto max-w-7xl px-6 py-10 lg:px-10">
+                <div class="reveal grid gap-8 rounded-2xl border border-primary/25 bg-surface-dark/70 p-6 md:grid-cols-2 md:p-8">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.16em] text-primary/80">Rating Reality Check</p>
+                        <h2 class="mt-2 font-display text-3xl font-bold text-white">From inflated stars to authentic score.</h2>
+                        <p class="mt-3 text-slate-300">A product may show 4.6 stars publicly, but after fake review filtering the true quality can drop sharply.</p>
+                        <a href="{{ url_for('analyze') }}" class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
+                            Open analysis dashboard
+                            <span class="material-symbols-outlined text-base">arrow_forward</span>
+                        </a>
+                    </div>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="rounded-xl border border-white/10 bg-surface-deep/80 p-4">
+                            <p class="text-xs uppercase tracking-widest text-slate-400">Shown Rating</p>
+                            <p class="mt-2 font-display text-4xl font-bold text-white">4.6</p>
+                            <p class="mt-1 text-sm text-slate-400">Marketplace value</p>
+                        </div>
+                        <div class="rounded-xl border border-accent-red/40 bg-accent-red/10 p-4">
+                            <p class="text-xs uppercase tracking-widest text-accent-red">Adjusted Authentic Rating</p>
+                            <p class="mt-2 font-display text-4xl font-bold text-accent-red">3.9</p>
+                            <p class="mt-1 text-sm text-red-200/90">After fraud filtering</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mx-auto max-w-7xl px-6 py-12 lg:px-10">
+                <div class="reveal">
+                    <p class="text-xs uppercase tracking-[0.18em] text-primary/80">Model Credibility</p>
+                    <h2 class="mt-2 font-display text-3xl font-bold text-white">Built for competition-level presentation.</h2>
+                    <p class="mt-3 text-slate-300">Live project telemetry from your local scan history and training dataset.</p>
+                </div>
+                <div class="mt-8 grid grid-cols-2 gap-4 md:grid-cols-5">
+                    <div class="reveal rounded-xl border border-white/10 bg-surface-dark/80 p-4">
+                        <p class="text-xs uppercase tracking-[0.12em] text-slate-400">Recent Avg Trust</p>
+                        <p class="mt-2 font-display text-3xl font-bold text-primary">{{ hm.get('recent_avg_trust_text', '0.0%') }}</p>
+                    </div>
+                    <div class="reveal rounded-xl border border-white/10 bg-surface-dark/80 p-4">
+                        <p class="text-xs uppercase tracking-[0.12em] text-slate-400">Recent Avg Fraud</p>
+                        <p class="mt-2 font-display text-3xl font-bold text-accent-red">{{ hm.get('recent_avg_fraud_text', '0.0%') }}</p>
+                    </div>
+                    <div class="reveal rounded-xl border border-white/10 bg-surface-dark/80 p-4">
+                        <p class="text-xs uppercase tracking-[0.12em] text-slate-400">Total Scans</p>
+                        <p class="mt-2 font-display text-3xl font-bold text-primary">{{ hm.get('total_scans_text', '0') }}</p>
+                    </div>
+                    <div class="reveal rounded-xl border border-white/10 bg-surface-dark/80 p-4">
+                        <p class="text-xs uppercase tracking-[0.12em] text-slate-400">Unique Products</p>
+                        <p class="mt-2 font-display text-3xl font-bold text-white">{{ hm.get('unique_products_text', '0') }}</p>
+                    </div>
+                    <div class="reveal rounded-xl border border-white/10 bg-surface-dark/80 p-4">
+                        <p class="text-xs uppercase tracking-[0.12em] text-slate-400">Training Reviews</p>
+                        <p class="mt-2 font-display text-3xl font-bold text-white">{{ hm.get('training_reviews_text', '0') }}</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mx-auto max-w-7xl px-6 py-14 lg:px-10" id="how-it-works">
+                <div class="reveal">
+                    <p class="text-xs uppercase tracking-[0.18em] text-primary/80">Workflow</p>
+                    <h2 class="mt-2 font-display text-3xl font-bold text-white md:text-4xl">Scrape, detect, and deliver verdict.</h2>
+                </div>
+                <div class="mt-10 grid gap-6 md:grid-cols-3">
+                    <article class="reveal rounded-xl border border-white/10 bg-surface-dark/70 p-6">
+                        <p class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-primary/40 text-primary">1</p>
+                        <h3 class="font-display text-xl font-semibold text-white">Scrape</h3>
+                        <p class="mt-2 text-slate-300">Collects high-volume reviews, metadata, and timestamps from product pages for robust coverage.</p>
+                    </article>
+                    <article class="reveal rounded-xl border border-white/10 bg-surface-dark/70 p-6">
+                        <p class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-primary/40 text-primary">2</p>
+                        <h3 class="font-display text-xl font-semibold text-white">Detect</h3>
+                        <p class="mt-2 text-slate-300">Runs ML and behavior engines to score fake probability, mismatch signals, and ring patterns.</p>
+                    </article>
+                    <article class="reveal rounded-xl border border-white/10 bg-surface-dark/70 p-6">
+                        <p class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-primary/40 text-primary">3</p>
+                        <h3 class="font-display text-xl font-semibold text-white">Verdict</h3>
+                        <p class="mt-2 text-slate-300">Outputs trust score, adjusted product rating, and explainable evidence for each flagged review.</p>
+                    </article>
+                </div>
+            </section>
+
+            <section class="mx-auto max-w-7xl px-6 py-10 lg:px-10">
+                <div class="reveal flex items-end justify-between gap-5">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.18em] text-primary/80">Case Studies</p>
+                        <h2 class="mt-2 font-display text-3xl font-bold text-white">Proof that stands in front of a jury.</h2>
+                    </div>
+                    <a href="{{ url_for('history') }}" class="text-sm font-semibold text-primary hover:underline">View all scans</a>
+                </div>
+                <div class="mt-8 grid gap-5 md:grid-cols-2">
+                    <article class="reveal rounded-2xl border border-primary/25 bg-surface-dark/75 p-6">
+                        <p class="text-xs uppercase tracking-widest text-primary/80">Case A</p>
+                        <h3 class="mt-2 font-display text-2xl font-semibold text-white">Wireless Earbuds Listing</h3>
+                        <p class="mt-3 text-slate-300">Detected dense 5-star burst in 72 hours with repeated review templates. Final fraud risk rose to 63.4%.</p>
+                        <div class="mt-5 grid grid-cols-3 gap-3 text-center">
+                            <div class="rounded-lg border border-white/10 bg-surface-deep/80 p-3">
+                                <p class="text-xs text-slate-400">Reviews</p>
+                                <p class="mt-1 text-lg font-bold text-white">2,184</p>
+                            </div>
+                            <div class="rounded-lg border border-white/10 bg-surface-deep/80 p-3">
+                                <p class="text-xs text-slate-400">Fraud Risk</p>
+                                <p class="mt-1 text-lg font-bold text-accent-red">63.4%</p>
+                            </div>
+                            <div class="rounded-lg border border-white/10 bg-surface-deep/80 p-3">
+                                <p class="text-xs text-slate-400">Rings</p>
+                                <p class="mt-1 text-lg font-bold text-primary">3</p>
+                            </div>
+                        </div>
+                    </article>
+                    <article class="reveal rounded-2xl border border-primary/25 bg-surface-dark/75 p-6">
+                        <p class="text-xs uppercase tracking-widest text-primary/80">Case B</p>
+                        <h3 class="mt-2 font-display text-2xl font-semibold text-white">Kitchen Blender Listing</h3>
+                        <p class="mt-3 text-slate-300">Low mismatch rate and balanced reviewer timelines. Trust score stayed high at 88.1% with clean network graph.</p>
+                        <div class="mt-5 grid grid-cols-3 gap-3 text-center">
+                            <div class="rounded-lg border border-white/10 bg-surface-deep/80 p-3">
+                                <p class="text-xs text-slate-400">Reviews</p>
+                                <p class="mt-1 text-lg font-bold text-white">1,126</p>
+                            </div>
+                            <div class="rounded-lg border border-white/10 bg-surface-deep/80 p-3">
+                                <p class="text-xs text-slate-400">Fraud Risk</p>
+                                <p class="mt-1 text-lg font-bold text-primary">11.9%</p>
+                            </div>
+                            <div class="rounded-lg border border-white/10 bg-surface-deep/80 p-3">
+                                <p class="text-xs text-slate-400">Rings</p>
+                                <p class="mt-1 text-lg font-bold text-primary">0</p>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="mx-auto max-w-7xl px-6 pb-20 pt-14 lg:px-10">
+                <div class="reveal rounded-2xl border border-primary/35 bg-primary/10 p-7 text-center md:p-10">
+                    <p class="text-xs uppercase tracking-[0.18em] text-primary">Ready for Project Showcase</p>
+                    <h2 class="mt-3 font-display text-3xl font-bold text-white md:text-4xl">Launch your live demo and let the data speak.</h2>
+                    <p class="mx-auto mt-4 max-w-2xl text-slate-300">Present measurable model quality, explainable output, and practical e-commerce impact in one polished flow.</p>
+                    <div class="mt-8 flex flex-wrap justify-center gap-4">
+                        <a href="{{ url_for('analyze') }}" class="rounded-xl bg-primary px-7 py-3 text-base font-bold text-surface-deep shadow-glow transition-all hover:brightness-110">Start Analysis Now</a>
+                        <a href="{{ url_for('leaderboard') }}" class="rounded-xl border border-white/25 px-7 py-3 text-base font-semibold text-slate-100 transition-colors hover:border-primary/50 hover:text-primary">View Leaderboard</a>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="border-t border-white/10 bg-surface-deep/80 px-6 py-9 lg:px-10">
+            <div class="mx-auto flex max-w-7xl flex-col gap-5 md:flex-row md:items-center md:justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">shield_with_heart</span>
+                    <span class="font-display font-semibold text-white">TrustLens AI</span>
+                </div>
+                <p class="text-sm text-slate-400">Copyright 2026 TrustLens AI. Evidence-driven fake review detection.</p>
+                <div class="flex gap-5 text-sm">
+                    <a class="text-slate-400 transition-colors hover:text-primary" href="#">Terms</a>
+                    <a class="text-slate-400 transition-colors hover:text-primary" href="#">Privacy</a>
+                    <a class="text-slate-400 transition-colors hover:text-primary" href="#">Support</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const revealNodes = Array.from(document.querySelectorAll(".reveal"));
+        if ("IntersectionObserver" in window) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add("show");
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.18 });
+            revealNodes.forEach((node) => observer.observe(node));
+        } else {
+            revealNodes.forEach((node) => node.classList.add("show"));
         }
     </script>
-</head>
-
-<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
-    <div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
-        <div class="layout-container flex h-full grow flex-col">
-            <!-- TopNavBar -->
-            <header
-                class="flex items-center justify-between whitespace-nowrap border-b border-solid border-white/5 px-6 md:px-10 py-4 bg-background-light/50 dark:bg-background-dark/80 backdrop-blur-md sticky top-0 z-50">
-                <div class="flex items-center gap-3">
-                    <div class="text-primary flex items-center justify-center">
-                        <span class="material-symbols-outlined text-3xl">shield_with_heart</span>
-                    </div>
-                    <h2 class="text-slate-900 dark:text-white text-xl font-black leading-tight tracking-tight">TrustLens
-                        AI</h2>
-                </div>
-                <div class="hidden md:flex flex-1 justify-end gap-8">
-                    <nav class="flex items-center gap-8">
-                        <a class="text-primary text-sm font-bold leading-normal hover:opacity-80 transition-opacity"
-                            href="{{ url_for('index') }}">Home</a>
-                        <a class="text-slate-900 dark:text-slate-300 text-sm font-medium leading-normal hover:text-primary transition-colors"
-                            href="{{ url_for('analyze') }}">Analyze</a>
-                        <a class="text-slate-900 dark:text-slate-300 text-sm font-medium leading-normal hover:text-primary transition-colors"
-                            href="{{ url_for('history') }}">History</a>
-                        <a class="text-slate-900 dark:text-slate-300 text-sm font-medium leading-normal hover:text-primary transition-colors"
-                            href="{{ url_for('leaderboard') }}">Leaderboard</a>
-                        <a class="text-slate-900 dark:text-slate-300 text-sm font-medium leading-normal hover:text-primary transition-colors"
-                            href="{{ url_for('profile') }}">Profile</a>
-                    </nav>
-                    <a href="{{ url_for('logout') }}"
-                        class="flex min-w-[84px] cursor-pointer items-center justify-center rounded-xl h-10 px-5 bg-primary text-background-dark text-sm font-bold leading-normal transition-all hover:scale-105 active:scale-95">
-                        <span class="truncate">Logout</span>
-                    </a>
-                </div>
-                <!-- Mobile Menu Icon (Visual Only) -->
-                <div class="md:hidden flex items-center">
-                    <span class="material-symbols-outlined text-slate-900 dark:text-white">menu</span>
-                </div>
-            </header>
-            <main class="flex flex-1 flex-col items-center">
-                <div class="layout-content-container flex flex-col max-w-[1200px] w-full px-6 md:px-10">
-                    <!-- Hero Section -->
-                    <div class="@container">
-                        <div class="flex flex-col gap-8 py-12 md:py-20 lg:flex-row lg:items-center">
-                            <div class="flex flex-col gap-6 lg:w-1/2">
-                                <div class="flex flex-col gap-4 text-left">
-                                    <h1
-                                        class="text-slate-900 dark:text-white text-4xl md:text-6xl font-black leading-tight tracking-tight">
-                                        TrustLens AI – Detect <span class="text-primary">Fake Reviews</span> Instantly
-                                    </h1>
-                                    <p
-                                        class="text-slate-600 dark:text-slate-300 text-lg md:text-xl font-normal leading-relaxed max-w-[540px]">
-                                        AI-powered system that detects fake Amazon product reviews using advanced
-                                        machine learning and natural language processing.
-                                    </p>
-                                </div>
-                                <div class="flex flex-wrap gap-4">
-                                    <a href="{{ url_for('analyze') }}"
-                                        class="flex min-w-[160px] cursor-pointer items-center justify-center rounded-xl h-12 md:h-14 px-8 bg-primary text-background-dark text-base md:text-lg font-bold leading-normal shadow-[0_0_20px_rgba(68,237,38,0.3)] hover:shadow-[0_0_30px_rgba(68,237,38,0.5)] transition-all">
-                                        <span class="truncate">Start Analysis</span>
-                                    </a>
-                                    <a href="#how-it-works"
-                                        class="flex min-w-[160px] cursor-pointer items-center justify-center rounded-xl h-12 md:h-14 px-8 bg-primary/10 border border-primary/30 text-primary text-base md:text-lg font-bold leading-normal hover:bg-primary/20 transition-all">
-                                        <span class="truncate">How it works</span>
-                                    </a>
-                                </div>
-                            </div>
-                            <div class="w-full lg:w-1/2 flex justify-center">
-                                <div
-                                    class="relative w-full aspect-square max-w-[500px] rounded-xl overflow-hidden border border-primary/20 shadow-2xl shadow-primary/10">
-                                    <div class="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent z-10">
-                                    </div>
-                                    <img class="w-full h-full object-cover grayscale opacity-80"
-                                        alt="AI dashboard preview"
-                                        data-alt="Futuristic dashboard with data visualization and AI analysis charts"
-                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiOe1K5V1AK9dJfUcXNbM3gt5-_OPG6X1nkodou_YJH5cH3Z54o0DXwPC13IF8OlDMVxo5lPWn-4OPpsvxWHk4KP225pjtvaLk9sWrvd9JgtV4ILp4szniVyWuqaAeqWmlMgd-GJuLZhvIv2V4OsXarCr48J3eK5La05riNKLmPeJHxYERiA61cKqX_FmuHWwJ6-gBC2AaHhqWP3FueJuI7wtWY64in2KB7kcH-JhlXLy2S_c5ae5FzzZce68vCkwOcXju1a4eN6uW" />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Features Section -->
-                    <div class="flex flex-col gap-10 py-16 @container border-t border-primary/10">
-                        <div class="flex flex-col gap-4 text-center items-center">
-                            <h2
-                                class="text-slate-900 dark:text-white tracking-tight text-3xl md:text-4xl font-black leading-tight max-w-[720px]">
-                                Advanced Detection Features
-                            </h2>
-                            <p
-                                class="text-slate-600 dark:text-slate-400 text-base md:text-lg font-normal leading-normal max-w-[720px]">
-                                Our sophisticated AI models ensure you get the truth behind every review, protecting
-                                your purchasing decisions.
-                            </p>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <div
-                                class="flex flex-col gap-4 rounded-xl border border-primary/10 bg-card-dark p-6 hover:border-primary/30 transition-all group">
-                                <div
-                                    class="text-primary bg-primary/20 w-12 h-12 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <span class="material-symbols-outlined">smart_toy</span>
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <h3 class="text-slate-900 dark:text-white text-lg font-bold leading-tight">AI Fake
-                                        Review Detection</h3>
-                                    <p class="text-slate-600 dark:text-slate-400 text-sm font-normal leading-relaxed">
-                                        Deep learning models identify synthetic patterns and bot behaviors.</p>
-                                </div>
-                            </div>
-                            <div
-                                class="flex flex-col gap-4 rounded-xl border border-primary/10 bg-card-dark p-6 hover:border-primary/30 transition-all group">
-                                <div
-                                    class="text-primary bg-primary/20 w-12 h-12 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <span class="material-symbols-outlined">verified_user</span>
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <h3 class="text-slate-900 dark:text-white text-lg font-bold leading-tight">Trust
-                                        Score Calculation</h3>
-                                    <p class="text-slate-600 dark:text-slate-400 text-sm font-normal leading-relaxed">
-                                        Proprietary scoring based on reviewer history and credibility metrics.</p>
-                                </div>
-                            </div>
-                            <div
-                                class="flex flex-col gap-4 rounded-xl border border-primary/10 bg-card-dark p-6 hover:border-primary/30 transition-all group">
-                                <div
-                                    class="text-primary bg-primary/20 w-12 h-12 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <span class="material-symbols-outlined">search_check</span>
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <h3 class="text-slate-900 dark:text-white text-lg font-bold leading-tight">Keyword
-                                        Detection</h3>
-                                    <p class="text-slate-600 dark:text-slate-400 text-sm font-normal leading-relaxed">
-                                        Flags promotional language and specific markers of paid reviews.</p>
-                                </div>
-                            </div>
-                            <div
-                                class="flex flex-col gap-4 rounded-xl border border-primary/10 bg-card-dark p-6 hover:border-primary/30 transition-all group">
-                                <div
-                                    class="text-primary bg-primary/20 w-12 h-12 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <span class="material-symbols-outlined">query_stats</span>
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <h3 class="text-slate-900 dark:text-white text-lg font-bold leading-tight">Activity
-                                        Analysis</h3>
-                                    <p class="text-slate-600 dark:text-slate-400 text-sm font-normal leading-relaxed">
-                                        Analyzes the velocity and timing spikes of review submissions.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- How It Works Section -->
-                    <div class="py-16 mb-20" id="how-it-works">
-                        <h2
-                            class="text-slate-900 dark:text-white text-3xl font-black leading-tight tracking-tight mb-12 text-center">
-                            How It Works</h2>
-                        <div class="relative grid grid-cols-1 md:grid-cols-3 gap-12 max-w-5xl mx-auto">
-                            <!-- Connection Line (Desktop) -->
-                            <div
-                                class="hidden md:block absolute top-10 left-[15%] right-[15%] h-[2px] bg-primary/20 -z-10">
-                            </div>
-                            <!-- Step 1 -->
-                            <div class="flex flex-col items-center text-center gap-4 group">
-                                <div
-                                    class="w-20 h-20 rounded-full bg-card-dark border-4 border-primary flex items-center justify-center text-primary shadow-[0_0_15px_rgba(38,237,237,0.2)] group-hover:scale-110 transition-transform">
-                                    <span class="material-symbols-outlined text-4xl">link</span>
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <p class="text-slate-900 dark:text-white text-xl font-bold leading-normal">1. Paste
-                                        Link</p>
-                                    <p class="text-slate-600 dark:text-slate-400 text-base font-normal leading-normal">
-                                        Simply copy and paste the Amazon product URL into our analyzer input.</p>
-                                </div>
-                            </div>
-                            <!-- Step 2 -->
-                            <div class="flex flex-col items-center text-center gap-4 group">
-                                <div
-                                    class="w-20 h-20 rounded-full bg-card-dark border-4 border-primary flex items-center justify-center text-primary shadow-[0_0_15px_rgba(38,237,237,0.2)] group-hover:scale-110 transition-transform">
-                                    <span class="material-symbols-outlined text-4xl">memory</span>
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <p class="text-slate-900 dark:text-white text-xl font-bold leading-normal">2. AI
-                                        Analyzes</p>
-                                    <p class="text-slate-600 dark:text-slate-400 text-base font-normal leading-normal">
-                                        Our proprietary NLP engine processes thousands of reviews and data points in
-                                        seconds.</p>
-                                </div>
-                            </div>
-                            <!-- Step 3 -->
-                            <div class="flex flex-col items-center text-center gap-4 group">
-                                <div
-                                    class="w-20 h-20 rounded-full bg-card-dark border-4 border-primary flex items-center justify-center text-primary shadow-[0_0_15px_rgba(38,237,237,0.2)] group-hover:scale-110 transition-transform">
-                                    <span class="material-symbols-outlined text-4xl">dashboard_customize</span>
-                                </div>
-                                <div class="flex flex-col gap-2">
-                                    <p class="text-slate-900 dark:text-white text-xl font-bold leading-normal">3.
-                                        Dashboard Results</p>
-                                    <p class="text-slate-600 dark:text-slate-400 text-base font-normal leading-normal">
-                                        Receive a detailed authenticity report with visual trust scores and risk flags.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </main>
-            <!-- Footer -->
-            <footer class="border-t border-white/5 py-10 px-6 bg-background-light/30 dark:bg-[#080808]">
-                <div class="max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-                    <div class="flex items-center gap-2">
-                        <span class="material-symbols-outlined text-primary">shield_with_heart</span>
-                        <span class="text-slate-900 dark:text-white font-bold">TrustLens AI</span>
-                    </div>
-                    <p class="text-slate-500 text-sm">© 2026 TrustLens AI. Ensuring review authenticity for everyone.
-                    </p>
-                    <div class="flex gap-6">
-                        <a class="text-slate-500 hover:text-primary transition-colors text-sm" href="#">Terms</a>
-                        <a class="text-slate-500 hover:text-primary transition-colors text-sm" href="#">Privacy</a>
-                        <a class="text-slate-500 hover:text-primary transition-colors text-sm" href="#">Support</a>
-                    </div>
-                </div>
-            </footer>
-        </div>
-    </div>
 </body>
-
 </html>

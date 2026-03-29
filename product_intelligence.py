@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 from itertools import combinations
@@ -26,6 +27,31 @@ def _as_timedelta(window: Any) -> pd.Timedelta:
     if isinstance(window, pd.Timedelta):
         return window
     return pd.to_timedelta(window)
+
+
+def _parse_review_timestamp(value: Any) -> pd.Timestamp:
+    """
+    Parse noisy marketplace date strings robustly.
+    Handles strings like: "Reviewed in India on 12 March 2026".
+    """
+    if value is None:
+        return pd.NaT
+    text = str(value).strip()
+    if not text:
+        return pd.NaT
+
+    ts = pd.to_datetime(text, errors="coerce")
+    if pd.notna(ts):
+        return pd.Timestamp(ts)
+
+    # Common marketplace pattern: "... on <date>"
+    m = re.search(r"\bon\b\s+(.+)$", text, flags=re.IGNORECASE)
+    if m:
+        ts = pd.to_datetime(m.group(1).strip(), errors="coerce")
+        if pd.notna(ts):
+            return pd.Timestamp(ts)
+
+    return pd.NaT
 
 
 def build_reviewer_coordination_graph(
@@ -55,7 +81,7 @@ def build_reviewer_coordination_graph(
 
     work = df[[user_col, product_col, timestamp_col]].copy()
     work = work.dropna(subset=[user_col, product_col, timestamp_col])
-    work[timestamp_col] = pd.to_datetime(work[timestamp_col], errors="coerce")
+    work[timestamp_col] = work[timestamp_col].apply(_parse_review_timestamp)
     work = work.dropna(subset=[timestamp_col])
     if work.empty:
         return nx.Graph()

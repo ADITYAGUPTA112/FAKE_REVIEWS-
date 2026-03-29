@@ -5,11 +5,10 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>TrustLens AI – Forensic Review Intelligence</title>
+    <title>TrustLens AI - Forensic Review Intelligence</title>
     <meta name="description" content="AI-powered forensic analysis terminal for detecting fake product reviews using advanced NLP and network analysis." />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
@@ -37,6 +36,12 @@
         .font-mono-code { font-family: 'JetBrains Mono', monospace; }
         .glass-panel { background: rgba(15,15,20,0.85); border: 1px solid rgba(38,237,237,0.08); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
         .glass-panel-elevated { background: rgba(20,20,28,0.92); border: 1px solid rgba(38,237,237,0.12); backdrop-filter: blur(20px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+        .hero-command { background: radial-gradient(circle at 12% 15%, rgba(38,237,237,0.18), rgba(0,0,0,0) 45%), radial-gradient(circle at 88% 10%, rgba(56,189,248,0.12), rgba(0,0,0,0) 35%), linear-gradient(130deg, rgba(10,10,14,0.96), rgba(14,22,30,0.94)); }
+        .section-kicker { letter-spacing: 0.18em; text-transform: uppercase; font-size: 11px; color: rgba(148,163,184,0.9); }
+        .case-header { position: relative; overflow: hidden; }
+        .case-header::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(38,237,237,0.06), rgba(0,0,0,0)); pointer-events: none; }
+        .stat-priority { border: 1px solid rgba(38,237,237,0.22); background: linear-gradient(140deg, rgba(16,22,28,0.95), rgba(10,14,18,0.92)); }
+        .stat-support { border: 1px solid rgba(148,163,184,0.18); background: rgba(12,16,22,0.82); }
         .review-fake { background: rgba(239,68,68,0.07) !important; border: 1px solid rgba(239,68,68,0.25) !important; border-left: 4px solid #ef4444 !important; }
         .review-fake .review-text { color: #fca5a5; }
         .review-genuine { background: rgba(15,15,20,0.85); border: 1px solid rgba(38,237,237,0.12); border-left: 4px solid #26eded; }
@@ -49,9 +54,16 @@
         .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
         .forensic-marker { animation: fadeSlideIn 0.4s ease-out forwards; opacity: 0; }
         @keyframes fadeSlideIn { from { opacity:0; transform: translateX(-10px); } to { opacity:1; transform: translateX(0); } }
+        @keyframes evidenceIn { from { opacity:0; transform: translateY(10px) scale(0.995); } to { opacity:1; transform: translateY(0) scale(1); } }
+        .evidence-card { opacity: 0; animation: evidenceIn 0.36s ease-out forwards; will-change: transform, opacity; }
+        @keyframes metricFlash {
+            0% { box-shadow: 0 0 0 rgba(38,237,237,0); border-color: rgba(38,237,237,0.2); }
+            45% { box-shadow: 0 0 22px rgba(38,237,237,0.28), 0 0 44px rgba(38,237,237,0.10); border-color: rgba(38,237,237,0.5); }
+            100% { box-shadow: 0 0 0 rgba(38,237,237,0); border-color: rgba(38,237,237,0.2); }
+        }
+        .stat-card.metric-flash { animation: metricFlash 0.68s ease-out; }
         .stat-card { transition: all 0.3s ease; }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
-        #network-graph-container { background: radial-gradient(ellipse at center, rgba(38,237,237,0.03) 0%, transparent 70%); }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.35); }
         .trustlens-input { background: rgba(10,10,15,0.9); border: 1px solid rgba(38,237,237,0.15); transition: all 0.3s ease; }
         .trustlens-input:focus { border-color: rgba(38,237,237,0.5); box-shadow: 0 0 0 3px rgba(38,237,237,0.1), 0 0 20px rgba(38,237,237,0.1); }
     </style>
@@ -96,23 +108,35 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Search/Analysis Input Section -->
         <section class="mb-12" id="search-section">
-            <div class="glass-panel-elevated p-8 rounded-xl border border-primary/30 text-center max-w-4xl mx-auto">
-                <h1 class="text-3xl font-black mb-2">Forensic Review Scanner</h1>
-                <p class="text-slate-500 dark:text-slate-400 mb-6 font-mono-code text-xs">// Enter an Amazon URL or ASIN to begin deep forensic analysis</p>
-                <div class="flex flex-col md:flex-row gap-3">
-                    <div class="relative flex-grow">
-                        <span
-                            class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary/60">link</span>
-                        <input
-                            class="w-full pl-12 pr-4 py-4 rounded-xl bg-slate-100 dark:bg-slate-900 border border-primary/20 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
-                            placeholder="https://www.amazon.com/dp/B0..." type="text" />
+            <div class="hero-command p-6 sm:p-8 lg:p-10 rounded-2xl border border-primary/30">
+                <div class="max-w-4xl">
+                    <p class="section-kicker mb-3">TrustLens Forensic Command Center</p>
+                    <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black leading-tight mb-3">
+                        Detect Fake Reviews in Seconds
+                    </h1>
+                    <p class="text-slate-300 mb-8 max-w-2xl">
+                        Paste an Amazon URL or ASIN to run deep forensic analysis across language signals, behavior anomalies, and coordinated review activity.
+                    </p>
+                    <div class="flex flex-col md:flex-row gap-3 max-w-3xl">
+                        <div class="relative flex-grow">
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary/60">link</span>
+                            <input
+                                class="trustlens-input w-full pl-12 pr-4 py-4 rounded-xl bg-slate-100 dark:bg-slate-900 focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                                placeholder="https://www.amazon.com/dp/B0... or ASIN" type="text" />
+                        </div>
+                        <button
+                            class="bg-primary text-background-dark px-8 py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:shadow-[0_0_20px_rgba(38,237,237,0.35)] transition-all"
+                            id="run-analysis-btn">
+                            <span class="material-symbols-outlined">play_arrow</span>
+                            Analyze Product
+                        </button>
                     </div>
-                    <button
-                        class="bg-primary text-background-dark px-8 py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:shadow-[0_0_20px_rgba(68,237,38,0.4)] transition-all"
-                        id="run-analysis-btn">
-                        <span class="material-symbols-outlined">analytics</span>
-                        Run Analysis
-                    </button>
+                    <div class="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                        <span class="section-kicker !text-[10px] !tracking-[0.15em]">Quick Demo</span>
+                        <button type="button" class="px-3 py-1 rounded-full border border-primary/30 bg-slate-900/50 text-primary hover:bg-primary/10 transition-colors" onclick="const i=document.querySelector('input[placeholder*=amazon.com]'); if(i){i.value='B0BRJ7QX33'; i.focus();}">
+                            Use Sample ASIN: B0BRJ7QX33
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -132,27 +156,25 @@
             </div>
         </div>
 
-        <!-- â”€â”€ Product Details Panel (shown after analysis) â”€â”€ -->
-        <div class="loading-hidden mb-8" id="product-panel">
-            <div class="glass-panel rounded-xl border border-primary/20 p-6">
+        <!-- Product Details Panel (shown after analysis) -->
+        <div class="loading-hidden mb-8 lg:sticky lg:top-20 z-30" id="product-panel">
+            <div class="glass-panel case-header rounded-xl border border-primary/20 p-6">
                 <div class="flex flex-col md:flex-row gap-6 items-start">
                     <!-- Product Image -->
                     <div
-                        class="flex-shrink-0 w-36 h-36 rounded-xl overflow-hidden border border-primary/20 bg-slate-900 flex items-center justify-center">
+                        class="flex-shrink-0 w-36 h-36 rounded-xl overflow-hidden border border-primary/20 bg-slate-900 flex items-center justify-center relative z-10">
                         <img id="product-img" alt="Product image" class="w-full h-full object-contain" />
                     </div>
                     <!-- Details -->
-                    <div class="flex-1">
+                    <div class="flex-1 relative z-10">
                         <div class="flex items-center gap-2 mb-1">
-                            <span class="material-symbols-outlined text-primary text-sm">inventory_2</span>
-                            <span class="text-xs text-slate-400 uppercase tracking-widest font-bold">Amazon
-                                Product</span>
+                            <span class="material-symbols-outlined text-primary text-sm">lab_profile</span>
+                            <span class="text-xs text-slate-400 uppercase tracking-widest font-bold">Active Case File</span>
                         </div>
-                        <h2 class="text-xl font-bold mb-1" id="product-title">Product: â€”</h2>
-                        <p class="text-xs text-slate-400 mb-1" id="product-asin-title">ASIN: â€”</p>
+                        <h2 class="text-xl font-bold mb-1" id="product-title">Product: --</h2>
+                        <p class="text-xs text-slate-400 mb-1" id="product-asin-title">ASIN: --</p>
                         <a id="product-link" href="#" target="_blank"
-                            class="text-xs text-primary/70 hover:text-primary underline underline-offset-2 transition-colors mb-4 inline-block">Open
-                            on Amazon â†—</a>
+                            class="text-xs text-primary/70 hover:text-primary underline underline-offset-2 transition-colors mb-4 inline-block">Open on Amazon</a>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-300 mb-3">
                             <div class="rounded-lg border border-primary/20 bg-slate-900/40 px-3 py-2">
                                 <span class="text-slate-400">Marketplace:</span>
@@ -170,8 +192,8 @@
                         <!-- Fake vs Genuine Bar -->
                         <div class="mt-3">
                             <div class="flex justify-between text-xs text-slate-400 mb-1">
-                                <span id="pd-genuine-label">Genuine: â€”</span>
-                                <span id="pd-fake-label" class="text-red-400">Fake: â€”</span>
+                                <span id="pd-genuine-label">Genuine: --</span>
+                                <span id="pd-fake-label" class="text-red-400">Fake: --</span>
                             </div>
                             <div class="w-full h-3 rounded-full bg-slate-800 overflow-hidden flex">
                                 <div id="pd-genuine-bar" class="h-full w-0 bg-primary transition-all duration-700"></div>
@@ -183,38 +205,54 @@
             </div>
         </div>
         <!-- Stats Dashboard -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="stats-dashboard">
-            <div class="glass-panel p-6 rounded-xl border-l-4 border-l-primary stat-card">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Genuine Score</span>
-                    <span class="material-symbols-outlined text-primary/60">verified</span>
+        <div class="mb-8" id="stats-dashboard">
+            <div class="flex items-end justify-between gap-4 mb-4">
+                <div>
+                    <p class="section-kicker mb-2">Primary Verdict</p>
+                    <h2 class="text-2xl font-bold">Fraud Risk Overview</h2>
                 </div>
-                <div class="text-3xl font-bold" id="stat-total-reviews">0%</div>
-                <div class="text-xs text-primary mt-1" id="stat-total-diff">Authentic likelihood</div>
+                <div class="flex items-center gap-3">
+                    <p class="text-xs text-slate-400">Scan data updates after every analysis run</p>
+                    <button id="export-report-btn" type="button" class="px-3 py-1.5 rounded-lg border border-primary/40 text-primary text-xs hover:bg-primary/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" disabled>
+                        Export Report
+                    </button>
+                </div>
             </div>
-            <div class="glass-panel p-6 rounded-xl border-l-4 border-l-red-500 stat-card">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Fake Score</span>
-                    <span class="material-symbols-outlined text-red-500/60">warning</span>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                <div class="stat-priority p-6 rounded-xl stat-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-slate-400 text-sm font-medium">Trust Score</span>
+                        <span class="material-symbols-outlined text-primary/70">verified_user</span>
+                    </div>
+                    <div class="text-4xl font-black text-primary" id="stat-total-reviews">0%</div>
+                    <div class="text-xs text-primary/80 mt-1" id="stat-total-diff">Authentic likelihood</div>
                 </div>
-                <div class="text-3xl font-bold text-red-500" id="stat-fraud-risk">24.8%</div>
-                <div class="text-xs text-slate-400 mt-1" id="stat-risk-label">Suspicious likelihood</div>
+                <div class="stat-priority p-6 rounded-xl stat-card border-red-500/40">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-slate-400 text-sm font-medium">Fraud Risk</span>
+                        <span class="material-symbols-outlined text-red-500/80">gpp_maybe</span>
+                    </div>
+                    <div class="text-4xl font-black text-red-500" id="stat-fraud-risk">0%</div>
+                    <div class="text-xs text-slate-400 mt-1" id="stat-risk-label">Suspicious likelihood</div>
+                </div>
             </div>
-            <div class="glass-panel p-6 rounded-xl border-l-4 border-l-blue-500 stat-card">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Model Confidence</span>
-                    <span class="material-symbols-outlined text-blue-500/60">verified</span>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="stat-support p-5 rounded-xl stat-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-slate-400 text-sm font-medium">Model Confidence</span>
+                        <span class="material-symbols-outlined text-blue-400/80">rule_settings</span>
+                    </div>
+                    <div class="text-3xl font-bold text-blue-400" id="stat-genuine-count">0%</div>
+                    <div class="text-xs text-slate-500 mt-1">Prediction stability across scanned reviews</div>
                 </div>
-                <div class="text-3xl font-bold text-blue-500" id="stat-genuine-count">0%</div>
-                <div class="text-xs text-slate-400 mt-1">Prediction confidence</div>
-            </div>
-            <div class="glass-panel p-6 rounded-xl border-l-4 border-l-amber-500 stat-card">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Review Rings</span>
-                    <span class="material-symbols-outlined text-amber-500/60">hub</span>
+                <div class="stat-support p-5 rounded-xl stat-card">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-slate-400 text-sm font-medium">Review Rings</span>
+                        <span class="material-symbols-outlined text-amber-400/80">hub</span>
+                    </div>
+                    <div class="text-3xl font-bold text-amber-400" id="stat-ring-count">0</div>
+                    <div class="text-xs text-slate-500 mt-1" id="stat-ring-label">Suspicious clusters detected</div>
                 </div>
-                <div class="text-3xl font-bold text-amber-500" id="stat-ring-count">0</div>
-                <div class="text-xs text-slate-400 mt-1" id="stat-ring-label">Suspicious clusters</div>
             </div>
         </div>
 
@@ -227,36 +265,9 @@
             <span id="network-v2-status"></span>
         </div>
 
-        <!-- Interactive Network Graph Visualization -->
-        <section class="loading-hidden mb-12" id="network-graph-section">
-            <div class="flex items-center justify-between mb-6">
-                <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined text-primary text-2xl">hub</span>
-                    <h2 class="text-2xl font-bold">Reviewer Coordination Network</h2>
-                </div>
-                <span id="network-graph-status" class="text-xs text-slate-500 font-mono-code">IDLE</span>
-            </div>
-            <div class="glass-panel-elevated rounded-xl border border-primary/15 overflow-hidden">
-                <div id="network-graph-container" class="w-full" style="height: 420px; position: relative;">
-                    <div class="flex flex-col items-center justify-center h-full opacity-50">
-                        <span class="material-symbols-outlined text-5xl text-primary/30 mb-3">hub</span>
-                        <p class="text-sm text-slate-500">Run analysis to visualize reviewer networks</p>
-                    </div>
-                </div>
-                <div class="px-6 py-3 border-t border-primary/10 flex items-center justify-between">
-                    <div class="flex items-center gap-4 text-xs text-slate-500">
-                        <span>Nodes: <span class="text-slate-300 font-bold" id="graph-nodes-v2">0</span></span>
-                        <span>Edges: <span class="text-slate-300 font-bold" id="graph-edges-v2">0</span></span>
-                        <span>Clusters: <span class="text-red-400 font-bold" id="graph-clusters-v2">0</span></span>
-                    </div>
-                    <span class="text-[10px] text-slate-600 uppercase tracking-widest font-mono-code">vis.js network engine</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- Recent Product Intelligence Updates -->
+        <!-- Trust Intelligence Timeline -->
         <section class="loading-hidden mb-12" id="recent-updates-section">
-            <h2 class="text-2xl font-bold mb-6">Recent Product Intelligence</h2>
+            <h2 class="text-2xl font-bold mb-6">Trust Intelligence Timeline</h2>
             <div class="grid grid-cols-1 gap-6">
                 <div class="glass-panel p-6 rounded-xl border border-primary/20">
                     <div class="flex items-center justify-between mb-3">
@@ -264,8 +275,17 @@
                             <span class="material-symbols-outlined text-primary">timeline</span>
                             <h3 class="font-bold">12-Month Trust Trend</h3>
                         </div>
-                        <span id="trend-status" class="text-xs text-slate-400">No data yet</span>
+                        <div class="flex items-center gap-3">
+                            <span id="trend-status" class="text-xs text-slate-400">No data yet</span>
+                            <div class="inline-flex items-center rounded-lg border border-slate-700 overflow-hidden">
+                                <button type="button" class="trend-range-btn px-2.5 py-1 text-[11px] text-slate-300 bg-slate-900/60 hover:bg-slate-800 transition-colors" data-months="3">3M</button>
+                                <button type="button" class="trend-range-btn px-2.5 py-1 text-[11px] text-slate-300 bg-slate-900/60 hover:bg-slate-800 transition-colors" data-months="6">6M</button>
+                                <button type="button" class="trend-range-btn px-2.5 py-1 text-[11px] text-black bg-primary font-semibold" data-months="12">12M</button>
+                            </div>
+                        </div>
                     </div>
+                    <p class="text-xs text-slate-500 mb-3">Monthly signal of trust score and fraud risk for this product.</p>
+                    <p id="trend-summary" class="text-xs text-slate-400 mb-3">Run analysis to view movement across months.</p>
                     <div class="h-64">
                         <canvas id="trust-trend-chart"></canvas>
                     </div>
@@ -316,100 +336,33 @@
         <!-- Detailed Review Analysis Section -->
         <section id="reviews-section">
             <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold">In-Depth Review Analysis</h2>
-                <div class="flex gap-2">
-                    <button
-                        class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm">Sort:
-                        Newest</button>
-                    <button
-                        class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm">Filter:
-                        Suspicious</button>
+                <div>
+                    <h2 class="text-2xl font-bold">Forensic Evidence Feed</h2>
+                    <p id="evidence-meta" class="text-xs text-slate-500 mt-1">Run analysis to populate the evidence feed.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <div class="inline-flex items-center rounded-lg border border-slate-700 overflow-hidden">
+                        <button id="filter-all-btn" type="button" class="review-filter-btn px-3 py-1.5 text-xs text-black bg-primary font-semibold" data-filter="all">All</button>
+                        <button id="filter-fake-btn" type="button" class="review-filter-btn px-3 py-1.5 text-xs text-slate-300 bg-slate-900/60 hover:bg-slate-800 transition-colors" data-filter="fake">Fake</button>
+                        <button id="filter-genuine-btn" type="button" class="review-filter-btn px-3 py-1.5 text-xs text-slate-300 bg-slate-900/60 hover:bg-slate-800 transition-colors" data-filter="genuine">Genuine</button>
+                        <button id="filter-suspicious-btn" type="button" class="review-filter-btn px-3 py-1.5 text-xs text-slate-300 bg-slate-900/60 hover:bg-slate-800 transition-colors" data-filter="suspicious">Suspicious</button>
+                    </div>
+                    <select id="sort-select" class="px-3 py-1.5 text-xs rounded-lg border border-slate-700 bg-slate-900/60 text-slate-200">
+                        <option value="newest">Sort: Newest</option>
+                        <option value="confidence-high">Sort: Highest Confidence</option>
+                        <option value="risk-high">Sort: Highest Risk</option>
+                    </select>
                 </div>
             </div>
-            <div class="grid grid-cols-1 gap-6">
-                <!-- Analysis Card 1 (Suspicious) -->
-                <div class="glass-panel p-6 rounded-xl border border-red-500/30">
-                    <div class="flex flex-col md:flex-row gap-6">
-                        <div class="flex-grow">
-                            <div class="flex items-center gap-3 mb-3">
-                                <span
-                                    class="px-2 py-1 rounded bg-red-500 text-white text-[10px] font-bold uppercase tracking-wider">High
-                                    Probability Fake</span>
-                                <span class="text-sm text-slate-500">October 12, 2023</span>
-                                <span class="text-sm font-medium text-slate-300">Verified Purchase: Yes</span>
-                            </div>
-                            <h4 class="text-lg font-bold mb-2">"This product changed my life, absolutely perfect!"</h4>
-                            <p class="text-slate-400 text-sm leading-relaxed mb-4">
-                                I was very skeptical at first but after using this for exactly 2 hours I can say it is
-                                the best thing ever. Everyone should buy this immediately. No flaws at all. The
-                                packaging was also the most beautiful thing I have ever seen in my entire life.
-                            </p>
-                            <div class="flex flex-wrap gap-2">
-                                <span
-                                    class="text-xs px-2 py-1 bg-slate-800 text-red-400 rounded-full border border-red-500/20">Hyperbolic
-                                    Language</span>
-                                <span
-                                    class="text-xs px-2 py-1 bg-slate-800 text-red-400 rounded-full border border-red-500/20">Short
-                                    Duration Usage</span>
-                                <span
-                                    class="text-xs px-2 py-1 bg-slate-800 text-red-400 rounded-full border border-red-500/20">Repetitive
-                                    Pattern</span>
-                            </div>
-                        </div>
-                        <div
-                            class="md:w-48 flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-primary/10 pt-4 md:pt-0">
-                            <div class="text-sm text-slate-500 mb-1">AI Confidence</div>
-                            <div class="text-3xl font-bold text-red-500">99.4%</div>
-                            <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
-                                <div class="bg-red-500 h-full w-[99.4%]"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Analysis Card 2 (Genuine) -->
-                <div class="glass-panel p-6 rounded-xl border border-primary/30">
-                    <div class="flex flex-col md:flex-row gap-6">
-                        <div class="flex-grow">
-                            <div class="flex items-center gap-3 mb-3">
-                                <span
-                                    class="px-2 py-1 rounded bg-primary text-background-dark text-[10px] font-bold uppercase tracking-wider">Likely
-                                    Genuine</span>
-                                <span class="text-sm text-slate-500">September 28, 2023</span>
-                                <span class="text-sm font-medium text-slate-300">Verified Purchase: Yes</span>
-                            </div>
-                            <h4 class="text-lg font-bold mb-2">"Good performance but slightly overpriced"</h4>
-                            <p class="text-slate-400 text-sm leading-relaxed mb-4">
-                                It works as advertised for the most part. The setup took longer than expected and the
-                                manual was a bit confusing. However, once running, it's solid. Not sure if it's worth
-                                the full retail price, maybe wait for a sale.
-                            </p>
-                            <div class="flex flex-wrap gap-2">
-                                <span
-                                    class="text-xs px-2 py-1 bg-slate-800 text-primary/80 rounded-full border border-primary/20">Balanced
-                                    Review</span>
-                                <span
-                                    class="text-xs px-2 py-1 bg-slate-800 text-primary/80 rounded-full border border-primary/20">Specific
-                                    Critique</span>
-                                <span
-                                    class="text-xs px-2 py-1 bg-slate-800 text-primary/80 rounded-full border border-primary/20">Natural
-                                    Language</span>
-                            </div>
-                        </div>
-                        <div
-                            class="md:w-48 flex flex-col items-center justify-center border-t md:border-t-0 md:border-l border-primary/10 pt-4 md:pt-0">
-                            <div class="text-sm text-slate-500 mb-1">AI Confidence</div>
-                            <div class="text-3xl font-bold text-primary">88.2%</div>
-                            <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
-                                <div class="bg-primary h-full w-[88.2%]"></div>
-                            </div>
-                        </div>
-                    </div>
+            <div id="reviews-container" class="grid grid-cols-1 gap-6">
+                <div class="glass-panel p-6 rounded-xl border border-primary/20 text-slate-400 text-sm">
+                    Evidence cards will appear here after analysis.
                 </div>
             </div>
             <div class="mt-8 flex justify-center">
                 <button id="load-more-btn"
                     class="hidden px-6 py-2 rounded-lg border border-primary text-primary font-medium hover:bg-primary/10 transition-colors">
-                    Load More Reviews
+                    Expand Evidence
                 </button>
             </div>
         </section>
@@ -427,7 +380,7 @@
                 <a class="hover:text-primary" href="#">API Documentation</a>
                 <a class="hover:text-primary" href="#">Contact Support</a>
             </div>
-            <p class="text-[10px] text-slate-600 uppercase tracking-widest">Â© 2026 TrustLens AI. All rights reserved.
+            <p class="text-[10px] text-slate-600 uppercase tracking-widest">(c) 2026 TrustLens AI. All rights reserved.
             </p>
         </div>
     </footer>
@@ -451,7 +404,22 @@
 
         const advancedInsightsSection = document.getElementById('advanced-insights-section');
         const recentUpdatesSection = document.getElementById('recent-updates-section');
-        const networkGraphSection = document.getElementById('network-graph-section');
+        const reviewsContainer = document.getElementById('reviews-container');
+        const evidenceMeta = document.getElementById('evidence-meta');
+        const trendSummary = document.getElementById('trend-summary');
+        const exportReportBtn = document.getElementById('export-report-btn');
+        const sortSelect = document.getElementById('sort-select');
+        const reviewFilterButtons = Array.from(document.querySelectorAll('.review-filter-btn'));
+        const trendRangeButtons = Array.from(document.querySelectorAll('.trend-range-btn'));
+
+        let currentTrendMonths = 12;
+        let trendContext = { productId: null, platform: 'amazon', fallbackFraudScore: null };
+        let allReviewRows = [];
+        let filteredReviewRows = [];
+        let activeReviewFilter = 'all';
+        let activeReviewSort = 'newest';
+        let currentReviewLimit = 10;
+        let latestAnalysisSnapshot = null;
 
         function showLoader() {
             searchSection.classList.add('loading-hidden');
@@ -460,7 +428,6 @@
             reviewsSection.classList.add('loading-hidden');
             advancedInsightsSection.classList.add('loading-hidden');
             recentUpdatesSection.classList.add('loading-hidden');
-            if (networkGraphSection) networkGraphSection.classList.add('loading-hidden');
             loadingState.classList.remove('loading-hidden');
             progressBar.classList.remove('animate-progress');
             void progressBar.offsetWidth;
@@ -491,7 +458,6 @@
             reviewsSection.classList.remove('loading-hidden');
             advancedInsightsSection.classList.remove('loading-hidden');
             recentUpdatesSection.classList.remove('loading-hidden');
-            if (networkGraphSection) networkGraphSection.classList.remove('loading-hidden');
         }
 
         function resolveRiskPercentages(chartData) {
@@ -504,21 +470,236 @@
             return { fakePct, genPct: 100 - fakePct };
         }
 
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatFilterLabel(filter) {
+            const key = String(filter || '').toLowerCase();
+            if (key === 'fake') return 'Fake only';
+            if (key === 'genuine') return 'Genuine only';
+            if (key === 'suspicious') return 'Suspicious only';
+            return 'All reviews';
+        }
+
+        function formatSortLabel(sort) {
+            const key = String(sort || '').toLowerCase();
+            if (key === 'confidence-high') return 'Highest confidence';
+            if (key === 'risk-high') return 'Highest risk';
+            return 'Newest';
+        }
+
+        function buildPrintableReportHtml(snapshot, context = {}) {
+            const data = (snapshot && snapshot.data) ? snapshot.data : {};
+            const summary = data.summary || {};
+            const chart = data.chart_data || {};
+            const advanced = data.advanced_analysis || {};
+            const fraudRisk = Number.isFinite(Number(advanced.combined_fraud_score))
+                ? Number(advanced.combined_fraud_score)
+                : Number.isFinite(Number(chart.fake_score))
+                    ? Number(chart.fake_score)
+                    : 0;
+            const trustScore = Math.max(0, 100 - fraudRisk);
+            const modelConfidence = Number(summary.confidence || summary.avg_confidence || NaN);
+            const generatedAt = snapshot.generatedAt || new Date().toISOString();
+            const source = snapshot.rawInput || snapshot.asin || '';
+            const trendWindow = Number(context.trendMonths || currentTrendMonths || 12);
+            const trendSummaryText = context.trendSummaryText || (trendSummary ? trendSummary.textContent : '');
+            const filterLabel = formatFilterLabel(context.activeFilter || activeReviewFilter);
+            const sortLabel = formatSortLabel(context.activeSort || activeReviewSort);
+            const totalScanned = Number(context.totalCount || allReviewRows.length || 0);
+            const currentViewCount = Number(context.viewCount || filteredReviewRows.length || 0);
+
+            const viewRowsSource = Array.isArray(context.exportRows) && context.exportRows.length
+                ? context.exportRows
+                : (filteredReviewRows.length ? filteredReviewRows : allReviewRows);
+
+            const viewRows = [...viewRowsSource].slice(0, 8);
+            const suspiciousTotal = [...allReviewRows].filter(isSuspiciousRow).length;
+
+            const viewEvidenceRows = viewRows.map((row, idx) => {
+                const excerpt = escapeHtml(String(row.review || '').slice(0, 260));
+                const risk = getRowRiskScore(row);
+                return `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td>${escapeHtml(row.prediction || '-')}</td>
+                        <td>${Number(row.confidence || 0).toFixed(1)}%</td>
+                        <td>${risk.toFixed(1)}</td>
+                        <td>${escapeHtml(row.date || '-')}</td>
+                        <td>${excerpt}${String(row.review || '').length > 260 ? '...' : ''}</td>
+                    </tr>`;
+            }).join('');
+
+            const suspiciousTop = [...allReviewRows]
+                .filter(isSuspiciousRow)
+                .sort((a, b) => getRowRiskScore(b) - getRowRiskScore(a))
+                .slice(0, 8);
+
+            const suspiciousRows = suspiciousTop.map((row, idx) => {
+                const excerpt = escapeHtml(String(row.review || '').slice(0, 260));
+                const risk = getRowRiskScore(row);
+                return `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td>${escapeHtml(row.prediction || '-')}</td>
+                        <td>${Number(row.confidence || 0).toFixed(1)}%</td>
+                        <td>${risk.toFixed(1)}</td>
+                        <td>${escapeHtml(row.date || '-')}</td>
+                        <td>${excerpt}${String(row.review || '').length > 260 ? '...' : ''}</td>
+                    </tr>`;
+            }).join('');
+
+            return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>TrustLens AI Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; color: #111; }
+    h1 { margin: 0 0 8px; font-size: 22px; }
+    h2 { margin: 24px 0 8px; font-size: 16px; }
+    .meta { color: #444; font-size: 12px; margin-bottom: 12px; }
+    .cards { display: grid; grid-template-columns: repeat(3, minmax(120px, 1fr)); gap: 10px; margin: 12px 0 6px; }
+    .card { border: 1px solid #ddd; padding: 10px; border-radius: 8px; }
+    .label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.04em; }
+    .value { font-size: 22px; font-weight: 700; margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+    th, td { border: 1px solid #ddd; padding: 6px; vertical-align: top; text-align: left; }
+    th { background: #f3f4f6; }
+    .muted { color: #666; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <h1>TrustLens AI - Forensic Review Report</h1>
+  <div class="meta">
+    <div><strong>Product:</strong> ${escapeHtml(summary.product_title || 'Unknown Product')}</div>
+    <div><strong>ASIN:</strong> ${escapeHtml(snapshot.asin || '-')}</div>
+    <div><strong>Input:</strong> ${escapeHtml(source)}</div>
+    <div><strong>Generated:</strong> ${escapeHtml(generatedAt)}</div>
+    <div><strong>Trend window:</strong> ${escapeHtml(String(trendWindow))} months</div>
+    <div><strong>Active view:</strong> ${escapeHtml(filterLabel)} | ${escapeHtml(sortLabel)}</div>
+    <div><strong>Rows:</strong> ${currentViewCount} in current view, ${totalScanned} total scanned, ${suspiciousTotal} suspicious</div>
+    <div><strong>Trend insight:</strong> ${escapeHtml(trendSummaryText || 'N/A')}</div>
+  </div>
+
+  <div class="cards">
+    <div class="card"><div class="label">Trust Score</div><div class="value">${trustScore.toFixed(1)}%</div></div>
+    <div class="card"><div class="label">Fraud Risk</div><div class="value">${fraudRisk.toFixed(1)}%</div></div>
+    <div class="card"><div class="label">Model Confidence</div><div class="value">${Number.isFinite(modelConfidence) ? modelConfidence.toFixed(1) + '%' : 'N/A'}</div></div>
+  </div>
+
+  <h2>Current View Evidence (Top ${viewRows.length})</h2>
+  ${viewRows.length ? `
+    <table>
+      <thead>
+        <tr><th>#</th><th>Label</th><th>Confidence</th><th>Risk</th><th>Date</th><th>Excerpt</th></tr>
+      </thead>
+      <tbody>
+        ${viewEvidenceRows}
+      </tbody>
+    </table>` : '<p class="muted">No rows available in the current view.</p>'}
+
+  <h2>Top Suspicious Evidence</h2>
+  ${suspiciousTop.length ? `
+    <table>
+      <thead>
+        <tr><th>#</th><th>Label</th><th>Confidence</th><th>Risk</th><th>Date</th><th>Excerpt</th></tr>
+      </thead>
+      <tbody>
+        ${suspiciousRows}
+      </tbody>
+    </table>` : '<p class="muted">No suspicious evidence rows available in this run.</p>'}
+
+  <p class="muted" style="margin-top:18px;">
+    Generated by TrustLens AI forensic engine. Use this report as decision support, not as sole evidence.
+  </p>
+</body>
+</html>`;
+        }
+
+        function exportCurrentReport() {
+            if (!latestAnalysisSnapshot) {
+                alert('Run an analysis first to export a report.');
+                return;
+            }
+            const html = buildPrintableReportHtml(latestAnalysisSnapshot, {
+                trendMonths: currentTrendMonths,
+                trendSummaryText: trendSummary ? trendSummary.textContent : '',
+                activeFilter: activeReviewFilter,
+                activeSort: activeReviewSort,
+                viewCount: filteredReviewRows.length,
+                totalCount: allReviewRows.length,
+                exportRows: filteredReviewRows.slice(0, 8),
+            });
+            const reportWindow = window.open('', '_blank');
+            if (!reportWindow) {
+                alert('Popup blocked. Please allow popups and try again.');
+                return;
+            }
+            reportWindow.document.open();
+            reportWindow.document.write(html);
+            reportWindow.document.close();
+            setTimeout(() => {
+                reportWindow.focus();
+                reportWindow.print();
+            }, 250);
+        }
+
         function showProductPanel(asin, chartData, summary = {}, rawInput = '') {
             const { fakePct, genPct } = resolveRiskPercentages(chartData);
             const title = (summary && summary.product_title) ? String(summary.product_title) : `Amazon Product (${asin})`;
-            const ratingValue = summary ? summary.product_rating : null;
-            const ratingRaw = (() => {
-                if (ratingValue === null || ratingValue === undefined || String(ratingValue).trim() === "") return NaN;
-                const m = String(ratingValue).match(/[\d.]+/);
-                return m ? Number(m[0]) : NaN;
-            })();
-            const ratingsTotal = (() => {
-                const value = summary ? summary.product_reviews_total : null;
-                if (value === null || value === undefined || String(value).trim() === "") return NaN;
-                const m = String(value).replace(/,/g, "").match(/\d+/);
-                return m ? Number(m[0]) : NaN;
-            })();
+            const parseCompactNumber = (value) => {
+                if (value === null || value === undefined) return NaN;
+                const raw = String(value).trim().toLowerCase();
+                if (!raw) return NaN;
+                const normalized = raw.replace(/,/g, "");
+                const compact = normalized.match(/(-?\d+(?:\.\d+)?)\s*([kmb])/i);
+                if (compact) {
+                    const base = Number(compact[1]);
+                    if (!Number.isFinite(base)) return NaN;
+                    const suffix = compact[2].toLowerCase();
+                    const multiplier = suffix === 'k' ? 1e3 : (suffix === 'm' ? 1e6 : 1e9);
+                    return base * multiplier;
+                }
+                const plain = normalized.match(/-?\d+(?:\.\d+)?/);
+                return plain ? Number(plain[0]) : NaN;
+            };
+
+            const ratingCandidates = [
+                summary ? summary.product_rating : null,
+                summary ? summary.avg_star_rating : null,
+                summary ? summary.rating : null,
+            ];
+            let ratingRaw = NaN;
+            for (const candidate of ratingCandidates) {
+                const parsed = parseCompactNumber(candidate);
+                if (Number.isFinite(parsed) && parsed > 0) {
+                    ratingRaw = parsed;
+                    break;
+                }
+            }
+
+            const reviewsCandidates = [
+                summary ? summary.product_reviews_total : null,
+                summary ? summary.reviews_total : null,
+                summary ? summary.global_ratings : null,
+                summary ? summary.total_reviews : null,
+                Number(chartData?.fake || 0) + Number(chartData?.genuine || 0),
+            ];
+            let ratingsTotal = NaN;
+            for (const candidate of reviewsCandidates) {
+                const parsed = parseCompactNumber(candidate);
+                if (Number.isFinite(parsed) && parsed > 0) {
+                    ratingsTotal = parsed;
+                    break;
+                }
+            }
             let marketplaceHost = 'amazon.com';
             try {
                 if (rawInput && /^https?:\/\//i.test(rawInput)) {
@@ -529,9 +710,9 @@
             productTitle.textContent = title;
             productAsinTitle.textContent = `ASIN: ${asin}`;
             productMarketplace.textContent = marketplaceHost;
-            productRatingMeta.textContent = Number.isFinite(ratingRaw) ? `${ratingRaw.toFixed(1)} / 5.0` : '-';
+            productRatingMeta.textContent = Number.isFinite(ratingRaw) ? `${Math.min(5, ratingRaw).toFixed(1)} / 5.0` : '-';
             productRatingsTotalMeta.textContent = Number.isFinite(ratingsTotal) && ratingsTotal > 0
-                ? ratingsTotal.toLocaleString()
+                ? Math.round(ratingsTotal).toLocaleString()
                 : '-';
 
             // Amazon image CDN (works for most ASINs without auth)
@@ -545,7 +726,7 @@
                 ? rawInput
                 : `https://www.${marketplaceHost}/dp/${asin}`;
             productLink.href = amzUrl;
-            productLink.textContent = `${marketplaceHost}/dp/${asin} â†—`;
+            productLink.textContent = `${marketplaceHost}/dp/${asin} ->`;
 
             pdGenuineLabel.textContent = `Genuine: ${genPct.toFixed(1)}%`;
             pdFakeLabel.textContent = `Fake: ${fakePct.toFixed(1)}%`;
@@ -559,15 +740,15 @@
             productPanel.classList.remove('loading-hidden');
         }
 
-        // â”€â”€ Chart instances (created once, updated on each analysis) â”€â”€
+        // Chart instances (created once, updated on each analysis)
         let donutChart = null;
         let histChart = null;
         let trustTrendChart = null;
 
         function initCharts() {
-            // â”€â”€ Histogram: confidence score distribution â”€â”€
+            // Histogram: confidence score distribution
             const hCtx = document.getElementById('histogram-chart').getContext('2d');
-            const bins = ['0â€“10', '10â€“20', '20â€“30', '30â€“40', '40â€“50', '50â€“60', '60â€“70', '70â€“80', '80â€“90', '90â€“100'];
+            const bins = ['0-10', '10-20', '20-30', '30-40', '40-50', '50-60', '60-70', '70-80', '80-90', '90-100'];
             histChart = new Chart(hCtx, {
                 type: 'bar',
                 data: {
@@ -620,7 +801,7 @@
                 }
             });
 
-            // â”€â”€ Doughnut: Fake vs Genuine â”€â”€
+            // Doughnut: Fake vs Genuine
             const dCtx = document.getElementById('donut-chart').getContext('2d');
             donutChart = new Chart(dCtx, {
                 type: 'doughnut',
@@ -693,30 +874,73 @@
             });
         }
 
-        async function updateTrustTrend(productId, platform = 'amazon', fallbackFraudScore = null) {
+        function updateTrendRangeButtons() {
+            trendRangeButtons.forEach(btn => {
+                const months = Number(btn.getAttribute('data-months'));
+                if (months === currentTrendMonths) {
+                    btn.classList.add('bg-primary', 'text-black', 'font-semibold');
+                    btn.classList.remove('bg-slate-900/60', 'text-slate-300');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-black', 'font-semibold');
+                    btn.classList.add('bg-slate-900/60', 'text-slate-300');
+                }
+            });
+        }
+
+        async function updateTrustTrend(productId, platform = 'amazon', fallbackFraudScore = null, months = 12) {
             const status = document.getElementById('trend-status');
             if (!productId) {
                 status.textContent = 'Missing product id';
+                if (trendSummary) trendSummary.textContent = 'Missing product id.';
                 return;
             }
+            const safeMonths = Math.max(1, Math.min(24, Number(months) || 12));
             status.textContent = 'Loading...';
+            if (trendSummary) trendSummary.textContent = 'Calculating trend movement...';
             try {
-                const res = await fetch(`/api/trust-history?product_id=${encodeURIComponent(productId)}&platform=${encodeURIComponent(platform)}&months=12`);
+                const res = await fetch(`/api/trust-history?product_id=${encodeURIComponent(productId)}&platform=${encodeURIComponent(platform)}&months=${safeMonths}`);
                 const data = await res.json();
                 if (!res.ok || data.error) throw new Error(data.error || 'Failed to fetch trend');
-                const history = data.history || [];
+                const history = (Array.isArray(data.history) ? data.history : []).map(h => {
+                    const trust = Number(h && h.trust_score);
+                    const fraud = Number(h && h.fraud_score);
+                    return {
+                        month: (h && h.month) ? String(h.month) : '',
+                        trust_score: Number.isFinite(trust) ? trust : null,
+                        fraud_score: Number.isFinite(fraud) ? fraud : null
+                    };
+                });
                 const hasPoints = history.some(h =>
-                    h && (
-                        (h.trust_score !== null && h.trust_score !== undefined) ||
-                        (h.fraud_score !== null && h.fraud_score !== undefined)
-                    )
+                    h && (Number.isFinite(h.trust_score) || Number.isFinite(h.fraud_score))
                 );
                 if (hasPoints) {
                     trustTrendChart.data.labels = history.map(h => h.month || '');
                     trustTrendChart.data.datasets[0].data = history.map(h => h.trust_score);
                     trustTrendChart.data.datasets[1].data = history.map(h => h.fraud_score);
                     trustTrendChart.update();
-                    status.textContent = 'Updated';
+                    status.textContent = `Updated (${safeMonths}M)`;
+
+                    const validFraud = history
+                        .filter(h => Number.isFinite(h && h.fraud_score))
+                        .map(h => ({ month: h.month, fraud: Number(h.fraud_score) }));
+                    if (trendSummary) {
+                        if (validFraud.length >= 2) {
+                            const first = validFraud[0];
+                            const last = validFraud[validFraud.length - 1];
+                            const delta = Number((last.fraud - first.fraud).toFixed(1));
+                            if (Math.abs(delta) < 0.1) {
+                                trendSummary.textContent = `FLAT - Fraud risk is stable across ${safeMonths} months (${last.fraud.toFixed(1)}%).`;
+                            } else if (delta < 0) {
+                                trendSummary.textContent = `DOWN v Fraud risk decreased by ${Math.abs(delta).toFixed(1)} pts over ${safeMonths} months (${first.fraud.toFixed(1)}% -> ${last.fraud.toFixed(1)}%).`;
+                            } else {
+                                trendSummary.textContent = `UP ^ Fraud risk increased by ${delta.toFixed(1)} pts over ${safeMonths} months (${first.fraud.toFixed(1)}% -> ${last.fraud.toFixed(1)}%).`;
+                            }
+                        } else if (validFraud.length === 1) {
+                            trendSummary.textContent = `LIVE > Only one month has history data (${validFraud[0].fraud.toFixed(1)}% fraud risk).`;
+                        } else {
+                            trendSummary.textContent = 'Historical records exist, but no usable trend points were found.';
+                        }
+                    }
                     return;
                 }
                 throw new Error('No non-null history points');
@@ -730,9 +954,11 @@
                     trustTrendChart.data.datasets[0].data = [100 - fraud];
                     trustTrendChart.data.datasets[1].data = [fraud];
                     trustTrendChart.update();
-                    status.textContent = 'Using current run only';
+                    status.textContent = `Using current run only (${safeMonths}M)`;
+                    if (trendSummary) trendSummary.textContent = `Single-point view: current fraud risk is ${fraud.toFixed(1)}%.`;
                 } else {
                     status.textContent = 'No history yet';
+                    if (trendSummary) trendSummary.textContent = 'No historical scans available yet. Run more scans to build timeline.';
                 }
             }
         }
@@ -766,6 +992,7 @@
                         reviews: rows,
                         min_nodes: 3,
                         min_density: 0.35,
+                        min_avg_edge_weight: 1.8,
                         min_shared_products: 1,
                         min_co_review_events: 1,
                         time_window: '72h'
@@ -803,7 +1030,7 @@
             document.getElementById('donut-center-label').textContent =
                 trustScore >= 80 ? 'Trusted' : trustScore >= 55 ? 'Fair' : 'High Risk';
             document.getElementById('donut-caption').textContent =
-                `Genuine ${(100 - fraudScore).toFixed(1)}% · Fake ${fraudScore.toFixed(1)}%`;
+                `Genuine ${(100 - fraudScore).toFixed(1)}% | Fake ${fraudScore.toFixed(1)}%`;
 
             // Build histogram bins
             if (results && results.review) {
@@ -872,6 +1099,42 @@
 
         // Initialise charts on page load
         initCharts();
+
+        function parseMetricNumber(textValue) {
+            const numeric = Number(String(textValue || '').replace(/[^0-9.\-]/g, ''));
+            return Number.isFinite(numeric) ? numeric : 0;
+        }
+
+        function pulseStatCard(el) {
+            const card = el ? el.closest('.stat-card') : null;
+            if (!card) return;
+            card.classList.remove('metric-flash');
+            void card.offsetWidth;
+            card.classList.add('metric-flash');
+        }
+
+        function animateMetricValue(el, target, { decimals = 1, suffix = '%', duration = 700 } = {}) {
+            if (!el || !Number.isFinite(Number(target))) return;
+            const end = Number(target);
+            const prior = Number(el.dataset.metricValue);
+            const hasPrior = Number.isFinite(prior);
+            const changed = !hasPrior || Math.abs(prior - end) > 0.05;
+            if (changed) pulseStatCard(el);
+            el.dataset.metricValue = String(end);
+            const start = parseMetricNumber(el.textContent);
+            const startTime = performance.now();
+            const delta = end - start;
+
+            const step = (now) => {
+                const p = Math.min(1, (now - startTime) / duration);
+                const eased = 1 - Math.pow(1 - p, 3);
+                const value = start + (delta * eased);
+                el.textContent = `${value.toFixed(decimals)}${suffix}`;
+                if (p < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        }
+
         function renderStats(data) {
             const { summary, chart_data, advanced_analysis } = data;
             const { fakePct } = resolveRiskPercentages(chart_data);
@@ -883,10 +1146,14 @@
             const genuineRisk = Math.max(0, 100 - fraudRisk);
             const conf = summary ? Number(summary.confidence || summary.avg_confidence || NaN) : NaN;
 
-            document.getElementById('stat-total-reviews').textContent = `${genuineRisk.toFixed(1)}%`;
-            document.getElementById('stat-fraud-risk').textContent = `${fraudRisk.toFixed(1)}%`;
+            animateMetricValue(document.getElementById('stat-total-reviews'), genuineRisk, { decimals: 1, suffix: '%' });
+            animateMetricValue(document.getElementById('stat-fraud-risk'), fraudRisk, { decimals: 1, suffix: '%' });
             document.getElementById('stat-risk-label').textContent = 'Suspicious likelihood';
-            document.getElementById('stat-genuine-count').textContent = Number.isFinite(conf) ? `${conf.toFixed(1)}%` : 'N/A';
+            if (Number.isFinite(conf)) {
+                animateMetricValue(document.getElementById('stat-genuine-count'), conf, { decimals: 1, suffix: '%' });
+            } else {
+                document.getElementById('stat-genuine-count').textContent = 'N/A';
+            }
             if (coverageWarning) {
                 document.getElementById('stat-total-diff').textContent = coverageWarning;
             } else {
@@ -903,6 +1170,74 @@
             const key = String(value || '').trim().toLowerCase();
             if (!key || key === 'unknown' || key === 'none' || key === 'nan') return null;
             return key;
+        }
+
+        function parseReviewTimestamp(value) {
+            const ts = Date.parse(String(value || ''));
+            return Number.isFinite(ts) ? ts : null;
+        }
+
+        function getRowRiskScore(row) {
+            const behaviorScore = Number(row && row.behavioralResults && row.behavioralResults.behavior_score);
+            const normalizedBehavior = Number.isFinite(behaviorScore) ? Math.max(0, Math.min(1, behaviorScore)) : 0;
+            let score = normalizedBehavior * 100;
+            if (row && row.prediction === 'Fake') score += 60;
+            if (row && row.sentimentMismatch) score += 25;
+            if (row && row.behavioralResults && row.behavioralResults.is_suspicious) score += 30;
+            return score;
+        }
+
+        function isSuspiciousRow(row) {
+            if (!row) return false;
+            return (
+                row.prediction === 'Fake' ||
+                Boolean(row.sentimentMismatch) ||
+                Boolean(row.behavioralResults && row.behavioralResults.is_suspicious) ||
+                getRowRiskScore(row) >= 40
+            );
+        }
+
+        function updateReviewFilterButtons() {
+            reviewFilterButtons.forEach(btn => {
+                const key = btn.getAttribute('data-filter') || '';
+                const isActive = key === activeReviewFilter;
+                if (isActive) {
+                    btn.classList.remove('text-slate-300', 'bg-slate-900/60');
+                    btn.classList.add('text-black', 'bg-primary', 'font-semibold');
+                } else {
+                    btn.classList.remove('text-black', 'bg-primary', 'font-semibold');
+                    btn.classList.add('text-slate-300', 'bg-slate-900/60');
+                }
+            });
+        }
+
+        function applyReviewSortAndFilter(resetLimit = true) {
+            let rows = [...allReviewRows];
+            if (activeReviewFilter === 'fake') {
+                rows = rows.filter(r => r.prediction === 'Fake');
+            } else if (activeReviewFilter === 'genuine') {
+                rows = rows.filter(r => r.prediction === 'Genuine');
+            } else if (activeReviewFilter === 'suspicious') {
+                rows = rows.filter(isSuspiciousRow);
+            }
+
+            if (activeReviewSort === 'confidence-high') {
+                rows.sort((a, b) => Number(b.confidence || 0) - Number(a.confidence || 0));
+            } else if (activeReviewSort === 'risk-high') {
+                rows.sort((a, b) => getRowRiskScore(b) - getRowRiskScore(a));
+            } else {
+                rows.sort((a, b) => {
+                    const at = parseReviewTimestamp(a.date);
+                    const bt = parseReviewTimestamp(b.date);
+                    if (at !== null && bt !== null) return bt - at;
+                    if (at !== null) return -1;
+                    if (bt !== null) return 1;
+                    return b.index - a.index;
+                });
+            }
+
+            filteredReviewRows = rows;
+            if (resetLimit) currentReviewLimit = 10;
         }
 
         function reviewCard(review, prediction, confidence, date, explanation, behavioralResults, sentimentMismatch) {
@@ -932,7 +1267,7 @@
             }
 
             return `
-    <div class="p-6 rounded-xl ${isFake ? 'review-fake' : 'review-genuine'}" style="${isFake ? 'background:rgba(239,68,68,0.09);' : 'background:#1a1a1a;'}">
+    <div class="evidence-card p-6 rounded-xl ${isFake ? 'review-fake' : 'review-genuine'}" style="${isFake ? 'background:rgba(239,68,68,0.09);' : 'background:#1a1a1a;'}">
       <div class="flex flex-col md:flex-row gap-6">
         <div class="flex-grow">
           <div class="flex items-center flex-wrap gap-3 mb-3">
@@ -953,17 +1288,64 @@
           <div class="w-full bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
             <div style="width:${confidence}%;height:100%;background:${isFake ? '#ef4444' : '#26eded'}"></div>
           </div>
-          ${isFake ? '<div style="margin-top:8px;font-size:10px;color:#f87171;font-weight:700;text-transform:uppercase;letter-spacing:0.1em">âš  Suspicious</div>' : ''}
+          ${isFake ? '<div style="margin-top:8px;font-size:10px;color:#f87171;font-weight:700;text-transform:uppercase;letter-spacing:0.1em">Suspicious</div>' : ''}
         </div>
       </div>
     </div>`;
         }
 
+        function renderVisibleReviewRows() {
+            if (!reviewsContainer) return;
+            const visible = filteredReviewRows.slice(0, currentReviewLimit);
+            if (!visible.length) {
+                reviewsContainer.innerHTML = `
+                    <div class="glass-panel p-6 rounded-xl border border-slate-700 text-slate-400 text-sm">
+                        No reviews match the selected filter.
+                    </div>`;
+            } else {
+                reviewsContainer.innerHTML = visible.map(row =>
+                    reviewCard(
+                        row.review,
+                        row.prediction,
+                        row.confidence,
+                        row.date,
+                        row.explanation,
+                        row.behavioralResults,
+                        row.sentimentMismatch
+                    )
+                ).join('');
+                const cards = reviewsContainer.querySelectorAll('.evidence-card');
+                cards.forEach((card, idx) => {
+                    card.style.animationDelay = `${Math.min(idx, 10) * 45}ms`;
+                });
+            }
+
+            if (evidenceMeta) {
+                if (!allReviewRows.length) {
+                    evidenceMeta.textContent = 'Run analysis to populate the evidence feed.';
+                } else {
+                    evidenceMeta.textContent = `${Math.min(visible.length, filteredReviewRows.length)} of ${filteredReviewRows.length} shown (${allReviewRows.length} total scanned)`;
+                }
+            }
+
+            const more = document.getElementById('load-more-btn');
+            if (more) {
+                if (currentReviewLimit < filteredReviewRows.length) {
+                    more.classList.remove('hidden');
+                } else {
+                    more.classList.add('hidden');
+                }
+            }
+        }
+
         function renderReviews(data) {
             const { results, advanced_analysis } = data;
-            if (!results || !results.review || results.review.length === 0) return;
-            const container = reviewsSection.querySelector('.grid.grid-cols-1.gap-6');
-            if (!container) return;
+            if (!results || !Array.isArray(results.review)) {
+                allReviewRows = [];
+                filteredReviewRows = [];
+                renderVisibleReviewRows();
+                return;
+            }
 
             const rawBehaviorMap = (advanced_analysis && advanced_analysis.behavior_anomalies) ? advanced_analysis.behavior_anomalies : {};
             const behaviorMap = {};
@@ -973,30 +1355,78 @@
             });
             const mismatches = (advanced_analysis && advanced_analysis.sentiment_mismatches) ? advanced_analysis.sentiment_mismatches : [];
 
-            const pageSize = 10;
-            const getCardHtml = (limit) => results.review.slice(0, limit).map((r, i) => {
+            allReviewRows = results.review.map((review, i) => {
                 const user = results.user_name ? results.user_name[i] : null;
                 const normalizedUser = normalizeBehaviorKey(user);
-                const bRes = normalizedUser ? (behaviorMap[normalizedUser] || null) : null;
-                const mMismatach = mismatches[i] ? mismatches[i].is_mismatch : false;
-                return reviewCard(r, results.prediction[i], results.confidence[i], results.date[i], results.explanation[i], bRes, mMismatach);
-            }).join('');
+                const behavioralResults = normalizedUser ? (behaviorMap[normalizedUser] || null) : null;
+                const confidence = Number(results.confidence && results.confidence[i]);
+                return {
+                    index: i,
+                    review,
+                    prediction: results.prediction ? results.prediction[i] : '',
+                    confidence: Number.isFinite(confidence) ? confidence : 0,
+                    date: results.date ? results.date[i] : '',
+                    explanation: results.explanation ? results.explanation[i] : [],
+                    behavioralResults,
+                    sentimentMismatch: Boolean(mismatches[i] && mismatches[i].is_mismatch),
+                };
+            });
 
-            container.innerHTML = getCardHtml(pageSize);
+            applyReviewSortAndFilter(true);
+            renderVisibleReviewRows();
+        }
 
-            // Use the uniquely-id'd button â€” avoids accidentally selecting Sort/Filter buttons
-            const more = document.getElementById('load-more-btn');
-            if (more) {
-                if (results.review.length > pageSize) {
-                    more.classList.remove('hidden');
-                    more.onclick = () => {
-                        container.innerHTML = getCardHtml(results.review.length);
-                        more.classList.add('hidden');
-                    };
+        updateReviewFilterButtons();
+        updateTrendRangeButtons();
+
+        reviewFilterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const filter = String(btn.getAttribute('data-filter') || 'all');
+                activeReviewFilter = filter;
+                updateReviewFilterButtons();
+                applyReviewSortAndFilter(true);
+                renderVisibleReviewRows();
+            });
+        });
+
+        if (sortSelect) {
+            sortSelect.addEventListener('change', () => {
+                activeReviewSort = String(sortSelect.value || 'newest');
+                applyReviewSortAndFilter(true);
+                renderVisibleReviewRows();
+            });
+        }
+
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', () => {
+                currentReviewLimit = Math.min(currentReviewLimit + 10, filteredReviewRows.length);
+                renderVisibleReviewRows();
+            });
+        }
+
+        trendRangeButtons.forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const months = Number(btn.getAttribute('data-months'));
+                if (!Number.isFinite(months)) return;
+                currentTrendMonths = months;
+                updateTrendRangeButtons();
+                if (trendContext.productId) {
+                    await updateTrustTrend(
+                        trendContext.productId,
+                        trendContext.platform,
+                        trendContext.fallbackFraudScore,
+                        currentTrendMonths
+                    );
                 } else {
-                    more.classList.add('hidden');
+                    const status = document.getElementById('trend-status');
+                    if (status) status.textContent = 'Run analysis first';
                 }
-            }
+            });
+        });
+
+        if (exportReportBtn) {
+            exportReportBtn.addEventListener('click', exportCurrentReport);
         }
 
         runBtn.addEventListener('click', async () => {
@@ -1006,6 +1436,7 @@
             const productRef = /amazon\./i.test(raw) ? raw : asin;
             const reviewLimit = 10000;
             const timer = showLoader();
+            if (exportReportBtn) exportReportBtn.disabled = true;
 
             try {
                 const res = await fetch('/api/analyze', {
@@ -1022,6 +1453,7 @@
                 if (!res.ok || data.error) {
                     statusText.textContent = data.error || 'Analysis failed.';
                     loadingState.classList.remove('loading-hidden');
+                    if (exportReportBtn) exportReportBtn.disabled = !latestAnalysisSnapshot;
                     return;
                 }
                 renderStats(data);
@@ -1033,36 +1465,28 @@
                 const advFraud = data.advanced_analysis && Number.isFinite(Number(data.advanced_analysis.combined_fraud_score))
                     ? Number(data.advanced_analysis.combined_fraud_score)
                     : chartFraud;
-                await updateTrustTrend(asin, 'amazon', advFraud);
+                trendContext = { productId: asin, platform: 'amazon', fallbackFraudScore: advFraud };
+                await updateTrustTrend(asin, 'amazon', advFraud, currentTrendMonths);
                 await refreshReviewerNetworkRealtime(data, asin);
-                // Render interactive network graph
-                if (window.ForensicGraph && data.advanced_analysis) {
-                    const rings = data.advanced_analysis.review_rings || {};
-                    const graphStatus = document.getElementById('network-graph-status');
-                    try {
-                        const fg = new ForensicGraph('network-graph-container');
-                        fg.render(rings);
-                        const gs = rings.graph_summary || {};
-                        const el1 = document.getElementById('graph-nodes-v2');
-                        const el2 = document.getElementById('graph-edges-v2');
-                        const el3 = document.getElementById('graph-clusters-v2');
-                        if (el1) el1.textContent = gs.total_users || gs.total_nodes || 0;
-                        if (el2) el2.textContent = gs.total_edges || 0;
-                        if (el3) el3.textContent = (rings.suspicious_clusters || []).length;
-                        if (graphStatus) graphStatus.textContent = 'RENDERED';
-                    } catch (e) {
-                        console.warn('Network graph render failed:', e);
-                        if (graphStatus) graphStatus.textContent = 'ERROR';
-                    }
-                }
+                latestAnalysisSnapshot = {
+                    asin,
+                    rawInput: raw,
+                    data,
+                    generatedAt: new Date().toISOString()
+                };
+                if (exportReportBtn) exportReportBtn.disabled = false;
+                setTimeout(() => {
+                    reviewsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 180);
             } catch (e) {
                 hideLoader(timer);
                 alert('Analysis failed: ' + e.message);
+                if (exportReportBtn) exportReportBtn.disabled = !latestAnalysisSnapshot;
             }
         });
     </script>
-    <script src="/static/js/forensic_graph.js"></script>
 </body>
 
 </html>
+
 

@@ -30,6 +30,10 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 LOCAL_TRUST_HISTORY_FILE = "trust_history.csv"
+LOCAL_SCAN_HISTORY_FILE = "scan_history_local.jsonl"
+TRAINING_DATA_CANDIDATES = ["fake reviews dataset.csv", "scraped_training_reviews.csv"]
+_HOME_METRICS_CACHE = {"key": None, "payload": None}
+_GLOBAL_CATEGORY_CACHE = {"key": None, "rows": [], "data_source": "none"}
 
 
 def _safe_float(value, default=None):
@@ -39,6 +43,598 @@ def _safe_float(value, default=None):
         return float(value)
     except Exception:
         return default
+
+
+def _safe_int(value, default: int = 0) -> int:
+    try:
+        if value is None:
+            return int(default)
+        return int(float(value))
+    except Exception:
+        return int(default)
+
+
+def _format_int(value: int) -> str:
+    try:
+        return f"{int(value):,}"
+    except Exception:
+        return "0"
+
+
+def _count_csv_rows_fast(path: str) -> int:
+    """
+    Counts CSV rows without loading into pandas.
+    Returns number of data rows (header excluded).
+    """
+    try:
+        with open(path, "rb") as fh:
+            line_count = sum(1 for _ in fh)
+        return max(0, line_count - 1)
+    except Exception:
+        return 0
+
+
+def _build_home_metrics() -> dict:
+    cache_key_parts = []
+    for p in [LOCAL_TRUST_HISTORY_FILE, *TRAINING_DATA_CANDIDATES]:
+        try:
+            cache_key_parts.append((p, os.path.getmtime(p)))
+        except OSError:
+            cache_key_parts.append((p, None))
+    cache_key = tuple(cache_key_parts)
+    if _HOME_METRICS_CACHE["key"] == cache_key and isinstance(_HOME_METRICS_CACHE["payload"], dict):
+        return _HOME_METRICS_CACHE["payload"]
+
+    metrics = {
+        "recent_avg_trust": 0.0,
+        "recent_avg_fraud": 0.0,
+        "total_scans": 0,
+        "unique_products": 0,
+        "training_reviews": 0,
+        "last_scan_label": "No scans yet",
+        "recent_avg_trust_text": "0.0%",
+        "recent_avg_fraud_text": "0.0%",
+        "total_scans_text": "0",
+        "unique_products_text": "0",
+        "training_reviews_text": "0",
+    }
+
+    try:
+        if os.path.exists(LOCAL_TRUST_HISTORY_FILE):
+            df = pd.read_csv(LOCAL_TRUST_HISTORY_FILE)
+            if not df.empty:
+                df["trust_score"] = pd.to_numeric(df.get("trust_score"), errors="coerce")
+                df["fraud_score"] = pd.to_numeric(df.get("fraud_score"), errors="coerce")
+                df["timestamp"] = pd.to_datetime(df.get("timestamp"), errors="coerce", utc=True)
+                clean = df.dropna(subset=["trust_score", "fraud_score", "timestamp"]).copy()
+                if not clean.empty:
+                    clean = clean.sort_values("timestamp", ascending=False)
+                    recent = clean.head(50)
+                    metrics["recent_avg_trust"] = round(float(recent["trust_score"].mean()), 1)
+                    metrics["recent_avg_fraud"] = round(float(recent["fraud_score"].mean()), 1)
+                    metrics["total_scans"] = int(len(clean))
+                    metrics["unique_products"] = int(clean["product_id"].astype(str).nunique())
+                    latest_ts = clean["timestamp"].max()
+                    if pd.notna(latest_ts):
+                        metrics["last_scan_label"] = latest_ts.strftime("%d %b %Y, %I:%M %p UTC")
+    except Exception as exc:
+        print(f"[WARN] Home metrics history parse failed: {exc}")
+
+    try:
+        training_counts = []
+        for path in TRAINING_DATA_CANDIDATES:
+            if os.path.exists(path):
+                training_counts.append(_count_csv_rows_fast(path))
+        metrics["training_reviews"] = int(max(training_counts)) if training_counts else 0
+    except Exception as exc:
+        print(f"[WARN] Home metrics dataset count failed: {exc}")
+
+    metrics["recent_avg_trust_text"] = f"{metrics['recent_avg_trust']:.1f}%"
+    metrics["recent_avg_fraud_text"] = f"{metrics['recent_avg_fraud']:.1f}%"
+    metrics["total_scans_text"] = _format_int(metrics["total_scans"])
+    metrics["unique_products_text"] = _format_int(metrics["unique_products"])
+    metrics["training_reviews_text"] = _format_int(metrics["training_reviews"])
+
+    _HOME_METRICS_CACHE["key"] = cache_key
+    _HOME_METRICS_CACHE["payload"] = metrics
+    return metrics
+
+
+def _empty_leaderboard_payload(page: int = 1, page_size: int = 12) -> dict:
+    page = max(1, int(page))
+    page_size = max(1, int(page_size))
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "data_source": "none",
+        "rows": [],
+        "top3": [],
+        "platforms": [],
+        "total_filtered": 0,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": 1,
+        "rank_offset": 0,
+        "summary": {
+            "products": 0,
+            "scans": 0,
+            "high_risk": 0,
+            "clean": 0,
+        },
+    }
+
+
+def _clean_events_df(df: pd.DataFrame) -> pd.DataFrame:
+    if df.empty:
+        return df
+    out = df.copy()
+    out["timestamp"] = pd.to_datetime(out.get("timestamp"), errors="coerce", utc=True)
+    out["platform"] = out.get("platform", "").astype(str).str.strip().str.lower()
+    out["product_id"] = out.get("product_id", "").astype(str).str.strip()
+    out["trust_score"] = pd.to_numeric(out.get("trust_score"), errors="coerce")
+    out["fraud_score"] = pd.to_numeric(out.get("fraud_score"), errors="coerce")
+    out = out.dropna(subset=["timestamp", "platform", "product_id", "trust_score", "fraud_score"]).copy()
+    if out.empty:
+        return out
+    out["product_id"] = out.apply(
+        lambda r: _normalize_product_id(r.get("platform", ""), r.get("product_id", "")),
+        axis=1,
+    )
+    return out
+
+
+def _load_local_leaderboard_events_df() -> pd.DataFrame:
+    if not os.path.exists(LOCAL_TRUST_HISTORY_FILE):
+        return pd.DataFrame(columns=["timestamp", "platform", "product_id", "trust_score", "fraud_score"])
+    try:
+        df = pd.read_csv(LOCAL_TRUST_HISTORY_FILE)
+        return _clean_events_df(df)
+    except Exception as exc:
+        print(f"[WARN] Leaderboard local history read failed: {exc}")
+        return pd.DataFrame(columns=["timestamp", "platform", "product_id", "trust_score", "fraud_score"])
+
+
+def _load_firestore_leaderboard_events_df(limit_docs: int = 4000) -> pd.DataFrame:
+    cols = ["timestamp", "platform", "product_id", "trust_score", "fraud_score"]
+    if db is None:
+        return pd.DataFrame(columns=cols)
+
+    docs = None
+    try:
+        docs = (
+            db.collection("scans")
+            .order_by("timestamp", direction=firestore.Query.DESCENDING)
+            .limit(int(limit_docs))
+            .stream()
+        )
+    except Exception:
+        try:
+            docs = db.collection("scans").stream()
+        except Exception as exc:
+            print(f"[WARN] Firestore leaderboard read failed: {exc}")
+            return pd.DataFrame(columns=cols)
+
+    rows: list[dict] = []
+    for i, doc in enumerate(docs):
+        if i >= int(limit_docs):
+            break
+        data = doc.to_dict() or {}
+        asin_or_id = str(data.get("asin") or data.get("product_id") or "").strip()
+        if not asin_or_id:
+            continue
+
+        platform = str(data.get("platform") or _infer_platform(asin_or_id)).strip().lower()
+        product_id = _normalize_product_id(platform, asin_or_id)
+
+        summary_obj = data.get("summary") if isinstance(data.get("summary"), dict) else {}
+        chart_obj = data.get("chart_data") if isinstance(data.get("chart_data"), dict) else {}
+        advanced_obj = (
+            summary_obj.get("advanced_analysis", {})
+            if isinstance(summary_obj.get("advanced_analysis"), dict)
+            else {}
+        )
+
+        fraud_val = _safe_float(chart_obj.get("fake_score"), None)
+        if fraud_val is None:
+            fraud_val = _safe_float(advanced_obj.get("combined_fraud_score"), None)
+        if fraud_val is None:
+            fraud_val = _safe_float(summary_obj.get("avg_fake_probability"), None)
+        if fraud_val is None:
+            continue
+        fraud_val = round(max(0.0, min(100.0, float(fraud_val))), 3)
+        trust_val = round(100.0 - fraud_val, 3)
+
+        ts = data.get("timestamp")
+        if hasattr(ts, "isoformat"):
+            ts = ts.isoformat()
+        rows.append(
+            {
+                "timestamp": ts,
+                "platform": platform,
+                "product_id": product_id,
+                "trust_score": trust_val,
+                "fraud_score": fraud_val,
+            }
+        )
+
+    if not rows:
+        return pd.DataFrame(columns=cols)
+    return _clean_events_df(pd.DataFrame(rows, columns=cols))
+
+
+def _load_leaderboard_events_df() -> tuple[pd.DataFrame, str]:
+    local_df = _load_local_leaderboard_events_df()
+    if not local_df.empty:
+        return local_df, "local_csv"
+    firestore_df = _load_firestore_leaderboard_events_df()
+    if not firestore_df.empty:
+        return firestore_df, "firestore_scans"
+    return pd.DataFrame(columns=["timestamp", "platform", "product_id", "trust_score", "fraud_score"]), "none"
+
+
+def _aggregate_leaderboard_rows(events_df: pd.DataFrame, max_products: int = 300) -> list[dict]:
+    if events_df.empty:
+        return []
+
+    now = pd.Timestamp.now(tz="UTC")
+    rows: list[dict] = []
+    for (platform, product_id), group in events_df.groupby(["platform", "product_id"], sort=False):
+        g = group.sort_values("timestamp")
+        recent = g.tail(20)
+        trend = recent["trust_score"].tail(12).round(1).tolist()
+        scans_count = int(len(g))
+        trust_score = round(float(recent["trust_score"].mean()), 1)
+        fraud_score = round(float(recent["fraud_score"].mean()), 1)
+        volatility = float(recent["trust_score"].std(ddof=0)) if len(recent) > 1 else 0.0
+
+        recent_7 = int((g["timestamp"] >= (now - pd.Timedelta(days=7))).sum())
+        prev_21 = int(
+            ((g["timestamp"] >= (now - pd.Timedelta(days=28))) & (g["timestamp"] < (now - pd.Timedelta(days=7)))).sum()
+        )
+        burst_ratio = float((recent_7 + 1) / ((prev_21 / 3.0) + 1))
+
+        reasons: list[str] = []
+        if fraud_score >= 55:
+            reasons.append("High Fraud Score")
+        if volatility >= 12:
+            reasons.append("Volatile Trend")
+        if burst_ratio >= 2.0:
+            reasons.append("Burst Activity")
+        if scans_count < 3:
+            reasons.append("Low Evidence")
+        if not reasons:
+            reasons.append("Consistent Pattern" if fraud_score <= 20 else "Mixed Signals")
+
+        if trust_score >= 85:
+            tier = "Clean"
+        elif trust_score >= 60:
+            tier = "Watchlist"
+        else:
+            tier = "High Risk"
+
+        if scans_count >= 8:
+            confidence = "High"
+        elif scans_count >= 3:
+            confidence = "Medium"
+        else:
+            confidence = "Low"
+
+        latest_ts = g["timestamp"].max()
+        last_scan_iso = latest_ts.isoformat() if pd.notna(latest_ts) else ""
+        last_scan_epoch = int(latest_ts.timestamp()) if pd.notna(latest_ts) else 0
+        rows.append(
+            {
+                "platform": platform,
+                "product_id": product_id,
+                "trust_score": trust_score,
+                "fraud_score": fraud_score,
+                "scans_count": scans_count,
+                "confidence": confidence,
+                "tier": tier,
+                "reasons": reasons[:3],
+                "trend": trend,
+                "last_scan_iso": last_scan_iso,
+                "last_scan_label": latest_ts.strftime("%d %b %Y") if pd.notna(latest_ts) else "Unknown",
+                "last_scan_epoch": last_scan_epoch,
+            }
+        )
+
+    rows.sort(key=lambda x: (x["trust_score"], -x["fraud_score"], x["scans_count"]), reverse=True)
+    return rows[: max(1, int(max_products))]
+
+
+def _sort_leaderboard_rows(rows: list[dict], sort_key: str, tab: str) -> list[dict]:
+    out = list(rows)
+    if sort_key == "fraud_desc":
+        out.sort(key=lambda r: float(r.get("fraud_score", 0.0)), reverse=True)
+    elif sort_key == "scans_desc":
+        out.sort(key=lambda r: int(r.get("scans_count", 0)), reverse=True)
+    elif sort_key == "latest_desc":
+        out.sort(key=lambda r: int(r.get("last_scan_epoch", 0)), reverse=True)
+    else:
+        out.sort(key=lambda r: float(r.get("trust_score", 0.0)), reverse=True)
+        if tab == "risk":
+            out.sort(key=lambda r: float(r.get("fraud_score", 0.0)), reverse=True)
+    return out
+
+
+def _row_matches_fraud_band(row: dict, fraud_band: str) -> bool:
+    if fraud_band == "all":
+        return True
+    value = _safe_float(row.get("fraud_score"), None)
+    if value is None:
+        return False
+    if fraud_band == "0-20":
+        return 0 <= value < 20
+    if fraud_band == "20-40":
+        return 20 <= value < 40
+    if fraud_band == "40-60":
+        return 40 <= value < 60
+    if fraud_band == "60-100":
+        return value >= 60
+    return True
+
+
+def _label_to_genuine_flag(value) -> bool | None:
+    raw = str(value or "").strip().lower()
+    if not raw:
+        return None
+    if raw in {"or", "original", "genuine", "real", "authentic", "human", "0", "true"}:
+        return True
+    if raw in {"cg", "computer_generated", "computer generated", "fake", "spam", "bot", "1", "false"}:
+        return False
+    if "fake" in raw or "generated" in raw or raw.startswith("cg"):
+        return False
+    if "orig" in raw or "genuine" in raw or "real" in raw:
+        return True
+    return None
+
+
+def _resolve_global_dataset_path() -> str | None:
+    for path in TRAINING_DATA_CANDIDATES:
+        if os.path.exists(path):
+            return path
+    return None
+
+
+def _build_global_category_rows(max_categories: int = 600) -> tuple[list[dict], str]:
+    dataset_path = _resolve_global_dataset_path()
+    if not dataset_path:
+        return [], "none"
+
+    try:
+        file_key = (dataset_path, os.path.getmtime(dataset_path), os.path.getsize(dataset_path))
+    except OSError:
+        return [], "none"
+
+    if _GLOBAL_CATEGORY_CACHE["key"] == file_key:
+        cached_rows = _GLOBAL_CATEGORY_CACHE.get("rows", [])
+        cached_source = str(_GLOBAL_CATEGORY_CACHE.get("data_source", "global_dataset"))
+        return list(cached_rows)[: max(1, int(max_categories))], cached_source
+
+    try:
+        columns = pd.read_csv(dataset_path, nrows=0).columns.tolist()
+    except Exception as exc:
+        print(f"[WARN] Failed reading dataset header for leaderboard: {exc}")
+        return [], "none"
+
+    category_col = next((c for c in ("category", "Category", "product_category", "productCategory") if c in columns), None)
+    label_col = next((c for c in ("label", "Label", "class", "prediction") if c in columns), None)
+    if not category_col or not label_col:
+        print("[WARN] Global dataset missing category/label columns for leaderboard.")
+        return [], "none"
+
+    stats: dict[str, dict[str, float]] = {}
+    try:
+        for chunk in pd.read_csv(dataset_path, usecols=[category_col, label_col], chunksize=200_000):
+            if chunk.empty:
+                continue
+            cat = (
+                chunk[category_col]
+                .fillna("Unknown")
+                .astype(str)
+                .str.strip()
+                .replace("", "Unknown")
+            )
+            flags = chunk[label_col].map(_label_to_genuine_flag)
+            frame = pd.DataFrame({"category": cat, "is_genuine": flags})
+            frame = frame[frame["is_genuine"].notna()]
+            if frame.empty:
+                continue
+            agg = frame.groupby("category")["is_genuine"].agg(total="size", genuine="sum")
+            for category_name, row in agg.iterrows():
+                name = str(category_name).strip() or "Unknown"
+                rec = stats.setdefault(name, {"total": 0.0, "genuine": 0.0})
+                rec["total"] += float(row.get("total", 0.0))
+                rec["genuine"] += float(row.get("genuine", 0.0))
+    except Exception as exc:
+        print(f"[WARN] Global leaderboard aggregation failed: {exc}")
+        return [], "none"
+
+    if not stats:
+        return [], "none"
+
+    try:
+        dataset_ts = datetime.fromtimestamp(os.path.getmtime(dataset_path), tz=timezone.utc)
+    except Exception:
+        dataset_ts = datetime.now(timezone.utc)
+    dataset_epoch = int(dataset_ts.timestamp())
+    dataset_label = dataset_ts.strftime("%d %b %Y")
+
+    max_total = max(int(v.get("total", 0.0)) for v in stats.values()) if stats else 1
+    max_total = max(1, max_total)
+
+    rows: list[dict] = []
+    for category_name, rec in stats.items():
+        total = int(rec.get("total", 0.0))
+        if total <= 0:
+            continue
+        genuine = int(round(rec.get("genuine", 0.0)))
+        genuine = max(0, min(genuine, total))
+        fake = total - genuine
+        genuine_pct = (genuine / total) * 100.0
+        sample_confidence = (total / max_total) * 100.0
+        trust = round((0.85 * genuine_pct) + (0.15 * sample_confidence), 1)
+        fraud = round(100.0 - trust, 1)
+
+        if trust >= 85:
+            tier = "Clean"
+        elif trust >= 60:
+            tier = "Watchlist"
+        else:
+            tier = "High Risk"
+
+        if total >= 10_000:
+            confidence = "High"
+        elif total >= 2_000:
+            confidence = "Medium"
+        else:
+            confidence = "Low"
+
+        reasons: list[str] = []
+        if fraud >= 60:
+            reasons.append("High Fake Share")
+        elif fraud >= 35:
+            reasons.append("Moderate Fake Share")
+        if total >= 25_000:
+            reasons.append("Large Sample Size")
+        elif total < 2_000:
+            reasons.append("Low Sample Size")
+        if sample_confidence >= 85:
+            reasons.append("High Sample Confidence")
+        if trust >= 85:
+            reasons.append("Highly Reliable Category")
+        if not reasons:
+            reasons.append("Mixed Quality Signals")
+
+        swing = min(7.0, max(1.5, fraud / 12.0))
+        trend = [
+            round(max(0.0, min(100.0, trust - (swing * 1.5))), 1),
+            round(max(0.0, min(100.0, trust - swing)), 1),
+            round(max(0.0, min(100.0, trust - (swing * 0.5))), 1),
+            round(max(0.0, min(100.0, trust)), 1),
+            round(max(0.0, min(100.0, trust + (swing * 0.35))), 1),
+            round(max(0.0, min(100.0, trust + (swing * 0.7))), 1),
+        ]
+
+        rows.append(
+            {
+                "platform": "global",
+                "product_id": category_name,
+                "trust_score": trust,
+                "fraud_score": fraud,
+                "scans_count": total,
+                "confidence": confidence,
+                "tier": tier,
+                "reasons": reasons[:3],
+                "trend": trend,
+                "last_scan_iso": dataset_ts.isoformat(),
+                "last_scan_label": dataset_label,
+                "last_scan_epoch": dataset_epoch,
+                "genuine_count": genuine,
+                "fake_count": fake,
+                "genuine_share": round(genuine_pct, 1),
+                "sample_confidence": round(sample_confidence, 1),
+            }
+        )
+
+    rows.sort(key=lambda x: (x["trust_score"], x["scans_count"]), reverse=True)
+    rows = rows[: max(1, int(max_categories))]
+
+    _GLOBAL_CATEGORY_CACHE["key"] = file_key
+    _GLOBAL_CATEGORY_CACHE["rows"] = rows
+    _GLOBAL_CATEGORY_CACHE["data_source"] = "global_dataset"
+    return list(rows), "global_dataset"
+
+
+def _build_leaderboard_payload(
+    max_products: int = 300,
+    tab: str = "trusted",
+    search: str = "",
+    platform: str = "all",
+    date_days: str = "all",
+    min_scans: int = 1,
+    fraud_band: str = "all",
+    sort: str = "trust_desc",
+    page: int = 1,
+    page_size: int = 12,
+) -> dict:
+    page = max(1, _safe_int(page, 1))
+    page_size = max(1, min(_safe_int(page_size, 12), 500))
+    payload = _empty_leaderboard_payload(page=page, page_size=page_size)
+
+    all_rows, source = _build_global_category_rows(max_categories=max_products)
+    payload["data_source"] = source
+    if not all_rows:
+        return payload
+
+    payload["platforms"] = sorted(
+        {str(r.get("platform", "")).lower() for r in all_rows if str(r.get("platform", "")).strip()}
+    )
+    payload["summary"] = {
+        "products": int(len(all_rows)),
+        "scans": int(sum(int(r.get("scans_count", 0)) for r in all_rows)),
+        "high_risk": int(sum(1 for r in all_rows if r.get("tier") == "High Risk")),
+        "clean": int(sum(1 for r in all_rows if r.get("tier") == "Clean")),
+    }
+
+    q = str(search or "").strip().lower()
+    normalized_platform = str(platform or "all").strip().lower()
+    normalized_tab = "risk" if str(tab).strip().lower() in {"risk", "suspicious"} else "trusted"
+    normalized_sort = str(sort or "trust_desc").strip().lower()
+    normalized_fraud_band = str(fraud_band or "all").strip().lower()
+    days_value = _safe_int(date_days, -1) if str(date_days).strip().lower() != "all" else -1
+    min_scans = max(1, _safe_int(min_scans, 1))
+
+    now_epoch = int(datetime.now(timezone.utc).timestamp())
+    filtered = []
+    for row in all_rows:
+        pid = str(row.get("product_id", "")).lower()
+        plat = str(row.get("platform", "")).lower()
+        scans_count = _safe_int(row.get("scans_count", 0), 0)
+        last_epoch = _safe_int(row.get("last_scan_epoch", 0), 0)
+
+        if q and q not in pid:
+            continue
+        if normalized_platform != "all" and normalized_platform != plat:
+            continue
+        if scans_count < min_scans:
+            continue
+        if days_value > 0:
+            if last_epoch <= 0:
+                continue
+            if (now_epoch - last_epoch) > (days_value * 86400):
+                continue
+        if not _row_matches_fraud_band(row, normalized_fraud_band):
+            continue
+        if normalized_tab == "trusted" and _safe_float(row.get("trust_score"), 0.0) < _safe_float(row.get("fraud_score"), 0.0):
+            continue
+        if normalized_tab == "risk" and _safe_float(row.get("fraud_score"), 0.0) < 20.0:
+            continue
+        filtered.append(row)
+
+    filtered = _sort_leaderboard_rows(filtered, normalized_sort, normalized_tab)
+    for idx, row in enumerate(filtered, start=1):
+        row["rank"] = idx
+
+    total_filtered = len(filtered)
+    total_pages = max(1, math.ceil(total_filtered / page_size))
+    page = max(1, min(page, total_pages))
+    start = (page - 1) * page_size
+    page_rows = filtered[start : start + page_size]
+    top3 = filtered[:3]
+
+    payload.update(
+        {
+            "rows": page_rows,
+            "top3": top3,
+            "total_filtered": int(total_filtered),
+            "page": int(page),
+            "page_size": int(page_size),
+            "total_pages": int(total_pages),
+            "rank_offset": int(start),
+        }
+    )
+    return payload
 
 
 def _infer_platform(product_ref: str) -> str:
@@ -103,6 +699,100 @@ def _append_local_trust_history(platform: str, product_id: str, summary: dict) -
     row.to_csv(LOCAL_TRUST_HISTORY_FILE, mode="a", index=False, header=header)
 
 
+def _json_default(obj):
+    if isinstance(obj, (datetime, pd.Timestamp)):
+        return obj.isoformat()
+    try:
+        return obj.item()
+    except Exception:
+        return str(obj)
+
+
+def _append_local_scan_history(asin: str, summary: dict, chart_data: dict, user_id: str) -> None:
+    payload = {
+        "asin": str(asin or "").strip(),
+        "user_id": str(user_id or "anonymous"),
+        "summary": json.loads(json.dumps(summary or {}, default=_json_default)),
+        "chart_data": json.loads(json.dumps(chart_data or {}, default=_json_default)),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    with open(LOCAL_SCAN_HISTORY_FILE, "a", encoding="utf-8") as fh:
+        fh.write(json.dumps(payload, ensure_ascii=False) + "\n")
+
+
+def _load_local_scan_history(user_id: str | None = None, limit: int = 100) -> list[dict]:
+    if not os.path.exists(LOCAL_SCAN_HISTORY_FILE):
+        return []
+    out: list[dict] = []
+    try:
+        with open(LOCAL_SCAN_HISTORY_FILE, "r", encoding="utf-8") as fh:
+            for raw in fh:
+                line = raw.strip()
+                if not line:
+                    continue
+                try:
+                    item = json.loads(line)
+                except Exception:
+                    continue
+                if user_id and str(item.get("user_id", "")).strip() not in {"", str(user_id)}:
+                    continue
+                out.append(item)
+    except Exception as exc:
+        print(f"[WARN] Local scan history read failed: {exc}")
+        return []
+
+    out.sort(key=lambda x: str(x.get("timestamp", "")), reverse=True)
+    return out[: max(1, int(limit))]
+
+
+def _load_legacy_trust_history_as_scans(limit: int = 100) -> list[dict]:
+    if not os.path.exists(LOCAL_TRUST_HISTORY_FILE):
+        return []
+    try:
+        df = pd.read_csv(LOCAL_TRUST_HISTORY_FILE)
+    except Exception:
+        return []
+    if df.empty:
+        return []
+
+    df["timestamp"] = pd.to_datetime(df.get("timestamp"), errors="coerce", utc=True)
+    df["fraud_score"] = pd.to_numeric(df.get("fraud_score"), errors="coerce")
+    df["trust_score"] = pd.to_numeric(df.get("trust_score"), errors="coerce")
+    df["platform"] = df.get("platform", "amazon").astype(str)
+    df["product_id"] = df.get("product_id", "").astype(str)
+    df = df.dropna(subset=["timestamp", "fraud_score", "trust_score"])
+    if df.empty:
+        return []
+
+    df = df.sort_values("timestamp", ascending=False).head(max(1, int(limit)))
+    items: list[dict] = []
+    for _, row in df.iterrows():
+        asin = str(row.get("product_id", "")).strip()
+        platform = str(row.get("platform", "amazon")).strip().lower()
+        fraud = round(float(row.get("fraud_score", 0.0)), 1)
+        trust = round(float(row.get("trust_score", 0.0)), 1)
+        items.append(
+            {
+                "asin": asin,
+                "timestamp": row["timestamp"].isoformat(),
+                "summary": {
+                    "product_title": f"{platform.title()} Product ({asin})",
+                    "product_rating": "",
+                    "total_reviews": 0,
+                    "avg_fake_probability": fraud,
+                },
+                "chart_data": {
+                    "fake": 0,
+                    "genuine": 0,
+                    "fake_score": fraud,
+                    "genuine_score": trust,
+                    "ml_fake_score": fraud,
+                },
+            }
+        )
+    return items
+
+
 def _build_monthly_history(product_id: str, platform: str | None, months: int = 12):
     months = max(1, min(int(months), 24))
     if not os.path.exists(LOCAL_TRUST_HISTORY_FILE):
@@ -131,8 +821,12 @@ def _build_monthly_history(product_id: str, platform: str | None, months: int = 
     if requested_platform:
         df = df[df["platform_norm"] == requested_platform]
 
-    now = pd.Timestamp.now(tz="UTC").to_period("M")
-    month_labels = [(now - i).strftime("%Y-%m") for i in range(months - 1, -1, -1)]
+    month_labels = pd.date_range(
+        end=pd.Timestamp.now(tz="UTC"),
+        periods=months,
+        freq="MS",
+        tz="UTC",
+    ).strftime("%Y-%m").tolist()
     template = pd.DataFrame({"month": month_labels})
 
     if df.empty:
@@ -140,16 +834,20 @@ def _build_monthly_history(product_id: str, platform: str | None, months: int = 
         template["fraud_score"] = None
         return template.to_dict(orient="records")
 
-    df["month"] = df["timestamp"].dt.to_period("M").astype(str)
+    df["month"] = df["timestamp"].dt.strftime("%Y-%m")
     agg = (
         df.groupby("month", as_index=False)[["trust_score", "fraud_score"]]
         .mean()
         .round(3)
     )
     merged = template.merge(agg, on="month", how="left")
-    merged["trust_score"] = merged["trust_score"].where(pd.notna(merged["trust_score"]), None)
-    merged["fraud_score"] = merged["fraud_score"].where(pd.notna(merged["fraud_score"]), None)
-    return merged.to_dict(orient="records")
+    records = merged.to_dict(orient="records")
+    for item in records:
+        trust_val = item.get("trust_score")
+        fraud_val = item.get("fraud_score")
+        item["trust_score"] = None if pd.isna(trust_val) else round(float(trust_val), 3)
+        item["fraud_score"] = None if pd.isna(fraud_val) else round(float(fraud_val), 3)
+    return records
 
 
 def _compute_platform_trust(platform: str, product_ref: str, pages: int = 20, provided_score=None):
@@ -236,7 +934,7 @@ else:
 def index():
     if "user_id" not in session:
         return redirect(url_for("login"))
-    return render_template("home.html")
+    return render_template("home.html", home_metrics=_build_home_metrics())
 
 @app.route("/analyze", methods=["GET"])
 def analyze():
@@ -260,7 +958,32 @@ def history():
 def leaderboard():
     if "user_id" not in session:
         return redirect(url_for("login"))
-    return render_template("leaderboard.html")
+    return render_template("leaderboard.html", leaderboard_payload=_build_leaderboard_payload())
+
+
+@app.route("/api/leaderboard", methods=["GET", "OPTIONS"])
+def leaderboard_api():
+    if request.method == "OPTIONS":
+        return ("", 204)
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        payload = _build_leaderboard_payload(
+            max_products=_safe_int(request.args.get("max_products"), 300),
+            tab=request.args.get("tab", "trusted"),
+            search=request.args.get("search", ""),
+            platform=request.args.get("platform", "all"),
+            date_days=request.args.get("date_days", "all"),
+            min_scans=_safe_int(request.args.get("min_scans"), 1),
+            fraud_band=request.args.get("fraud_band", "all"),
+            sort=request.args.get("sort", "trust_desc"),
+            page=_safe_int(request.args.get("page"), 1),
+            page_size=_safe_int(request.args.get("page_size"), 12),
+        )
+        return jsonify(payload)
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
 
 @app.route("/profile",    methods=["GET"])
 def profile():
@@ -345,22 +1068,33 @@ def upload_avatar():
 def api_history():
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
-    if db is None:
-        return jsonify({"error": "Database not configured"}), 500
-    try:
-        docs = (db.collection("scans")
-                  .where("user_id", "==", session["user_id"])
-                  .stream())
-        history_data = []
-        for doc in docs:
-            data = doc.to_dict()
-            if "timestamp" in data and data["timestamp"]:
-                data["timestamp"] = data["timestamp"].isoformat()
-            history_data.append(data)
-        history_data.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
-        return jsonify({"history": history_data[:50]})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    user_id = str(session.get("user_id", "") or "").strip()
+
+    if db is not None:
+        try:
+            docs = (
+                db.collection("scans")
+                .where("user_id", "==", user_id)
+                .stream()
+            )
+            history_data = []
+            for doc in docs:
+                data = doc.to_dict() or {}
+                if "timestamp" in data and data["timestamp"] and hasattr(data["timestamp"], "isoformat"):
+                    data["timestamp"] = data["timestamp"].isoformat()
+                history_data.append(data)
+            history_data.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
+            if history_data:
+                return jsonify({"history": history_data[:100], "source": "firestore"})
+        except Exception as e:
+            print(f"[WARN] Firestore history read failed: {e}")
+
+    local_history = _load_local_scan_history(user_id=user_id, limit=100)
+    if local_history:
+        return jsonify({"history": local_history, "source": "local_scan_log"})
+
+    legacy = _load_legacy_trust_history_as_scans(limit=100)
+    return jsonify({"history": legacy, "source": "local_trust_csv" if legacy else "none"})
 
 # =============================================================================
 # MAIN ANALYSIS
@@ -416,6 +1150,20 @@ def analyze_api():
                 "genuine_score": round(100.0 - fake_score, 1),
                 "ml_fake_score": ml_fake_score,
             }
+            try:
+                _append_local_trust_history(
+                    platform=_infer_platform(asin),
+                    product_id=str(asin).strip(),
+                    summary=summary,
+                )
+                _append_local_scan_history(
+                    asin=asin,
+                    summary=summary,
+                    chart_data=chart_data,
+                    user_id=str(session.get("user_id", "anonymous")),
+                )
+            except Exception as e:
+                print(f"Local history write error: {e}")
             return jsonify(
                 {
                     "summary": summary,
@@ -484,6 +1232,12 @@ def analyze_api():
                 platform=_infer_platform(asin),
                 product_id=str(asin).strip(),
                 summary=summary,
+            )
+            _append_local_scan_history(
+                asin=asin,
+                summary=summary,
+                chart_data=chart_data,
+                user_id=str(session.get("user_id", "anonymous")),
             )
         except Exception as e:
             print(f"Local history write error: {e}")

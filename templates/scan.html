@@ -1,492 +1,361 @@
 <!DOCTYPE html>
-
 <html class="dark" lang="en">
-
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Scan History | TrustLens AI</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap"
-        rel="stylesheet" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-        rel="stylesheet" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-        rel="stylesheet" />
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#26eded",
-                        "background-light": "#f6f8f6",
-                        "background-dark": "#0a0a0a",
-                    },
-                    fontFamily: {
-                        "display": ["Inter", "sans-serif"]
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.75rem",
-                        "lg": "1rem",
-                        "xl": "1.5rem",
-                        "full": "9999px"
-                    },
-                },
-            },
-        }
-    </script>
+    <title>TrustLens AI | Scan History</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: "Manrope", sans-serif;
+            background:
+                radial-gradient(circle at 10% 8%, rgba(29, 231, 215, 0.12), transparent 35%),
+                radial-gradient(circle at 92% 6%, rgba(56, 189, 248, 0.09), transparent 30%),
+                linear-gradient(180deg, #03060d 0%, #08111c 45%, #03060d 100%);
         }
-
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(38, 237, 237, 0.1);
-            border-radius: 10px;
-        }
-
-        .report-card-bg {
-            background-color: #1a1a1a;
-        }
-
-        .profile-avatar-bg {
-            background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCR877XSIT5USYQs-TV3NTnIwyFBHDQE-5MAaXOFP_M_vwBrdQ1FCE6apvVYvudgH9mDp15WFA4znYeJoBOAt848Z31ceWHPHEqry0LOj1EYcT_h07WozBrPB7HxXI2XYCWT_weEAv6hmfLSsME0U7-63DbqPi8392jPDeLN2KY056rKhuppSih_EKZOYQ6OfXM2mkPZqH0GHDlFkigmDh3R0gLAzl2piy4zBCIUA2gOuZSJzdNZ1eXcrFjh4PN8VMNlT1II0YvudXZ');
-        }
-
-        .prod-bg-1 {
-            background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDp-qrrcsv9xobTEGbaqotsO9whuXCOdmL7mVs-LS9TqKc3tAvTuNxjwYlJAiw7L6M7YvCbM0cRzIUCWDMZVBQQ4qP6Em1nlqTPgIqv_a6y6VLEgp1l5bRiETFOtU53MQswB6K0JyYjLjmR0osZGyPvo4Y2wZTpubG7mTw3HgmiRbG8ScRrYHHod90xofogmMQYixZRnrrtpxGG5IcDYDhpBgmecQAG9dBd1DycGd2bJzJlQW1PipwXtMABfg83VGW1yG2yUCVwokGQ');
-        }
-
-        .prod-bg-2 {
-            background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBrUyN09WdXhUVvfYNHyF__FNTcrfvoMvc75fJ_LPkj46uUXZ8KCWbU7U9T9GTWK58MPHK555Tc38-CaY8Y4MeNwxMiRfdp6mcD3R23jTjJCCPKt9wG69_RGYIhox4Ig6HAz_bBGEKMIC1eLCsaGhreKnX00FFFXlrio3gP81Z8gcco9TQL1FY_k-_OlTrPt4qFRDRh8QO5Ri3StjI7DLey3k9rbw7gNCYjbSsvmEY8Ta6nyFM6M5VPkrAhZgkCQgEbpW-TaYs3gHbD');
-        }
-
-        .prod-bg-3 {
-            background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAlBGh1y-iJTL8kO04Iox87ZjBFAZY-8eZHh2_dYej41GXOnGtEfPWHWYQ3YyVDHx2ejR3df1fSMVik9sKcYFJ41HsvY_ppTwIK1WoEtEAn9siCOT_7odfXGgdO1ht_uSMUuVJ3mXJ4BTnluENMRz3OKEqp73HqYF16PyemLMsF_7WMwqJQDJlH9JwSkyP2mxjB7g12NujEgfW4Rn7unHsCeQJpxSJjwXlcyYiu8T9xvKb1iphWya4gRvo9RloRccVpxaqyq4B0TvOU');
-        }
-
-        .prod-bg-4 {
-            background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBKnDaLKdZW31OIg6bampbF5R3X7CJBIifwT2vtn740e3NcLUn-4bNbg7suCFOacaJLU3P8BYVoZfF48_bqEN14Vda3P_HedBXjh2r6a_IJ2KnO0hm_JuixSei36Y_6V1byHlJmONvGudZ9oIWJ3v01RhRNmr8qYPDEKck5KaOBcWlLJrsbqTE-NqtKBYzg987XmGNIYN42XYlgJluLXHZW22uDh_Dci-9OBYXhk-l9IDPY1YqHhBl0yqDYmu6304aw97IQ9KjrxlNr');
-        }
+        .font-display { font-family: "Space Grotesk", sans-serif; }
+        .panel { border: 1px solid rgba(29, 231, 215, 0.18); background: rgba(8, 14, 24, 0.84); }
+        .chip-active { background: rgba(29, 231, 215, 0.2); border-color: rgba(29, 231, 215, 0.45); color: #1de7d7; }
+        .chip-idle { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.14); color: #cbd5e1; }
     </style>
 </head>
+<body class="min-h-screen text-slate-100">
+    <div class="min-h-screen w-full overflow-x-hidden">
+        <header class="sticky top-0 z-40 border-b border-white/10 bg-[#04070d]/90 backdrop-blur-xl">
+            <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-10">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-teal-300 text-3xl">history</span>
+                    <h1 class="font-display text-xl font-bold">TrustLens AI</h1>
+                </div>
+                <nav class="hidden items-center gap-7 md:flex">
+                    <a class="text-sm text-slate-300 hover:text-teal-300" href="{{ url_for('index') }}">Home</a>
+                    <a class="text-sm text-slate-300 hover:text-teal-300" href="{{ url_for('analyze') }}">Analyze</a>
+                    <a class="text-sm font-semibold text-teal-300" href="{{ url_for('history') }}">History</a>
+                    <a class="text-sm text-slate-300 hover:text-teal-300" href="{{ url_for('leaderboard') }}">Leaderboard</a>
+                    <a class="text-sm text-slate-300 hover:text-teal-300" href="{{ url_for('profile') }}">Profile</a>
+                </nav>
+                <a href="{{ url_for('logout') }}" class="rounded-lg border border-teal-300/40 bg-teal-300/10 px-4 py-2 text-sm font-semibold text-teal-300 hover:bg-teal-300/20">Logout</a>
+            </div>
+        </header>
 
-<body
-    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display">
-    <div class="flex h-screen overflow-hidden">
-        <!-- Sidebar Navigation -->
-        <aside
-            class="w-64 border-r border-primary/10 bg-background-light dark:bg-background-dark hidden md:flex flex-col">
-            <div class="p-6 flex items-center gap-3">
-                <div class="bg-primary p-1.5 rounded-lg">
-                    <span class="material-symbols-outlined text-background-dark font-bold">shield_with_heart</span>
+        <main class="mx-auto max-w-7xl px-6 py-8 lg:px-10">
+            <section class="mb-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div>
+                    <p class="text-xs uppercase tracking-[0.18em] text-teal-300/80">Forensic Archive</p>
+                    <h2 class="mt-2 font-display text-4xl font-bold">Scan History</h2>
+                    <p class="mt-2 text-slate-400">Review previous analyses, detect recurring risk patterns, and re-run suspicious products quickly.</p>
                 </div>
-                <h1 class="text-xl font-black tracking-tight text-slate-900 dark:text-slate-100">TrustLens AI</h1>
-            </div>
-            <nav class="flex-1 px-4 space-y-2 mt-4">
-                <a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary"
-                    href="{{ url_for('index') }}"><span class="material-symbols-outlined text-[20px]">home</span> Home
-                </a>
-                <a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary"
-                    href="{{ url_for('analyze') }}">
-                    <span class="material-symbols-outlined">manage_search</span>
-                    <span class="font-medium">Analyze</span>
-                </a>
-                <a class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/20 text-primary border border-primary/20"
-                    href="{{ url_for('history') }}">
-                    <span class="material-symbols-outlined">history</span>
-                    <span class="font-medium">History</span>
-                </a>
-                <a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary"
-                    href="{{ url_for('leaderboard') }}">
-                    <span class="material-symbols-outlined">leaderboard</span>
-                    <span class="font-medium">Leaderboard</span>
-                </a>
-                <a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-600 dark:text-slate-400 hover:bg-primary/10 hover:text-primary"
-                    href="{{ url_for('profile') }}">
-                    <span class="material-symbols-outlined">person</span>
-                    <span class="font-medium">Profile</span>
-                </a>
-            </nav>
-            <div class="p-4 mt-auto">
-                <button
-                    class="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-red-500 hover:bg-red-500/10 transition-all">
-                    <span class="material-symbols-outlined">logout</span>
-                    <span class="font-medium">Logout</span>
-                </button>
-            </div>
-        </aside>
-        <!-- Main Content Area -->
-        <main class="flex-1 flex flex-col overflow-hidden">
-            <!-- Top Navbar -->
-            <header
-                class="h-20 border-b border-primary/10 flex items-center justify-between px-8 bg-background-light/50 dark:bg-background-dark/50 backdrop-blur-md z-10">
-                <div class="flex items-center gap-4 flex-1 max-w-xl">
-                    <div class="relative w-full">
-                        <span
-                            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-                        <input
-                            class="w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-200 dark:bg-primary/5 border-none focus:ring-2 focus:ring-primary text-sm"
-                            placeholder="Search previous scans..." type="text" />
-                    </div>
+                <div class="rounded-lg border border-teal-300/25 bg-teal-300/10 px-3 py-2 text-xs">
+                    <span class="text-slate-300">Data Source:</span>
+                    <span id="history-source" class="font-semibold text-teal-300">Loading...</span>
                 </div>
-                <div class="flex items-center gap-4">
-                    <button
-                        class="p-2.5 rounded-xl bg-slate-200 dark:bg-primary/10 text-slate-600 dark:text-primary transition-all">
-                        <span class="material-symbols-outlined">notifications</span>
-                    </button>
-                    <div class="h-10 w-10 rounded-full border-2 border-primary bg-cover bg-center profile-avatar-bg"
-                        data-alt="User profile avatar circle">
-                    </div>
+            </section>
+
+            <section class="mb-6 grid gap-3 md:grid-cols-4">
+                <div class="panel rounded-xl p-4">
+                    <p class="text-xs uppercase tracking-wider text-slate-400">Total Scans</p>
+                    <p id="stat-total" class="mt-2 text-3xl font-display font-bold text-teal-300">0</p>
                 </div>
-            </header>
-            <!-- Page Scrollable Content -->
-            <div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
-                <div class="max-w-6xl mx-auto">
-                    <!-- Header Section -->
-                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
-                        <div>
-                            <h2 class="text-4xl font-black text-slate-900 dark:text-slate-100 tracking-tight">Scan
-                                History</h2>
-                            <p class="text-slate-500 dark:text-slate-400 mt-2">Manage and review your AI authenticity
-                                reports.</p>
-                        </div>
-                        <div class="flex gap-2">
-                            <button
-                                class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all text-sm font-semibold">
-                                <span class="material-symbols-outlined text-[20px]">filter_list</span>
-                                <span>Filter</span>
-                            </button>
-                            <button
-                                class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all text-sm font-semibold">
-                                <span class="material-symbols-outlined text-[20px]">download</span>
-                                <span>Export</span>
-                            </button>
-                        </div>
-                    </div>
-                    <!-- Category Pills -->
-                    <div class="flex gap-3 mb-8 overflow-x-auto pb-2">
-                        <button
-                            class="px-5 py-2 rounded-full bg-primary text-background-dark font-bold text-sm whitespace-nowrap">All
-                            Reports</button>
-                        <button
-                            class="px-5 py-2 rounded-full bg-slate-200 dark:bg-primary/5 text-slate-600 dark:text-slate-400 border border-transparent hover:border-primary/30 transition-all text-sm whitespace-nowrap">Verified
-                            Only</button>
-                        <button
-                            class="px-5 py-2 rounded-full bg-slate-200 dark:bg-primary/5 text-slate-600 dark:text-slate-400 border border-transparent hover:border-primary/30 transition-all text-sm whitespace-nowrap">High
-                            Risk</button>
-                        <button
-                            class="px-5 py-2 rounded-full bg-slate-200 dark:bg-primary/5 text-slate-600 dark:text-slate-400 border border-transparent hover:border-primary/30 transition-all text-sm whitespace-nowrap">Recently
-                            Updated</button>
-                    </div>
-                    <!-- Grid of Cards -->
-                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                        <!-- Card 1: Verified -->
-                        <div class="dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all group bg-[#1a1a1a] report-card-bg">
-                            <div class="p-5 flex gap-5">
-                                <div
-                                    class="w-32 h-32 rounded-lg bg-slate-100 dark:bg-primary/10 flex-shrink-0 relative overflow-hidden">
-                                    <div class="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-500 prod-bg-1"
-                                        data-alt="Electronic product gadget on dark surface">
-                                    </div>
-                                    <div
-                                        class="absolute top-2 right-2 bg-primary text-background-dark px-1.5 py-0.5 rounded text-[10px] font-black tracking-tighter">
-                                        VERIFIED</div>
-                                </div>
-                                <div class="flex-1 flex flex-col justify-between">
-                                    <div>
-                                        <div class="flex justify-between items-start">
-                                            <p class="text-primary text-xs font-bold uppercase tracking-widest mb-1">
-                                                Electronics</p>
-                                            <p class="text-slate-400 dark:text-slate-500 text-xs">Oct 24, 2023</p>
-                                        </div>
-                                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">ASIN:
-                                            B08N5KWB9H</h3>
-                                        <div class="flex gap-4 items-center">
-                                            <div class="flex flex-col">
-                                                <span class="text-[10px] text-slate-500 uppercase font-bold">Trust
-                                                    Score</span>
-                                                <span class="text-primary text-xl font-black">85%</span>
-                                            </div>
-                                            <div class="w-px h-8 bg-primary/10"></div>
-                                            <div class="flex flex-col">
-                                                <span class="text-[10px] text-slate-500 uppercase font-bold">Fake
-                                                    Reviews</span>
-                                                <span
-                                                    class="text-slate-900 dark:text-slate-100 text-xl font-black">12%</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="flex justify-end gap-3">
-                                        <button
-                                            class="text-xs font-bold text-slate-400 hover:text-primary transition-colors">Details</button>
-                                        <button
-                                            class="bg-primary text-background-dark px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-tight hover:brightness-110 transition-all">View
-                                            Report</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Card 2: High Risk -->
-                        <div class="dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all group bg-[#1a1a1a] report-card-bg">
-                            <div class="p-5 flex gap-5">
-                                <div
-                                    class="w-32 h-32 rounded-lg bg-slate-100 dark:bg-primary/10 flex-shrink-0 relative overflow-hidden">
-                                    <div class="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-500 prod-bg-2"
-                                        data-alt="Skincare product bottle abstract photo">
-                                    </div>
-                                    <div
-                                        class="absolute top-2 right-2 bg-red-500 text-white px-1.5 py-0.5 rounded text-[10px] font-black tracking-tighter uppercase">
-                                        High Risk</div>
-                                </div>
-                                <div class="flex-1 flex flex-col justify-between">
-                                    <div>
-                                        <div class="flex justify-between items-start">
-                                            <p class="text-primary text-xs font-bold uppercase tracking-widest mb-1">
-                                                Beauty &amp; Health</p>
-                                            <p class="text-slate-400 dark:text-slate-500 text-xs">Oct 21, 2023</p>
-                                        </div>
-                                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">ASIN:
-                                            B07W5X1V2L</h3>
-                                        <div class="flex gap-4 items-center">
-                                            <div class="flex flex-col">
-                                                <span class="text-[10px] text-slate-500 uppercase font-bold">Trust
-                                                    Score</span>
-                                                <span class="text-red-500 text-xl font-black">22%</span>
-                                            </div>
-                                            <div class="w-px h-8 bg-primary/10"></div>
-                                            <div class="flex flex-col">
-                                                <span class="text-[10px] text-slate-500 uppercase font-bold">Fake
-                                                    Reviews</span>
-                                                <span
-                                                    class="text-slate-900 dark:text-slate-100 text-xl font-black">68%</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="flex justify-end gap-3">
-                                        <button
-                                            class="text-xs font-bold text-slate-400 hover:text-primary transition-colors">Details</button>
-                                        <button
-                                            class="bg-primary text-background-dark px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-tight hover:brightness-110 transition-all">View
-                                            Report</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Card 3: Moderate -->
-                        <div class="dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all group bg-[#1a1a1a] report-card-bg">
-                            <div class="p-5 flex gap-5">
-                                <div
-                                    class="w-32 h-32 rounded-lg bg-slate-100 dark:bg-primary/10 flex-shrink-0 relative overflow-hidden">
-                                    <div class="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-500 prod-bg-3"
-                                        data-alt="Modern office chair furniture item">
-                                    </div>
-                                    <div
-                                        class="absolute top-2 right-2 bg-yellow-500 text-background-dark px-1.5 py-0.5 rounded text-[10px] font-black tracking-tighter uppercase">
-                                        Moderate</div>
-                                </div>
-                                <div class="flex-1 flex flex-col justify-between">
-                                    <div>
-                                        <div class="flex justify-between items-start">
-                                            <p class="text-primary text-xs font-bold uppercase tracking-widest mb-1">
-                                                Home Office</p>
-                                            <p class="text-slate-400 dark:text-slate-500 text-xs">Oct 19, 2023</p>
-                                        </div>
-                                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">ASIN:
-                                            B09M2K6G6Y</h3>
-                                        <div class="flex gap-4 items-center">
-                                            <div class="flex flex-col">
-                                                <span class="text-[10px] text-slate-500 uppercase font-bold">Trust
-                                                    Score</span>
-                                                <span class="text-yellow-500 text-xl font-black">54%</span>
-                                            </div>
-                                            <div class="w-px h-8 bg-primary/10"></div>
-                                            <div class="flex flex-col">
-                                                <span class="text-[10px] text-slate-500 uppercase font-bold">Fake
-                                                    Reviews</span>
-                                                <span
-                                                    class="text-slate-900 dark:text-slate-100 text-xl font-black">34%</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="flex justify-end gap-3">
-                                        <button
-                                            class="text-xs font-bold text-slate-400 hover:text-primary transition-colors">Details</button>
-                                        <button
-                                            class="bg-primary text-background-dark px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-tight hover:brightness-110 transition-all">View
-                                            Report</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Card 4: Verified -->
-                        <div class="dark:bg-primary/5 rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all group bg-[#1a1a1a] report-card-bg">
-                            <div class="p-5 flex gap-5">
-                                <div
-                                    class="w-32 h-32 rounded-lg bg-slate-100 dark:bg-primary/10 flex-shrink-0 relative overflow-hidden">
-                                    <div class="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-500 prod-bg-4"
-                                        data-alt="Smartwatch fitness tracker tech device">
-                                    </div>
-                                    <div
-                                        class="absolute top-2 right-2 bg-primary text-background-dark px-1.5 py-0.5 rounded text-[10px] font-black tracking-tighter">
-                                        VERIFIED</div>
-                                </div>
-                                <div class="flex-1 flex flex-col justify-between">
-                                    <div>
-                                        <div class="flex justify-between items-start">
-                                            <p class="text-primary text-xs font-bold uppercase tracking-widest mb-1">
-                                                Wearables</p>
-                                            <p class="text-slate-400 dark:text-slate-500 text-xs">Oct 15, 2023</p>
-                                        </div>
-                                        <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">ASIN:
-                                            B08K9W2J3S</h3>
-                                        <div class="flex gap-4 items-center">
-                                            <div class="flex flex-col">
-                                                <span class="text-[10px] text-slate-500 uppercase font-bold">Trust
-                                                    Score</span>
-                                                <span class="text-primary text-xl font-black">92%</span>
-                                            </div>
-                                            <div class="w-px h-8 bg-primary/10"></div>
-                                            <div class="flex flex-col">
-                                                <span class="text-[10px] text-slate-500 uppercase font-bold">Fake
-                                                    Reviews</span>
-                                                <span
-                                                    class="text-slate-900 dark:text-slate-100 text-xl font-black">4%</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="flex justify-end gap-3">
-                                        <button
-                                            class="text-xs font-bold text-slate-400 hover:text-primary transition-colors">Details</button>
-                                        <button
-                                            class="bg-primary text-background-dark px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-tight hover:brightness-110 transition-all">View
-                                            Report</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Pagination -->
-                    <div class="mt-12 flex items-center justify-between border-t border-primary/10 pt-8">
-                        <button
-                            class="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-semibold">
-                            <span class="material-symbols-outlined">arrow_back</span>
-                            Previous
-                        </button>
-                        <div class="flex gap-2">
-                            <button class="h-10 w-10 rounded-lg bg-primary text-background-dark font-black">1</button>
-                            <button
-                                class="h-10 w-10 rounded-lg hover:bg-primary/10 text-slate-500 hover:text-primary transition-all font-bold">2</button>
-                            <button
-                                class="h-10 w-10 rounded-lg hover:bg-primary/10 text-slate-500 hover:text-primary transition-all font-bold">3</button>
-                            <span class="px-2 text-slate-500 self-center">...</span>
-                            <button
-                                class="h-10 w-10 rounded-lg hover:bg-primary/10 text-slate-500 hover:text-primary transition-all font-bold">12</button>
-                        </div>
-                        <button
-                            class="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-semibold">
-                            Next
-                            <span class="material-symbols-outlined">arrow_forward</span>
-                        </button>
-                    </div>
+                <div class="panel rounded-xl p-4">
+                    <p class="text-xs uppercase tracking-wider text-slate-400">Average Trust</p>
+                    <p id="stat-trust" class="mt-2 text-3xl font-display font-bold text-teal-300">0%</p>
                 </div>
-            </div>
+                <div class="panel rounded-xl p-4">
+                    <p class="text-xs uppercase tracking-wider text-slate-400">Average Fraud</p>
+                    <p id="stat-fraud" class="mt-2 text-3xl font-display font-bold text-rose-300">0%</p>
+                </div>
+                <div class="panel rounded-xl p-4">
+                    <p class="text-xs uppercase tracking-wider text-slate-400">High Risk Scans</p>
+                    <p id="stat-risk" class="mt-2 text-3xl font-display font-bold text-amber-300">0</p>
+                </div>
+            </section>
+
+            <section class="panel rounded-xl p-4 mb-6">
+                <div class="grid gap-3 md:grid-cols-[1.3fr_1fr_auto_auto]">
+                    <input id="search-input" type="text" placeholder="Search by ASIN or title..." class="w-full rounded-lg border border-white/15 bg-[#050b14] px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-teal-300/50 focus:ring-teal-300/25" />
+                    <div class="flex items-center gap-2">
+                        <button data-filter="all" class="history-filter chip-active rounded-full border px-3 py-1.5 text-xs font-semibold">All</button>
+                        <button data-filter="verified" class="history-filter chip-idle rounded-full border px-3 py-1.5 text-xs font-semibold">Verified</button>
+                        <button data-filter="moderate" class="history-filter chip-idle rounded-full border px-3 py-1.5 text-xs font-semibold">Moderate</button>
+                        <button data-filter="risk" class="history-filter chip-idle rounded-full border px-3 py-1.5 text-xs font-semibold">High Risk</button>
+                    </div>
+                    <button id="refresh-btn" class="rounded-lg border border-white/20 px-3 py-2 text-sm text-slate-200 hover:border-teal-300/40 hover:text-teal-300">Refresh</button>
+                    <button id="export-btn" class="rounded-lg border border-teal-300/35 bg-teal-300/10 px-3 py-2 text-sm font-semibold text-teal-300 hover:bg-teal-300/20">Export CSV</button>
+                </div>
+            </section>
+
+            <section id="empty-state" class="panel rounded-xl p-10 text-center hidden">
+                <span class="material-symbols-outlined text-5xl text-teal-300/40">history_toggle_off</span>
+                <h3 class="mt-3 text-xl font-bold">No scan history yet</h3>
+                <p class="mt-2 text-slate-400">Run an analysis from the Analyze page to start building your forensic history.</p>
+                <a href="{{ url_for('analyze') }}" class="mt-5 inline-flex rounded-lg bg-teal-300 px-5 py-2 text-sm font-bold text-[#041019]">Go To Analyze</a>
+            </section>
+
+            <section id="history-grid" class="grid grid-cols-1 xl:grid-cols-2 gap-4"></section>
+
+            <section class="mt-8 flex items-center justify-between">
+                <button id="prev-btn" class="rounded border border-white/20 px-3 py-2 text-sm text-slate-300 disabled:opacity-30">Previous</button>
+                <p id="page-meta" class="text-sm text-slate-400">0-0 of 0</p>
+                <button id="next-btn" class="rounded border border-white/20 px-3 py-2 text-sm text-slate-300 disabled:opacity-30">Next</button>
+            </section>
         </main>
     </div>
+
     <script>
+        const state = {
+            allRows: [],
+            filteredRows: [],
+            filter: "all",
+            query: "",
+            page: 1,
+            pageSize: 8,
+        };
+
+        const el = {
+            source: document.getElementById("history-source"),
+            statTotal: document.getElementById("stat-total"),
+            statTrust: document.getElementById("stat-trust"),
+            statFraud: document.getElementById("stat-fraud"),
+            statRisk: document.getElementById("stat-risk"),
+            search: document.getElementById("search-input"),
+            grid: document.getElementById("history-grid"),
+            empty: document.getElementById("empty-state"),
+            pageMeta: document.getElementById("page-meta"),
+            prev: document.getElementById("prev-btn"),
+            next: document.getElementById("next-btn"),
+            refresh: document.getElementById("refresh-btn"),
+            export: document.getElementById("export-btn"),
+        };
+
+        function clampPct(value) {
+            const n = Number(value);
+            if (!Number.isFinite(n)) return 0;
+            return Math.max(0, Math.min(100, n));
+        }
+
+        function parseRecord(item) {
+            const summary = item.summary || {};
+            const chart = item.chart_data || {};
+            const fakeRaw = Number.isFinite(Number(chart.fake_score))
+                ? Number(chart.fake_score)
+                : (Number.isFinite(Number(summary.avg_fake_probability)) ? Number(summary.avg_fake_probability) : null);
+            const totalByChart = Number(chart.fake || 0) + Number(chart.genuine || 0);
+            const fallbackFake = totalByChart > 0 ? (Number(chart.fake || 0) / totalByChart) * 100 : 0;
+            const fakePct = clampPct(fakeRaw === null ? fallbackFake : fakeRaw);
+            const trustPct = clampPct(100 - fakePct);
+
+            const asin = String(item.asin || item.product_id || "N/A").trim();
+            const title = String(summary.product_title || `Product (${asin})`);
+            const tsRaw = String(item.timestamp || "");
+            const tsValue = Date.parse(tsRaw);
+            const tsLabel = Number.isFinite(tsValue)
+                ? new Date(tsValue).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })
+                : "Unknown time";
+            const totalReviews = Number(summary.total_reviews || summary.product_reviews_total || totalByChart || 0);
+            const status = trustPct >= 70 ? "verified" : (trustPct >= 40 ? "moderate" : "risk");
+
+            return {
+                asin,
+                title,
+                fakePct,
+                trustPct,
+                totalReviews,
+                timestamp: tsRaw,
+                timestampValue: Number.isFinite(tsValue) ? tsValue : 0,
+                timestampLabel: tsLabel,
+                status,
+            };
+        }
+
+        function renderStats(rows) {
+            const total = rows.length;
+            const avgTrust = total ? rows.reduce((a, r) => a + r.trustPct, 0) / total : 0;
+            const avgFake = total ? rows.reduce((a, r) => a + r.fakePct, 0) / total : 0;
+            const riskCount = rows.filter((r) => r.status === "risk").length;
+
+            el.statTotal.textContent = total.toLocaleString();
+            el.statTrust.textContent = `${avgTrust.toFixed(1)}%`;
+            el.statFraud.textContent = `${avgFake.toFixed(1)}%`;
+            el.statRisk.textContent = riskCount.toLocaleString();
+        }
+
+        function updateFilterButtons() {
+            document.querySelectorAll(".history-filter").forEach((btn) => {
+                const active = btn.getAttribute("data-filter") === state.filter;
+                btn.classList.remove("chip-active", "chip-idle");
+                btn.classList.add(active ? "chip-active" : "chip-idle");
+            });
+        }
+
+        function applyFilters() {
+            const q = state.query.trim().toLowerCase();
+            let rows = [...state.allRows];
+            if (q) {
+                rows = rows.filter((r) => r.asin.toLowerCase().includes(q) || r.title.toLowerCase().includes(q));
+            }
+            if (state.filter !== "all") {
+                rows = rows.filter((r) => r.status === state.filter);
+            }
+            rows.sort((a, b) => b.timestampValue - a.timestampValue);
+            state.filteredRows = rows;
+            state.page = 1;
+        }
+
+        function cardHtml(row) {
+            const badge = row.status === "verified"
+                ? '<span class="rounded bg-teal-300 px-2 py-0.5 text-[10px] font-bold text-[#031018]">VERIFIED</span>'
+                : (row.status === "moderate"
+                    ? '<span class="rounded bg-amber-300 px-2 py-0.5 text-[10px] font-bold text-[#251506]">MODERATE</span>'
+                    : '<span class="rounded bg-rose-500 px-2 py-0.5 text-[10px] font-bold text-white">HIGH RISK</span>');
+            const trustColor = row.status === "verified" ? "text-teal-300" : (row.status === "moderate" ? "text-amber-300" : "text-rose-300");
+            const safeAsin = row.asin || "N/A";
+            return `
+                <article class="panel rounded-xl p-4">
+                    <div class="flex gap-4">
+                        <div class="w-28 h-28 rounded-lg border border-white/10 bg-[#050b14] overflow-hidden flex items-center justify-center">
+                            <img
+                                src="https://images-na.ssl-images-amazon.com/images/P/${safeAsin}.01._SCLZZZZZZZ_.jpg"
+                                alt="${safeAsin}"
+                                class="w-full h-full object-contain"
+                                onerror="this.onerror=null;this.style.display='none';this.parentElement.innerHTML='<span style=&quot;color:rgba(45,212,191,0.4);font-size:34px&quot; class=&quot;material-symbols-outlined&quot;>inventory_2</span>';"
+                            />
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-start justify-between gap-2">
+                                <div>
+                                    <p class="text-xs uppercase tracking-[0.14em] text-teal-300/80">${row.timestampLabel}</p>
+                                    <h3 class="mt-1 text-base font-bold truncate">${row.title}</h3>
+                                    <p class="text-xs text-slate-400 mt-0.5">ASIN: ${safeAsin}</p>
+                                </div>
+                                ${badge}
+                            </div>
+                            <div class="mt-3 grid grid-cols-3 gap-2 text-sm">
+                                <div class="rounded-lg border border-white/10 bg-[#060d18] p-2">
+                                    <p class="text-[10px] uppercase tracking-wider text-slate-400">Trust</p>
+                                    <p class="font-bold ${trustColor}">${row.trustPct.toFixed(1)}%</p>
+                                </div>
+                                <div class="rounded-lg border border-white/10 bg-[#060d18] p-2">
+                                    <p class="text-[10px] uppercase tracking-wider text-slate-400">Fraud</p>
+                                    <p class="font-bold text-rose-300">${row.fakePct.toFixed(1)}%</p>
+                                </div>
+                                <div class="rounded-lg border border-white/10 bg-[#060d18] p-2">
+                                    <p class="text-[10px] uppercase tracking-wider text-slate-400">Reviews</p>
+                                    <p class="font-bold text-slate-200">${row.totalReviews.toLocaleString()}</p>
+                                </div>
+                            </div>
+                            <div class="mt-3 h-1.5 rounded-full bg-white/10 overflow-hidden flex">
+                                <div class="bg-teal-300 h-full" style="width:${row.trustPct}%"></div>
+                                <div class="bg-rose-500 h-full" style="width:${row.fakePct}%"></div>
+                            </div>
+                            <div class="mt-3 flex justify-end">
+                                <a href="/analyze" class="rounded-lg bg-teal-300 px-3 py-1.5 text-xs font-bold text-[#05121c] hover:brightness-110">Re-Analyze</a>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            `;
+        }
+
+        function renderPage() {
+            const total = state.filteredRows.length;
+            const totalPages = Math.max(1, Math.ceil(total / state.pageSize));
+            state.page = Math.max(1, Math.min(state.page, totalPages));
+            const start = (state.page - 1) * state.pageSize;
+            const pageRows = state.filteredRows.slice(start, start + state.pageSize);
+
+            if (!state.allRows.length) {
+                el.empty.classList.remove("hidden");
+                el.grid.innerHTML = "";
+            } else {
+                el.empty.classList.add("hidden");
+                el.grid.innerHTML = pageRows.map(cardHtml).join("");
+            }
+
+            el.pageMeta.textContent = `${total ? start + 1 : 0}-${Math.min(start + state.pageSize, total)} of ${total}`;
+            el.prev.disabled = state.page <= 1;
+            el.next.disabled = state.page >= totalPages;
+        }
+
+        function exportCsv() {
+            const headers = ["timestamp", "asin", "title", "trust_score", "fraud_score", "total_reviews", "status"];
+            const lines = [headers.join(",")];
+            state.filteredRows.forEach((r) => {
+                const row = [
+                    r.timestamp,
+                    r.asin,
+                    r.title,
+                    r.trustPct.toFixed(1),
+                    r.fakePct.toFixed(1),
+                    String(r.totalReviews),
+                    r.status,
+                ].map((v) => `"${String(v || "").replace(/"/g, '""')}"`);
+                lines.push(row.join(","));
+            });
+            const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `trustlens_scan_history_${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
         async function loadHistory() {
-            const grid = document.querySelector('.grid.grid-cols-1.xl\\:grid-cols-2');
-            if (!grid) return;
             try {
-                const res = await fetch('/api/history');
+                const res = await fetch("/api/history");
                 const data = await res.json();
-                if (!res.ok || !data.history || data.history.length === 0) return;
-
-                grid.innerHTML = data.history.map(item => {
-                    const asin = item.asin || 'N/A';
-                    const summary = item.summary || {};
-                    const chartData = item.chart_data || {};
-                    const total = (chartData.fake || 0) + (chartData.genuine || 0);
-                    const scoreFromChart = typeof chartData.fake_score === 'number' ? chartData.fake_score : null;
-                    const scoreFromSummary = typeof summary.avg_fake_probability === 'number' ? summary.avg_fake_probability : null;
-                    const fallbackPct = total > 0 ? (chartData.fake / total) * 100 : 0;
-                    const fakePct = Math.max(0, Math.min(100, scoreFromChart ?? scoreFromSummary ?? fallbackPct));
-                    const trustScore = 100 - fakePct;
-                    const ts = item.timestamp ? new Date(item.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-                    const badge = trustScore >= 70 ? ['bg-primary', 'VERIFIED'] : trustScore >= 40 ? ['bg-yellow-500 text-black', 'MODERATE'] : ['bg-red-500', 'HIGH RISK'];
-                    const scoreColor = trustScore >= 70 ? 'text-primary' : trustScore >= 40 ? 'text-yellow-500' : 'text-red-500';
-
-                    const genPct = 100 - fakePct;
-                    return `<div class="rounded-xl border border-slate-200 dark:border-primary/10 overflow-hidden hover:shadow-lg hover:shadow-primary/5 transition-all group" style="background-color:#1a1a1a;">
-          <div class="p-5 flex gap-5">
-            <!-- Product Image -->
-            <div class="w-28 h-28 rounded-xl flex-shrink-0 bg-slate-900 border border-primary/10 overflow-hidden flex items-center justify-center relative">
-              <img
-                src="https://images-na.ssl-images-amazon.com/images/P/${asin}.01._SCLZZZZZZZ_.jpg"
-                alt="Product ${asin}"
-                class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
-                onerror="this.onerror=null;this.src='';this.parentElement.innerHTML='<span style=\\'font-family:Material Symbols Outlined;font-size:40px;color:rgba(38,237,237,0.4)\\'>inventory_2</span>';"
-              />
-              <div class="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded text-[9px] font-black tracking-tighter text-white ${badge[0]}">${badge[1]}</div>
-            </div>
-            <!-- Details -->
-            <div class="flex-1 flex flex-col justify-between min-w-0">
-              <div>
-                <div class="flex justify-between items-start mb-1">
-                  <p class="text-primary text-[10px] font-bold uppercase tracking-widest">Amazon Product</p>
-                  <p class="text-slate-400 text-xs">${ts}</p>
-                </div>
-                <h3 class="text-base font-bold text-slate-100 mb-0.5 truncate">ASIN: ${asin}</h3>
-                <a href="https://www.amazon.com/dp/${asin}" target="_blank"
-                   class="text-[10px] text-primary/60 hover:text-primary transition-colors truncate block mb-2">
-                  amazon.com/dp/${asin} &#x2197;
-                </a>
-                <!-- Fake vs Genuine mini-bar -->
-                <div class="flex gap-1 mb-2 h-1.5 rounded-full overflow-hidden bg-slate-800">
-                  <div class="h-full bg-primary rounded-l-full" style="width:${genPct}%"></div>
-                  <div class="h-full bg-red-500 rounded-r-full" style="width:${fakePct}%"></div>
-                </div>
-                <div class="flex gap-4 items-center">
-                  <div class="flex flex-col">
-                    <span class="text-[9px] text-slate-500 uppercase font-bold">Trust</span>
-                                        <span class="${scoreColor} text-lg font-black">${trustScore.toFixed(1)}%</span>
-                  </div>
-                  <div class="w-px h-7 bg-primary/10"></div>
-                  <div class="flex flex-col">
-                                        <span class="text-[9px] text-slate-500 uppercase font-bold">Fake Risk</span>
-                                        <span class="text-red-400 text-lg font-black">${fakePct.toFixed(1)}%</span>
-                  </div>
-                  <div class="w-px h-7 bg-primary/10"></div>
-                  <div class="flex flex-col">
-                    <span class="text-[9px] text-slate-500 uppercase font-bold">Total</span>
-                    <span class="text-slate-300 text-lg font-black">${total}</span>
-                  </div>
-                </div>
-              </div>
-              <div class="flex justify-end gap-2 mt-3">
-                <a href="/analyze" class="bg-primary text-background-dark px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-tight hover:brightness-110 transition-all">Re-Analyze</a>
-              </div>
-            </div>
-          </div>
-        </div>`;
-                }).join('');
+                const source = String(data.source || "none").replaceAll("_", " ");
+                el.source.textContent = source.toUpperCase();
+                const list = Array.isArray(data.history) ? data.history : [];
+                state.allRows = list.map(parseRecord);
+                renderStats(state.allRows);
+                applyFilters();
+                renderPage();
             } catch (e) {
-                console.warn('Could not load history:', e);
+                console.error(e);
+                el.source.textContent = "ERROR";
+                state.allRows = [];
+                renderStats([]);
+                applyFilters();
+                renderPage();
             }
         }
+
+        function bind() {
+            let timer = null;
+            el.search.addEventListener("input", () => {
+                if (timer) clearTimeout(timer);
+                timer = setTimeout(() => {
+                    state.query = el.search.value || "";
+                    applyFilters();
+                    renderPage();
+                }, 180);
+            });
+            document.querySelectorAll(".history-filter").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    state.filter = btn.getAttribute("data-filter") || "all";
+                    updateFilterButtons();
+                    applyFilters();
+                    renderPage();
+                });
+            });
+            el.prev.addEventListener("click", () => {
+                state.page = Math.max(1, state.page - 1);
+                renderPage();
+            });
+            el.next.addEventListener("click", () => {
+                state.page += 1;
+                renderPage();
+            });
+            el.refresh.addEventListener("click", loadHistory);
+            el.export.addEventListener("click", exportCsv);
+        }
+
+        updateFilterButtons();
+        bind();
         loadHistory();
     </script>
 </body>
-
 </html>

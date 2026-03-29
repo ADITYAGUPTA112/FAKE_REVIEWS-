@@ -47,13 +47,43 @@ except Exception:
     detect_review_rings_module = None
 
 try:
+    from product_intelligence import detect_coordinated_bot_networks
+except Exception:
+    detect_coordinated_bot_networks = None
+
+try:
     from Text_rating_mismatch import detect_text_rating_mismatch
 except Exception:
     detect_text_rating_mismatch = None
 
 
+def _load_local_env_fallback(path: str = ".env") -> None:
+    """
+    Minimal .env loader for environments where python-dotenv is unavailable.
+    Only sets vars that are not already present in process environment.
+    """
+    if not os.path.exists(path):
+        return
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for raw_line in f:
+                line = raw_line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = value
+    except Exception:
+        # Keep scraping resilient; missing env parsing should not crash analysis.
+        pass
+
+
 if load_dotenv:
     load_dotenv()
+else:
+    _load_local_env_fallback()
 
 
 SERP_API_KEY = (
@@ -76,6 +106,19 @@ USER_AGENTS = [
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
 ]
+
+
+def _get_scrapingdog_key() -> str:
+    """
+    Resolve ScrapingDog key from runtime environment first, then module fallback.
+    Supports both SCRAPINGDOG_KEY and SCRAPINGDOG_API_KEY.
+    """
+    return (
+        os.getenv("SCRAPINGDOG_KEY")
+        or os.getenv("SCRAPINGDOG_API_KEY")
+        or SCRAPINGDOG_KEY
+        or ""
+    ).strip()
 
 
 def _clamp_int(value: Any, minimum: int, maximum: int, default: int) -> int:
@@ -1001,7 +1044,8 @@ def _scrape_amazon_direct(asin: str, domain: str, max_reviews: int, max_pages: i
 
 
 def _scrape_amazon_scrapingdog(asin: str, domain: str, max_reviews: int, max_pages: int) -> List[Dict[str, Any]]:
-    if not SCRAPINGDOG_KEY or SCRAPINGDOG_KEY == "YOUR_SCRAPINGDOG_KEY_HERE":
+    scrapingdog_key = _get_scrapingdog_key()
+    if not scrapingdog_key or scrapingdog_key == "YOUR_SCRAPINGDOG_KEY_HERE":
         return []
     reviews: List[Dict[str, Any]] = []
     seen = set()
@@ -1015,7 +1059,7 @@ def _scrape_amazon_scrapingdog(asin: str, domain: str, max_reviews: int, max_pag
                 resp = requests.get(
                     "https://api.scrapingdog.com/amazon/reviews",
                     params={
-                        "api_key": SCRAPINGDOG_KEY,
+                        "api_key": scrapingdog_key,
                         "asin": asin,
                         "country": country,
                         "page": page,
@@ -1185,15 +1229,15 @@ def fetch_reviews_multi_page(
     product_details, fallback_reviews = _fetch_metadata(asin, domain)
     available_reviews = _safe_int(product_details.get("reviews_total"), 0)
     target_reviews = max_reviews
-    if available_reviews > 0:
-        # Scan as much as possible, bounded by global safety cap.
-        target_reviews = min(max_reviews, available_reviews)
     print(f"[INFO] Product : {product_details.get('title', '?')[:70]}")
     print(f"[INFO] Ratings : {product_details.get('rating', '')} ({product_details.get('reviews_total', 0)} reviews)")
+    if available_reviews > 0:
+        print(f"[INFO] Estimated available reviews (metadata): {available_reviews}")
     print(f"[INFO] Target scan volume: {target_reviews} reviews")
 
     reviews: List[Dict[str, Any]] = []
-    if SCRAPINGDOG_KEY and SCRAPINGDOG_KEY != "YOUR_SCRAPINGDOG_KEY_HERE":
+    scrapingdog_key = _get_scrapingdog_key()
+    if scrapingdog_key and scrapingdog_key != "YOUR_SCRAPINGDOG_KEY_HERE":
         print("[INFO] Using ScrapingDog API (premium scraping) ...")
         reviews = _scrape_amazon_scrapingdog(
             asin,
@@ -1453,11 +1497,55 @@ def detect_review_rings_for_ui(df_graph: pd.DataFrame, current_asin: str) -> Dic
         },
         "overall_graph_score": 0.0,
     }
-    if df_graph.empty or detect_review_rings_module is None:
+    if df_graph.empty:
         return result
 
     if known_user_count < 3:
         result["note"] = "Insufficient unique reviewer identities for reliable network analysis."
+        return result
+
+    if result["graph_summary"]["total_products"] <= 1 and detect_coordinated_bot_networks is not None:
+        try:
+            fallback = detect_coordinated_bot_networks(
+                df=df_graph[["user_id", "product_id", "timestamp", "rating"]].copy(),
+                user_col="user_id",
+                product_col="product_id",
+                timestamp_col="timestamp",
+                time_window="72h",
+                min_shared_products=1,
+                min_co_review_events=1,
+                min_nodes=3,
+                min_density=0.35,
+                min_avg_edge_weight=1.8,
+            )
+            fallback_clusters = fallback.get("suspicious_clusters", [])
+            transformed = []
+            for c in fallback_clusters:
+                transformed.append(
+                    {
+                        "users": c.get("users", []),
+                        "shared_products": c.get("products", []),
+                        "cluster_size": int(c.get("cluster_size", 0)),
+                        "cluster_score": round(float(c.get("risk_score", 0)) / 100.0, 3),
+                        "detection_method": "single_product_temporal",
+                    }
+                )
+            result["suspicious_clusters"] = transformed
+            result["graph_summary"]["total_edges"] = int(
+                (fallback.get("graph_summary", {}) or {}).get("total_edges", 0)
+            )
+            result["overall_graph_score"] = round(
+                max((c.get("cluster_score", 0.0) for c in transformed), default=0.0),
+                3,
+            )
+            if not transformed:
+                result["note"] = "No suspicious temporal coordination cluster found in current product sample."
+            return result
+        except Exception as exc:
+            print(f"[WARN] Single-product ring fallback failed: {exc}")
+
+    if detect_review_rings_module is None:
+        result["note"] = "Graph module unavailable in runtime."
         return result
 
     try:
@@ -1480,8 +1568,6 @@ def detect_review_rings_for_ui(df_graph: pd.DataFrame, current_asin: str) -> Dic
             result["graph_summary"]["total_edges"] = int(
                 sum(int(c.get("cluster_size", 0)) for c in transformed)
             )
-        if result["graph_summary"]["total_products"] <= 1:
-            result["note"] = "Only one product analysed - graph analysis needs multi-product data for meaningful ring detection."
         return result
     except Exception as exc:
         print(f"[WARN] Review ring detector failed: {exc}")
@@ -1724,8 +1810,26 @@ def analyze_product(asin: str, pages: int = 50, max_reviews: int = MAX_REVIEWS) 
         print(f"[WARN] Advanced analysis partial failure: {exc}")
         advanced_analysis["error"] = str(exc)
 
-    product_total = _safe_int(product_details.get("reviews_total", 0), 0)
-    coverage_ratio = float(total / product_total) if product_total > 0 else None
+    product_total_source = _safe_int(product_details.get("reviews_total", 0), 0)
+    product_total_display = product_total_source if product_total_source > 0 else int(total)
+
+    raw_product_rating = str(product_details.get("rating", "") or "").strip()
+    m_product_rating = re.search(r"([\d.]+)", raw_product_rating)
+    product_rating_value: Any = ""
+    if m_product_rating:
+        try:
+            product_rating_value = round(float(m_product_rating.group(1)), 1)
+        except Exception:
+            product_rating_value = raw_product_rating
+    elif "star_rating" in df_results.columns:
+        avg_star_fallback = pd.to_numeric(df_results["star_rating"], errors="coerce").dropna()
+        if not avg_star_fallback.empty:
+            product_rating_value = round(float(avg_star_fallback.mean()), 1)
+
+    avg_star_series = pd.to_numeric(df_results.get("star_rating", pd.Series(dtype=float)), errors="coerce").dropna()
+    avg_star_rating = round(float(avg_star_series.mean()), 2) if not avg_star_series.empty else None
+
+    coverage_ratio = float(total / product_total_source) if product_total_source > 0 else None
     coverage_warning = None
 
     summary = {
@@ -1736,8 +1840,9 @@ def analyze_product(asin: str, pages: int = 50, max_reviews: int = MAX_REVIEWS) 
         "avg_fake_probability": float(avg_fake),
         "product_title": product_details.get("title", "Unknown Product"),
         "product_image": product_details.get("thumbnail", ""),
-        "product_rating": product_details.get("rating", ""),
-        "product_reviews_total": product_total,
+        "product_rating": product_rating_value,
+        "avg_star_rating": avg_star_rating,
+        "product_reviews_total": product_total_display,
         "review_coverage_ratio": round(coverage_ratio, 4) if coverage_ratio is not None else None,
         "coverage_warning": coverage_warning,
         "requested_review_limit": target_reviews,
