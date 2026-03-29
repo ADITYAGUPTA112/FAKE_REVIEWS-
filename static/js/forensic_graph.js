@@ -1,5 +1,5 @@
 /**
- * Obsidian Lens – Forensic Network Graph Renderer
+ * TrustLens AI – Forensic Network Graph Renderer
  * Uses vis.js Network to visualize reviewer coordination clusters.
  */
 
