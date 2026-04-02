@@ -167,7 +167,7 @@
                                     <p class="text-sm text-slate-300">Model Accuracy: {{ hm.get('model_accuracy_text', '92.0%') }}</p>
                                 </div>
                                 <div class="h-2.5 w-full overflow-hidden rounded-full bg-white/10">
-                                    <div class="h-full rounded-full bg-primary" style="width:{{ hm.get('recent_avg_trust', 84.2) }}%"></div>
+                                    <div class="h-full rounded-full bg-primary" data-width="{{ hm.get('recent_avg_trust', 84.2) }}"></div>
                                 </div>
                                 <p class="text-sm text-slate-300">Last scan: {{ hm.get('last_scan_label', 'No scans yet') }}</p>
                             </div>
@@ -375,6 +375,10 @@
     </div>
 
     <script>
+        // Apply dynamic widths from data-width attributes (avoids CSS linter false positives on Jinja expressions)
+        document.querySelectorAll('[data-width]').forEach(el => {
+            el.style.width = el.dataset.width + '%';
+        });
         const revealNodes = Array.from(document.querySelectorAll(".reveal"));
         if ("IntersectionObserver" in window) {
             const observer = new IntersectionObserver((entries) => {
