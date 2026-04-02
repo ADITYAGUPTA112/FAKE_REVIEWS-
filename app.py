@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+﻿from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
 import os
@@ -1179,22 +1179,40 @@ def add_cors_headers(response):
     return response
 
 # Firebase init
+# Mode 1: Env var JSON string (Render/cloud deployment)
+# Mode 2: Local credentials file (development)
 cred_path = "firebase-credentials.json"
 db = None
 USE_MOCK_AUTH = False
 
-if os.path.exists(cred_path):
-    try:
-        cred = credentials.Certificate(cred_path)
-        firebase_admin.initialize_app(cred)
-        db = firestore.client()
-        print("Firebase initialized.")
-    except Exception as e:
-        print(f"Warning: Firebase init failed: {e}")
-        USE_MOCK_AUTH = True
-else:
-    print(f"Warning: '{cred_path}' not found. Using MOCK_AUTH mode.")
+def _init_firebase():
+    global db, USE_MOCK_AUTH
+    cred_json_str = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON", "").strip()
+    if cred_json_str:
+        try:
+            cred_dict = json.loads(cred_json_str)
+            cred = credentials.Certificate(cred_dict)
+            if not firebase_admin._apps:
+                firebase_admin.initialize_app(cred)
+            db = firestore.client()
+            print("Firebase initialized via environment variable.")
+            return
+        except Exception as e:
+            print(f"Warning: Firebase env-var init failed: {e}")
+    if os.path.exists(cred_path):
+        try:
+            cred = credentials.Certificate(cred_path)
+            if not firebase_admin._apps:
+                firebase_admin.initialize_app(cred)
+            db = firestore.client()
+            print("Firebase initialized via credentials file.")
+            return
+        except Exception as e:
+            print(f"Warning: Firebase file init failed: {e}")
+    print(f"Warning: No Firebase credentials found. Running in MOCK_AUTH mode.")
     USE_MOCK_AUTH = True
+
+_init_firebase()
 
 # =============================================================================
 # ROUTES
@@ -1508,7 +1526,7 @@ def analyze_api():
 
         summary, df_results = analyze_product(asin, pages=pages, max_reviews=review_limit)
 
-        # ── Clear error if no reviews found ───────────────────────────────────
+        # â”€â”€ Clear error if no reviews found â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if df_results.empty or summary.get("total_reviews", 0) == 0:
             ml_fake_score = float(summary.get("avg_fake_probability", 0.0))
             ml_fake_score = round(max(0.0, min(100.0, ml_fake_score)), 1)
@@ -1560,7 +1578,7 @@ def analyze_api():
                 }
             ), 200
 
-        # ── Build results ─────────────────────────────────────────────────────
+        # â”€â”€ Build results â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if "prediction" in df_results.columns:
             fake_count    = int((df_results["prediction"] == "Fake").sum())
             genuine_count = int((df_results["prediction"] == "Genuine").sum())
