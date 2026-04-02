@@ -4,6 +4,8 @@
 
 TrustLens AI is a full-stack web application that exposes fake reviews on e-commerce platforms by applying three forensic layers: language pattern analysis, reviewer behavior profiling, and coordination network graph detection. It outputs a clear **Trust Score**, an **Adjusted Authentic Rating**, and per-review fraud evidence — all in under 30 seconds.
 
+**🌐 Live Demo:** [https://trustlens-ai-01sk.onrender.com](https://trustlens-ai-01sk.onrender.com)
+
 ---
 
 ## 📸 Preview
