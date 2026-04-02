@@ -18,9 +18,9 @@ from product_intelligence import (
 )
 
 app = Flask(__name__)
-app.secret_key = "262ad8b51b449946485141e9ee2521a8d0120bd6b0ba609c667ed3a3d56d0495"
+app.secret_key = "add api key"
 
-FIREBASE_WEB_API_KEY = os.environ.get("FIREBASE_WEB_API_KEY", "AIzaSyCFZukdrr5sehQ2NRvtrzRnIm0qog2AiDQ")
+FIREBASE_WEB_API_KEY = os.environ.get("FIREBASE_WEB_API_KEY", "")
 
 @app.context_processor
 def inject_firebase_key():
