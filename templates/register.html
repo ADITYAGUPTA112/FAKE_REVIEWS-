@@ -1,19 +1,12 @@
 <!DOCTYPE html>
-
 <html class="dark" lang="en">
-
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Register | TrustLens AI</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap"
-        rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap"
-        rel="stylesheet" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
-        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -25,26 +18,16 @@
                         "background-dark": "#0a0a0a",
                         "card-dark": "#1a1a1a",
                     },
-                    fontFamily: {
-                        "display": ["Inter"]
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.5rem",
-                        "lg": "0.75rem",
-                        "xl": "1rem",
-                        "full": "9999px"
-                    },
+                    fontFamily: { "display": ["Inter"] },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "0.75rem", "xl": "1rem", "full": "9999px" },
                 },
             },
         }
     </script>
 </head>
-
-<body
-    class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
     <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
         <div class="layout-container flex h-full grow flex-col">
-            <!-- Header/Navigation -->
             <header class="flex items-center justify-between border-b border-primary/10 px-6 py-4 lg:px-20">
                 <div class="flex items-center gap-3">
                     <div class="size-8 flex items-center justify-center bg-primary/10 rounded-lg text-primary">
@@ -58,87 +41,74 @@
                     <a class="text-sm font-medium hover:text-primary transition-colors" href="#">Security</a>
                 </div>
             </header>
+
             <main class="flex flex-1 items-center justify-center p-6">
                 <div class="w-full max-w-[480px] space-y-8">
-                    <!-- Title Section -->
                     <div class="text-center space-y-2">
-                        <h1 class="text-4xl font-black tracking-tight text-slate-900 dark:text-white">Create Account
-                        </h1>
+                        <h1 class="text-4xl font-black tracking-tight text-slate-900 dark:text-white">Create Account</h1>
                         <p class="text-slate-600 dark:text-primary/60 text-base">Join the future of AI transparency</p>
                     </div>
-                    <!-- Registration Form -->
-                    <div
-                        class="bg-slate-100 dark:bg-white/5 p-8 rounded-xl border border-slate-200 dark:border-primary/10 shadow-xl backdrop-blur-sm dark:bg-card-dark">
-                        <form class="space-y-5" onsubmit="return false;">
-                            <!-- Name -->
+
+                    <div class="bg-slate-100 dark:bg-white/5 p-8 rounded-xl border border-slate-200 dark:border-primary/10 shadow-xl backdrop-blur-sm dark:bg-card-dark">
+                        <div class="hidden mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm" id="error-box"></div>
+                        <form class="space-y-5" id="register-form">
                             <div class="flex flex-col gap-2">
-                                <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Full
-                                    Name</label>
+                                <label class="text-sm font-semibold text-slate-700 dark:text-slate-300" for="full-name">Full Name</label>
                                 <div class="relative">
-                                    <span
-                                        class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">person</span>
-                                    <input
-                                        class="w-full pl-12 pr-4 py-3.5 rounded-lg bg-white dark:bg-background-dark border border-slate-300 dark:border-primary/20 focus:ring-2 focus:ring-primary focus:border-transparent text-slate-900 dark:text-white transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
-                                        placeholder="John Doe" type="text" />
+                                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">person</span>
+                                    <input id="full-name" required type="text" placeholder="John Doe"
+                                        class="w-full pl-12 pr-4 py-3.5 rounded-lg bg-white dark:bg-background-dark border border-slate-300 dark:border-primary/20 focus:ring-2 focus:ring-primary focus:border-transparent text-slate-900 dark:text-white transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600" />
                                 </div>
                             </div>
-                            <!-- Email -->
+
                             <div class="flex flex-col gap-2">
-                                <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Email
-                                    Address</label>
+                                <label class="text-sm font-semibold text-slate-700 dark:text-slate-300" for="email">Email Address</label>
                                 <div class="relative">
-                                    <span
-                                        class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">mail</span>
-                                    <input
-                                        class="w-full pl-12 pr-4 py-3.5 rounded-lg bg-white dark:bg-background-dark border border-slate-300 dark:border-primary/20 focus:ring-2 focus:ring-primary focus:border-transparent text-slate-900 dark:text-white transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
-                                        placeholder="name@example.com" type="email" />
+                                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">mail</span>
+                                    <input id="email" required type="email" placeholder="name@example.com"
+                                        class="w-full pl-12 pr-4 py-3.5 rounded-lg bg-white dark:bg-background-dark border border-slate-300 dark:border-primary/20 focus:ring-2 focus:ring-primary focus:border-transparent text-slate-900 dark:text-white transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600" />
                                 </div>
                             </div>
-                            <!-- Password -->
+
                             <div class="flex flex-col gap-2">
-                                <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Password</label>
+                                <label class="text-sm font-semibold text-slate-700 dark:text-slate-300" for="password">Password</label>
                                 <div class="relative flex items-center">
-                                    <span
-                                        class="material-symbols-outlined absolute left-4 text-slate-400 text-xl">lock</span>
-                                    <input
-                                        class="w-full pl-12 pr-4 py-3.5 rounded-lg bg-white dark:bg-background-dark border border-slate-300 dark:border-primary/20 focus:ring-2 focus:ring-primary focus:border-transparent text-slate-900 dark:text-white transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
-                                        placeholder="••••••••" type="password" />
-                                    <button class="absolute right-4 text-slate-400 hover:text-primary transition-colors"
-                                        type="button">
+                                    <span class="material-symbols-outlined absolute left-4 text-slate-400 text-xl">lock</span>
+                                    <input id="password" required type="password" placeholder="********"
+                                        class="w-full pl-12 pr-12 py-3.5 rounded-lg bg-white dark:bg-background-dark border border-slate-300 dark:border-primary/20 focus:ring-2 focus:ring-primary focus:border-transparent text-slate-900 dark:text-white transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600" />
+                                    <button class="absolute right-4 text-slate-400 hover:text-primary transition-colors" onclick="togglePass('password')" type="button">
                                         <span class="material-symbols-outlined text-xl">visibility</span>
                                     </button>
                                 </div>
                             </div>
-                            <!-- Confirm Password -->
+
                             <div class="flex flex-col gap-2">
-                                <label class="text-sm font-semibold text-slate-700 dark:text-slate-300">Confirm
-                                    Password</label>
-                                <div class="relative">
-                                    <span
-                                        class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">shield_lock</span>
-                                    <input
-                                        class="w-full pl-12 pr-4 py-3.5 rounded-lg bg-white dark:bg-background-dark border border-slate-300 dark:border-primary/20 focus:ring-2 focus:ring-primary focus:border-transparent text-slate-900 dark:text-white transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
-                                        placeholder="••••••••" type="password" />
+                                <label class="text-sm font-semibold text-slate-700 dark:text-slate-300" for="confirm-password">Confirm Password</label>
+                                <div class="relative flex items-center">
+                                    <span class="material-symbols-outlined absolute left-4 text-slate-400 text-xl">shield_lock</span>
+                                    <input id="confirm-password" required type="password" placeholder="********"
+                                        class="w-full pl-12 pr-12 py-3.5 rounded-lg bg-white dark:bg-background-dark border border-slate-300 dark:border-primary/20 focus:ring-2 focus:ring-primary focus:border-transparent text-slate-900 dark:text-white transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600" />
+                                    <button class="absolute right-4 text-slate-400 hover:text-primary transition-colors" onclick="togglePass('confirm-password')" type="button">
+                                        <span class="material-symbols-outlined text-xl">visibility</span>
+                                    </button>
                                 </div>
                             </div>
-                            <!-- Submit Button -->
-                            <button
-                                class="w-full py-4 px-6 bg-primary hover:bg-primary/90 text-background-dark font-bold text-lg rounded-lg transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 group"
-                                type="submit">
-                                Create Account
-                                <span
-                                    class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+
+                            <button id="register-btn" type="submit"
+                                class="w-full py-4 px-6 bg-primary hover:bg-primary/90 text-background-dark font-bold text-lg rounded-lg transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 group">
+                                <span id="register-btn-text">Create Account</span>
+                                <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
                             </button>
                         </form>
+
                         <div class="mt-8 pt-6 border-t border-slate-200 dark:border-primary/10 text-center">
                             <p class="text-slate-600 dark:text-slate-400 text-sm">
                                 Already have an account?
-                                <a class="text-primary font-bold hover:underline underline-offset-4 ml-1"
-                                    href="{{ url_for('login') }}">Login here</a>
+                                <a class="text-primary font-bold hover:underline underline-offset-4 ml-1" href="{{ url_for('login') }}">Login here</a>
                             </p>
                         </div>
                     </div>
-                    <!-- Terms -->
+
                     <p class="text-center text-xs text-slate-500 dark:text-slate-600 max-w-xs mx-auto">
                         By clicking register, you agree to our
                         <a class="underline" href="#">Terms of Service</a> and
@@ -146,22 +116,124 @@
                     </p>
                 </div>
             </main>
-            <!-- Footer Decoration -->
+
             <footer class="p-6 text-center">
-                <div
-                    class="inline-flex items-center gap-2 px-3 py-1 bg-primary/5 rounded-full border border-primary/10">
+                <div class="inline-flex items-center gap-2 px-3 py-1 bg-primary/5 rounded-full border border-primary/10">
                     <div class="size-2 bg-primary rounded-full animate-pulse"></div>
-                    <span class="text-[10px] uppercase tracking-widest font-bold text-primary/80">Secured by TrustLens
-                        Protocol</span>
+                    <span class="text-[10px] uppercase tracking-widest font-bold text-primary/80">Secured by TrustLens Protocol</span>
                 </div>
             </footer>
         </div>
     </div>
-    <!-- Background Decoration -->
+
     <div class="fixed inset-0 pointer-events-none z-[-1] overflow-hidden">
         <div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full"></div>
         <div class="absolute top-[20%] -right-[5%] w-[30%] h-[50%] bg-primary/5 blur-[100px] rounded-full"></div>
     </div>
-</body>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "{{ firebase_api_key | default('') }}",
+            authDomain: "fake-reviews-94913.firebaseapp.com",
+            projectId: "fake-reviews-94913",
+        };
+
+        let fbApp, auth;
+        try {
+            fbApp = initializeApp(firebaseConfig);
+            auth = getAuth(fbApp);
+        } catch (e) {
+            console.warn("Firebase init failed:", e);
+        }
+
+        function showError(msg) {
+            const box = document.getElementById("error-box");
+            box.textContent = msg;
+            box.classList.remove("hidden");
+        }
+
+        function hideError() {
+            document.getElementById("error-box").classList.add("hidden");
+        }
+
+        window.togglePass = function (id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.type = el.type === "password" ? "text" : "password";
+        };
+
+        document.getElementById("register-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            hideError();
+
+            const btn = document.getElementById("register-btn");
+            const btnText = document.getElementById("register-btn-text");
+            const fullName = String(document.getElementById("full-name").value || "").trim();
+            const email = String(document.getElementById("email").value || "").trim();
+            const password = String(document.getElementById("password").value || "");
+            const confirmPassword = String(document.getElementById("confirm-password").value || "");
+
+            if (!fullName) {
+                showError("Please enter your full name.");
+                return;
+            }
+            if (password.length < 6) {
+                showError("Password must be at least 6 characters.");
+                return;
+            }
+            if (password !== confirmPassword) {
+                showError("Password and confirm password do not match.");
+                return;
+            }
+            if (!auth) {
+                showError("Firebase not configured. Please add your API key.");
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.textContent = "Creating account...";
+            try {
+                const cred = await createUserWithEmailAndPassword(auth, email, password);
+                try {
+                    await updateProfile(cred.user, { displayName: fullName });
+                } catch (e) {
+                    console.warn("Profile update skipped:", e);
+                }
+
+                const idToken = await cred.user.getIdToken();
+                const res = await fetch("/api/sessionLogin", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        idToken,
+                        email: cred.user && cred.user.email ? cred.user.email : email,
+                        displayName: fullName || (cred.user && cred.user.displayName ? cred.user.displayName : ""),
+                        photoURL: cred.user && cred.user.photoURL ? cred.user.photoURL : "",
+                    }),
+                });
+
+                if (res.ok) {
+                    window.location.href = "/";
+                    return;
+                }
+                const data = await res.json().catch(() => ({}));
+                showError(data.error || "Account created, but login failed. Please login manually.");
+            } catch (err) {
+                const msgs = {
+                    "auth/email-already-in-use": "This email is already registered.",
+                    "auth/invalid-email": "Please enter a valid email address.",
+                    "auth/weak-password": "Password is too weak.",
+                    "auth/too-many-requests": "Too many attempts. Try later.",
+                };
+                showError(msgs[err.code] || err.message || "Registration failed.");
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = "Create Account";
+            }
+        });
+    </script>
+</body>
 </html>

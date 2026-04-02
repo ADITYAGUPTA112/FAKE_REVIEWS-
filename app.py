@@ -4,6 +4,7 @@ from firebase_admin import credentials, auth, firestore
 import os
 import math
 import re
+import hashlib
 from analyzer import analyze_product
 import json
 from werkzeug.utils import secure_filename
@@ -91,12 +92,14 @@ def _build_home_metrics() -> dict:
     metrics = {
         "recent_avg_trust": 0.0,
         "recent_avg_fraud": 0.0,
+        "model_accuracy": 0.0,
         "total_scans": 0,
         "unique_products": 0,
         "training_reviews": 0,
         "last_scan_label": "No scans yet",
         "recent_avg_trust_text": "0.0%",
         "recent_avg_fraud_text": "0.0%",
+        "model_accuracy_text": "0.0%",
         "total_scans_text": "0",
         "unique_products_text": "0",
         "training_reviews_text": "0",
@@ -132,8 +135,13 @@ def _build_home_metrics() -> dict:
     except Exception as exc:
         print(f"[WARN] Home metrics dataset count failed: {exc}")
 
+    env_model_accuracy = _safe_float(os.getenv("MODEL_ACCURACY", "92.0"), 92.0)
+    env_model_accuracy = max(0.0, min(100.0, float(env_model_accuracy)))
+    metrics["model_accuracy"] = round(env_model_accuracy, 1)
+
     metrics["recent_avg_trust_text"] = f"{metrics['recent_avg_trust']:.1f}%"
     metrics["recent_avg_fraud_text"] = f"{metrics['recent_avg_fraud']:.1f}%"
+    metrics["model_accuracy_text"] = f"{metrics['model_accuracy']:.1f}%"
     metrics["total_scans_text"] = _format_int(metrics["total_scans"])
     metrics["unique_products_text"] = _format_int(metrics["unique_products"])
     metrics["training_reviews_text"] = _format_int(metrics["training_reviews"])
@@ -798,32 +806,6 @@ def _load_legacy_trust_history_as_scans(limit: int = 100) -> list[dict]:
 
 def _build_monthly_history(product_id: str, platform: str | None, months: int = 12):
     months = max(1, min(int(months), 24))
-    if not os.path.exists(LOCAL_TRUST_HISTORY_FILE):
-        return []
-
-    df = pd.read_csv(LOCAL_TRUST_HISTORY_FILE)
-    if df.empty:
-        return []
-
-    df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", utc=True)
-    df = df.dropna(subset=["timestamp"])
-    df["product_id"] = df["product_id"].astype(str)
-    df["platform"] = df["platform"].astype(str)
-    df["platform_norm"] = df["platform"].str.strip().str.lower()
-    df["product_id_norm"] = df.apply(
-        lambda r: _normalize_product_id(r.get("platform_norm", ""), r.get("product_id", "")),
-        axis=1,
-    )
-    df["trust_score"] = pd.to_numeric(df["trust_score"], errors="coerce")
-    df["fraud_score"] = pd.to_numeric(df["fraud_score"], errors="coerce")
-    df = df.dropna(subset=["trust_score", "fraud_score"])
-
-    requested_platform = str(platform or "").strip().lower() or None
-    pid = _normalize_product_id(requested_platform or _infer_platform(product_id), product_id)
-    df = df[df["product_id_norm"] == pid]
-    if requested_platform:
-        df = df[df["platform_norm"] == requested_platform]
-
     month_labels = pd.date_range(
         end=pd.Timestamp.now(tz="UTC"),
         periods=months,
@@ -832,24 +814,103 @@ def _build_monthly_history(product_id: str, platform: str | None, months: int = 
     ).strftime("%Y-%m").tolist()
     template = pd.DataFrame({"month": month_labels})
 
-    if df.empty:
-        template["trust_score"] = None
-        template["fraud_score"] = None
-        return template.to_dict(orient="records")
+    requested_platform = str(platform or "").strip().lower() or None
+    pid = _normalize_product_id(requested_platform or _infer_platform(product_id), product_id)
 
-    df["month"] = df["timestamp"].dt.strftime("%Y-%m")
-    agg = (
-        df.groupby("month", as_index=False)[["trust_score", "fraud_score"]]
-        .mean()
-        .round(3)
-    )
-    merged = template.merge(agg, on="month", how="left")
+    trust_df = pd.DataFrame(columns=["month", "trust_score", "fraud_score"])
+    if os.path.exists(LOCAL_TRUST_HISTORY_FILE):
+        try:
+            df = pd.read_csv(LOCAL_TRUST_HISTORY_FILE)
+            if not df.empty:
+                df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", utc=True)
+                df = df.dropna(subset=["timestamp"])
+                df["product_id"] = df["product_id"].astype(str)
+                df["platform"] = df["platform"].astype(str)
+                df["platform_norm"] = df["platform"].str.strip().str.lower()
+                df["product_id_norm"] = df.apply(
+                    lambda r: _normalize_product_id(r.get("platform_norm", ""), r.get("product_id", "")),
+                    axis=1,
+                )
+                df["trust_score"] = pd.to_numeric(df["trust_score"], errors="coerce")
+                df["fraud_score"] = pd.to_numeric(df["fraud_score"], errors="coerce")
+                df = df.dropna(subset=["trust_score", "fraud_score"])
+                df = df[df["product_id_norm"] == pid]
+                if requested_platform:
+                    df = df[df["platform_norm"] == requested_platform]
+                if not df.empty:
+                    df["month"] = df["timestamp"].dt.strftime("%Y-%m")
+                    trust_df = (
+                        df.groupby("month", as_index=False)[["trust_score", "fraud_score"]]
+                        .mean()
+                        .round(3)
+                    )
+        except Exception as exc:
+            print(f"[WARN] Trust history monthly aggregation failed: {exc}")
+
+    review_count_by_month: dict[str, int] = {m: 0 for m in month_labels}
+    scan_events_by_month: dict[str, int] = {m: 0 for m in month_labels}
+    if os.path.exists(LOCAL_SCAN_HISTORY_FILE):
+        try:
+            with open(LOCAL_SCAN_HISTORY_FILE, "r", encoding="utf-8") as fh:
+                for raw in fh:
+                    line = raw.strip()
+                    if not line:
+                        continue
+                    try:
+                        item = json.loads(line)
+                    except Exception:
+                        continue
+
+                    ts = pd.to_datetime(item.get("timestamp"), errors="coerce", utc=True)
+                    if pd.isna(ts):
+                        continue
+                    month_key = pd.Timestamp(ts).strftime("%Y-%m")
+                    if month_key not in review_count_by_month:
+                        continue
+
+                    summary = item.get("summary") if isinstance(item.get("summary"), dict) else {}
+                    chart_data = item.get("chart_data") if isinstance(item.get("chart_data"), dict) else {}
+                    item_ref = str(
+                        item.get("asin")
+                        or item.get("product_id")
+                        or summary.get("asin")
+                        or summary.get("product_id")
+                        or ""
+                    ).strip()
+                    if not item_ref:
+                        continue
+                    item_platform = str(
+                        item.get("platform")
+                        or summary.get("platform")
+                        or _infer_platform(item_ref)
+                    ).strip().lower()
+                    item_pid = _normalize_product_id(item_platform, item_ref)
+                    if item_pid != pid:
+                        continue
+                    if requested_platform and item_platform != requested_platform:
+                        continue
+
+                    monthly_reviews = _safe_int(summary.get("total_reviews"), 0)
+                    if monthly_reviews <= 0:
+                        monthly_reviews = _safe_int(chart_data.get("fake"), 0) + _safe_int(chart_data.get("genuine"), 0)
+                    monthly_reviews = max(0, int(monthly_reviews))
+
+                    review_count_by_month[month_key] = review_count_by_month.get(month_key, 0) + monthly_reviews
+                    scan_events_by_month[month_key] = scan_events_by_month.get(month_key, 0) + 1
+        except Exception as exc:
+            print(f"[WARN] Scan history monthly aggregation failed: {exc}")
+
+    merged = template.merge(trust_df, on="month", how="left")
+    merged["review_count"] = merged["month"].map(review_count_by_month).fillna(0).astype(int)
+    merged["scan_events"] = merged["month"].map(scan_events_by_month).fillna(0).astype(int)
     records = merged.to_dict(orient="records")
     for item in records:
         trust_val = item.get("trust_score")
         fraud_val = item.get("fraud_score")
         item["trust_score"] = None if pd.isna(trust_val) else round(float(trust_val), 3)
         item["fraud_score"] = None if pd.isna(fraud_val) else round(float(fraud_val), 3)
+        item["review_count"] = max(0, _safe_int(item.get("review_count"), 0))
+        item["scan_events"] = max(0, _safe_int(item.get("scan_events"), 0))
     return records
 
 
@@ -954,11 +1015,11 @@ def _build_profile_view_data(user_id: str) -> dict:
     user_id = str(user_id or "").strip()
     default_name = str(session.get("user_name") or "TrustLens User").strip() or "TrustLens User"
     display_name = default_name
-    email = ""
+    email = str(session.get("user_email") or "").strip()
     avatar_url = str(session.get("user_photo") or "").strip()
 
     if "@" in default_name and " " not in default_name:
-        email = default_name
+        email = email or default_name
 
     if db is not None and user_id:
         try:
@@ -976,6 +1037,28 @@ def _build_profile_view_data(user_id: str) -> dict:
                     avatar_url = db_avatar
         except Exception as exc:
             print(f"[WARN] Profile user lookup failed: {exc}")
+
+    if user_id and (not email or not display_name or not avatar_url):
+        try:
+            auth_user = auth.get_user(user_id)
+            auth_email = str(getattr(auth_user, "email", "") or "").strip()
+            auth_name = str(getattr(auth_user, "display_name", "") or "").strip()
+            auth_avatar = str(getattr(auth_user, "photo_url", "") or "").strip()
+            if auth_email and not email:
+                email = auth_email
+            if auth_name and (not display_name or display_name == "TrustLens User"):
+                display_name = auth_name
+            if auth_avatar and not avatar_url:
+                avatar_url = auth_avatar
+        except Exception as exc:
+            print(f"[WARN] Firebase auth user lookup failed: {exc}")
+
+    if display_name:
+        session["user_name"] = display_name
+    if email:
+        session["user_email"] = email
+    if avatar_url:
+        session["user_photo"] = avatar_url
 
     if not avatar_url:
         avatar_url = DEFAULT_AVATAR_URL
@@ -1182,6 +1265,7 @@ def profile():
 def logout():
     session.pop("user_id",   None)
     session.pop("user_name", None)
+    session.pop("user_email", None)
     session.pop("user_photo",None)
     return redirect(url_for("login"))
 
@@ -1239,6 +1323,7 @@ def api_profile_delete_request():
 
     session.pop("user_id", None)
     session.pop("user_name", None)
+    session.pop("user_email", None)
     session.pop("user_photo", None)
     return jsonify({"status": "success", "redirect": url_for("login")})
 
@@ -1246,17 +1331,28 @@ def api_profile_delete_request():
 @app.route("/api/sessionLogin", methods=["POST"])
 def session_login():
     try:
-        data     = request.json
+        data     = request.get_json(silent=True) or {}
         id_token = data.get("idToken")
         if not id_token:
             return jsonify({"error": "No token provided"}), 400
+
+        name_hint = re.sub(r"\s+", " ", str(data.get("displayName") or data.get("name") or "").strip())[:80]
+        email_hint = str(data.get("email") or "").strip().lower()[:160]
+        photo_hint = str(data.get("photoURL") or data.get("photo_url") or "").strip()[:600]
+
+        def _mock_uid() -> str:
+            if email_hint:
+                digest = hashlib.sha1(email_hint.encode("utf-8")).hexdigest()[:12]
+                return f"mock_{digest}"
+            return "mock_local_user"
         
         # --- Bypass for Local Development ---
         if USE_MOCK_AUTH and id_token == "local-dev-mock-token":
-            uid = "abc123mock"
+            uid = _mock_uid()
             session["user_id"]    = uid
-            session["user_name"]  = "Developer"
-            session["user_photo"] = None
+            session["user_name"]  = name_hint or (email_hint.split("@")[0] if "@" in email_hint else "Developer")
+            session["user_email"] = email_hint or "developer@local.mock"
+            session["user_photo"] = photo_hint or None
             return jsonify({"status": "success"})
         # ------------------------------------
 
@@ -1265,6 +1361,7 @@ def session_login():
             uid     = decoded["uid"]
             session["user_id"]    = uid
             session["user_name"]  = decoded.get("name") or decoded.get("email", "User")
+            session["user_email"] = decoded.get("email") or ""
             session["user_photo"] = decoded.get("picture")
             if db:
                 try:
@@ -1281,10 +1378,24 @@ def session_login():
         except Exception as e:
             if USE_MOCK_AUTH:
                 print(f"Bypassing real auth failure: {e}")
-                uid = "abc123mock"
+                uid = _mock_uid()
                 session["user_id"]    = uid
-                session["user_name"]  = "Developer (Mock)"
-                session["user_photo"] = None
+                session["user_name"]  = name_hint or (email_hint.split("@")[0] if "@" in email_hint else "Developer (Mock)")
+                session["user_email"] = email_hint or "developer@local.mock"
+                session["user_photo"] = photo_hint or None
+
+                if db:
+                    try:
+                        db.collection("users").document(uid).set({
+                            "uid": uid,
+                            "email": session["user_email"],
+                            "displayName": session["user_name"],
+                            "photoURL": session["user_photo"],
+                            "lastLogin": firestore.SERVER_TIMESTAMP,
+                            "mockAuth": True,
+                        }, merge=True)
+                    except Exception as write_err:
+                        print(f"[WARN] Mock auth profile write failed: {write_err}")
                 return jsonify({"status": "success"})
             
             print(f"Login error: {e}")

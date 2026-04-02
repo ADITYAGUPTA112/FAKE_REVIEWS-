@@ -26,9 +26,10 @@ PROJECT_DEFAULTS: Dict[str, Any] = {
     "debug_json": "scrape_debug_report.json",
     "pages": 50,
     "max_reviews": 10000,
+    "min_required_reviews": 50,
     "target_domain": "amazon.in",
     "min_words": 1,
-    "allow_cache": False,
+    "allow_cache": True,
 }
 
 RAPIDAPI_AMAZON_HOST = (
@@ -137,10 +138,37 @@ def _run_with_captured_stdout(func) -> Tuple[Any, str]:
     return result, logs
 
 
+def _get_serp_api_key() -> str:
+    getter = getattr(analyzer, "_get_serp_api_key", None)
+    if callable(getter):
+        return str(getter() or "").strip()
+    return (os.getenv("SERP_API_KEY") or getattr(analyzer, "SERP_API_KEY", "") or "").strip()
+
+
+def _get_rapidapi_key() -> str:
+    getter = getattr(analyzer, "_get_rapidapi_key", None)
+    if callable(getter):
+        return str(getter() or "").strip()
+    return (os.getenv("RAPIDAPI_KEY") or getattr(analyzer, "RAPIDAPI_KEY", "") or "").strip()
+
+
+def _get_scrapingdog_key() -> str:
+    getter = getattr(analyzer, "_get_scrapingdog_key", None)
+    if callable(getter):
+        return str(getter() or "").strip()
+    return (
+        os.getenv("SCRAPINGDOG_KEY")
+        or os.getenv("SCRAPINGDOG_API_KEY")
+        or getattr(analyzer, "SCRAPINGDOG_KEY", "")
+        or ""
+    ).strip()
+
+
 def _probe_serpapi_amazon_reviews(asin: str, domain: str) -> Dict[str, Any]:
+    serp_api_key = _get_serp_api_key()
     if (
-        not analyzer.SERP_API_KEY
-        or analyzer.SERP_API_KEY == "YOUR_SERP_API_KEY_HERE"
+        not serp_api_key
+        or serp_api_key == "YOUR_SERP_API_KEY_HERE"
         or analyzer.GoogleSearch is None
     ):
         return {
@@ -153,7 +181,7 @@ def _probe_serpapi_amazon_reviews(asin: str, domain: str) -> Dict[str, Any]:
     params = {
         "engine": "amazon_reviews",
         "amazon_domain": domain,
-        "api_key": analyzer.SERP_API_KEY,
+        "api_key": serp_api_key,
         "asin": asin,
         "product_id": asin,
         "page": 1,
@@ -216,7 +244,7 @@ def _scrape_rapidapi_amazon_top_reviews(
     domain: str,
     max_reviews: int,
 ) -> Tuple[List[Dict[str, Any]], str]:
-    rapid_key = (os.getenv("RAPIDAPI_KEY") or analyzer.RAPIDAPI_KEY or "").strip()
+    rapid_key = _get_rapidapi_key()
     if not rapid_key:
         return [], "RAPIDAPI_KEY missing."
 
@@ -314,7 +342,7 @@ def _scrape_rapidapi_amazon_reviews_paginated(
     max_reviews: int,
     max_pages: int,
 ) -> Tuple[List[Dict[str, Any]], str]:
-    rapid_key = (os.getenv("RAPIDAPI_KEY") or analyzer.RAPIDAPI_KEY or "").strip()
+    rapid_key = _get_rapidapi_key()
     if not rapid_key:
         return [], "RAPIDAPI_KEY missing."
 
@@ -446,9 +474,10 @@ def _scrape_serpapi_amazon_product_reviews(
     domain: str,
     max_reviews: int,
 ) -> Tuple[List[Dict[str, Any]], str]:
+    serp_api_key = _get_serp_api_key()
     if (
-        not analyzer.SERP_API_KEY
-        or analyzer.SERP_API_KEY == "YOUR_SERP_API_KEY_HERE"
+        not serp_api_key
+        or serp_api_key == "YOUR_SERP_API_KEY_HERE"
         or analyzer.GoogleSearch is None
     ):
         return [], "SERP_API_KEY missing or SerpAPI SDK unavailable."
@@ -462,7 +491,7 @@ def _scrape_serpapi_amazon_product_reviews(
             "engine": "amazon_product",
             "amazon_domain": domain,
             "asin": asin,
-            "api_key": analyzer.SERP_API_KEY,
+            "api_key": serp_api_key,
         }
         result = analyzer.GoogleSearch(params).get_dict()
         err = str(result.get("error") or "").strip()
@@ -538,26 +567,17 @@ def _scrape_serpapi_amazon_product_reviews(
 
 
 def _load_local_cache_flexible(max_reviews: int) -> List[Dict[str, Any]]:
-    path = analyzer.ANALYSIS_RESULTS_PATH
-    if not os.path.exists(path):
-        return []
-
-    try:
-        df = pd.read_csv(path, on_bad_lines="skip").fillna("")
-    except Exception:
+    def load_csv(path: str) -> pd.DataFrame:
         try:
-            df = pd.read_csv(path, engine="python", on_bad_lines="skip").fillna("")
+            return pd.read_csv(path, on_bad_lines="skip").fillna("")
         except Exception:
-            return []
+            try:
+                return pd.read_csv(path, engine="python", on_bad_lines="skip").fillna("")
+            except Exception:
+                return pd.DataFrame()
 
-    if df.empty:
-        return []
-
-    def pick_col(*tokens: str) -> str:
-        normalized = {
-            col: re.sub(r"\s+", "", str(col).lower())
-            for col in df.columns
-        }
+    def pick_col(df: pd.DataFrame, *tokens: str) -> str:
+        normalized = {col: re.sub(r"\s+", "", str(col).lower()) for col in df.columns}
         for token in tokens:
             token_norm = re.sub(r"\s+", "", token.lower())
             for col, norm in normalized.items():
@@ -565,30 +585,65 @@ def _load_local_cache_flexible(max_reviews: int) -> List[Dict[str, Any]]:
                     return col
         return ""
 
-    review_col = pick_col("review", "text", "text_")
-    user_col = pick_col("user_name", "user", "user_id")
-    date_col = pick_col("date", "timestamp")
-    review_id_col = pick_col("review_id", "id")
-    star_col = pick_col("star_rating", "rating")
-    rating_source_col = pick_col("rating_source")
+    def extract_rows(df: pd.DataFrame, limit: int, source_tag: str) -> List[Dict[str, Any]]:
+        if df.empty or limit <= 0:
+            return []
+        review_col = pick_col(df, "text_raw", "review", "text", "text_", "content", "body")
+        user_col = pick_col(df, "user_name", "user", "user_id")
+        date_col = pick_col(df, "date_raw", "date", "timestamp")
+        review_id_col = pick_col(df, "review_id", "id")
+        star_col = pick_col(df, "star_rating", "rating")
+        rating_source_col = pick_col(df, "rating_source")
 
+        rows: List[Dict[str, Any]] = []
+        safe_source_tag = re.sub(r"[^a-z0-9]+", "_", source_tag.lower()).strip("_") or "cache"
+        for idx, (_, row) in enumerate(df.iterrows(), start=1):
+            text = _normalize_text(row.get(review_col, "")) if review_col else ""
+            if not text:
+                continue
+            user_id = _clean_user_id(row.get(user_col, "unknown")) if user_col else "unknown"
+            if user_id == "unknown":
+                user_id = f"{safe_source_tag}_user_{idx}"
+            review_id = _normalize_text(row.get(review_id_col, "")) if review_id_col else ""
+            if not review_id:
+                review_id = f"{safe_source_tag}_review_{idx}"
+            rows.append(
+                {
+                    "text": text,
+                    "date": _normalize_text(row.get(date_col, "")) if date_col else "",
+                    "star_rating": _safe_rating(row.get(star_col, 3), default=3) if star_col else 3,
+                    "user_name": user_id,
+                    "review_id": review_id,
+                    "rating_source": _normalize_text(row.get(rating_source_col, "default")) if rating_source_col else "default",
+                }
+            )
+            if len(rows) >= limit:
+                break
+        return rows
+
+    candidates = [
+        analyzer.ANALYSIS_RESULTS_PATH,
+        "scraped_training_reviews.csv",
+        "fake reviews dataset.csv",
+    ]
     out: List[Dict[str, Any]] = []
-    for _, row in df.iterrows():
-        text = _normalize_text(row.get(review_col, "")) if review_col else ""
-        if not text:
+    seen = set()
+    for path in candidates:
+        if not os.path.exists(path):
             continue
-        out.append(
-            {
-                "text": text,
-                "date": _normalize_text(row.get(date_col, "")) if date_col else "",
-                "star_rating": _safe_rating(row.get(star_col, 3), default=3) if star_col else 3,
-                "user_name": _clean_user_id(row.get(user_col, "unknown")) if user_col else "unknown",
-                "review_id": _normalize_text(row.get(review_id_col, "")) if review_id_col else "",
-                "rating_source": _normalize_text(row.get(rating_source_col, "default")) if rating_source_col else "default",
-            }
-        )
-        if len(out) >= max_reviews:
+        df = load_csv(path)
+        needed = max_reviews - len(out)
+        if needed <= 0:
             break
+        extracted = extract_rows(df, needed * 3, source_tag=os.path.basename(path))
+        for row in extracted:
+            key = analyzer._review_dedupe_key(row)
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(row)
+            if len(out) >= max_reviews:
+                break
     return out[:max_reviews]
 
 
@@ -598,6 +653,7 @@ def collect_reviews_everywhere(
     max_reviews: int,
     target_domain: str,
     allow_cache: bool,
+    min_required_reviews: int = 0,
 ) -> Tuple[List[Dict[str, Any]], Dict[str, Any], Dict[str, Any]]:
     diagnostics: Dict[str, Any] = {
         "target": target,
@@ -711,10 +767,15 @@ def collect_reviews_everywhere(
     available_reviews = analyzer._safe_int(product_details.get("reviews_total", 0), 0)
     if available_reviews > 0:
         target_reviews = min(max_reviews, available_reviews)
+    min_required_reviews = max(0, int(min_required_reviews or 0))
+    if min_required_reviews > 0:
+        target_reviews = max(target_reviews, min_required_reviews)
+        target_reviews = min(target_reviews, max_reviews)
     diagnostics["target_reviews"] = int(target_reviews)
     _log(f"[INFO] Target scan volume: {target_reviews} reviews")
 
-    if analyzer.SCRAPINGDOG_KEY and analyzer.SCRAPINGDOG_KEY != "YOUR_SCRAPINGDOG_KEY_HERE":
+    scrapingdog_key = _get_scrapingdog_key()
+    if scrapingdog_key and scrapingdog_key != "YOUR_SCRAPINGDOG_KEY_HERE":
         start = time.time()
         try:
             remaining = max(target_reviews - len(collected), 0)
@@ -754,13 +815,17 @@ def collect_reviews_everywhere(
 
     serp_probe_start = time.time()
     probe = _probe_serpapi_amazon_reviews(asin, domain)
+    probe_error = str(probe.get("error", "")).strip()
     probe_status = "ok" if probe.get("ok") else ("skipped" if not probe.get("enabled") else "error")
+    if probe_status == "error" and "Unsupported `amazon_reviews` search engine" in probe_error:
+        # Account-level limitation, not a pipeline crash. SerpAPI product fallback still runs.
+        probe_status = "warning"
     _record_source(
         diagnostics,
         "serpapi_probe",
         serp_probe_start,
         probe_status,
-        error=str(probe.get("error", "")),
+        error=probe_error,
         extra={"hint": str(probe.get("hint", "")), "enabled": bool(probe.get("enabled", False))},
     )
 
@@ -936,15 +1001,17 @@ def collect_reviews_everywhere(
             extra={"traceback": traceback.format_exc()},
         )
 
-    if not collected and allow_cache:
+    if allow_cache and len(collected) < target_reviews:
         cache_start = time.time()
         try:
-            cache_reviews = _load_local_cache_flexible(max_reviews=target_reviews)
+            needed = max(target_reviews - len(collected), 0)
+            cache_reviews = _load_local_cache_flexible(max_reviews=needed)
             if not cache_reviews:
-                cache_reviews = analyzer._load_cached_reviews(max_reviews=target_reviews)
+                cache_reviews = analyzer._load_cached_reviews(max_reviews=needed)
             tagged = _tag_reviews(cache_reviews, "local_cache")
             collected = analyzer._merge_unique_reviews(collected, tagged, target_reviews)
-            _record_source(diagnostics, "local_cache", cache_start, "ok", count=len(tagged))
+            status = "ok" if len(tagged) > 0 else "warning"
+            _record_source(diagnostics, "local_cache", cache_start, status, count=len(tagged))
         except Exception as exc:
             _record_source(
                 diagnostics,
@@ -1069,6 +1136,7 @@ def main() -> int:
     parser.add_argument("--debug-json", dest="debug_json_flag", default=None, help="Debug report JSON path")
     parser.add_argument("--pages", dest="pages_flag", type=int, default=None, help="Max pages per source")
     parser.add_argument("--max-reviews", dest="max_reviews_flag", type=int, default=None, help="Max reviews to collect")
+    parser.add_argument("--min-required-reviews", dest="min_required_reviews_flag", type=int, default=None, help="Ensure at least this many reviews via live+cache backfill")
     parser.add_argument("--target-domain", dest="target_domain_flag", default=None, help="Domain for ASIN input")
     parser.add_argument("--min-words", dest="min_words_flag", type=int, default=None, help="Minimum words in cleaned text")
     parser.add_argument("--allow-cache", dest="allow_cache_flag", action="store_true", help="Allow fallback to local cached CSV when live scraping fails")
@@ -1091,6 +1159,11 @@ def main() -> int:
         if args.max_reviews_flag is not None
         else (args.max_reviews_pos if args.max_reviews_pos is not None else PROJECT_DEFAULTS["max_reviews"])
     )
+    min_required_reviews = (
+        args.min_required_reviews_flag
+        if args.min_required_reviews_flag is not None
+        else PROJECT_DEFAULTS["min_required_reviews"]
+    )
     output = args.output_flag or args.output_pos or PROJECT_DEFAULTS["output"]
     debug_json = args.debug_json_flag or args.debug_json_pos or PROJECT_DEFAULTS["debug_json"]
     target_domain = args.target_domain_flag or PROJECT_DEFAULTS["target_domain"]
@@ -1098,12 +1171,21 @@ def main() -> int:
     allow_cache = (
         args.allow_cache_flag if args.allow_cache_flag is not None else bool(PROJECT_DEFAULTS["allow_cache"])
     )
+    if int(max_reviews) < int(min_required_reviews):
+        _log(
+            f"[INFO] Increasing max_reviews from {max_reviews} to {min_required_reviews} "
+            f"to satisfy minimum required reviews."
+        )
+        max_reviews = int(min_required_reviews)
 
     _log(f"[INFO] Started scraping at {datetime.now().isoformat()}")
     _log(f"[INFO] Target: {target}")
     _log(f"[INFO] Output CSV: {output}")
     _log(f"[INFO] Debug JSON: {debug_json}")
-    _log(f"[INFO] Pages={pages} | MaxReviews={max_reviews} | MinWords={min_words} | AllowCache={allow_cache}")
+    _log(
+        f"[INFO] Pages={pages} | MaxReviews={max_reviews} | MinRequired={min_required_reviews} "
+        f"| MinWords={min_words} | AllowCache={allow_cache}"
+    )
 
     try:
         reviews, product, diagnostics = collect_reviews_everywhere(
@@ -1112,6 +1194,7 @@ def main() -> int:
             max_reviews=max(1, int(max_reviews)),
             target_domain=str(target_domain or "amazon.com"),
             allow_cache=bool(allow_cache),
+            min_required_reviews=max(0, int(min_required_reviews)),
         )
 
         if analyzer.is_amazon_url(target):

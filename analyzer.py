@@ -32,6 +32,25 @@ except Exception:  # pragma: no cover - optional dependency
     BeautifulSoup = None
 
 try:
+    from scrapy.selector import Selector as ScrapySelector
+except Exception:  # pragma: no cover - optional dependency
+    ScrapySelector = None
+
+try:
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options as ChromeOptions
+    from selenium.webdriver.chrome.service import Service as ChromeService
+except Exception:  # pragma: no cover - optional dependency
+    webdriver = None
+    ChromeOptions = None
+    ChromeService = None
+
+try:
+    from webdriver_manager.chrome import ChromeDriverManager
+except Exception:  # pragma: no cover - optional dependency
+    ChromeDriverManager = None
+
+try:
     from serpapi import GoogleSearch
 except Exception:  # pragma: no cover - optional dependency
     GoogleSearch = None
@@ -57,6 +76,44 @@ except Exception:
     detect_text_rating_mismatch = None
 
 
+_INLINE_ENV_PAIR_SPLIT_RE = re.compile(r",(?=\s*[A-Za-z_][A-Za-z0-9_]*\s*=)")
+
+
+def _env_file_candidates() -> List[str]:
+    here = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(os.getcwd(), ".env"),
+        os.path.join(here, ".env"),
+    ]
+    out: List[str] = []
+    for path in candidates:
+        p = os.path.abspath(path)
+        if p not in out:
+            out.append(p)
+    return out
+
+
+def _parse_env_assignments(raw_line: str) -> List[Tuple[str, str]]:
+    """
+    Parse one or more KEY=VALUE assignments from a line.
+    Supports accidental comma-separated multi-assignment paste, e.g.
+    SERP_API_KEY=abc,RAPIDAPI_KEY=def
+    """
+    line = str(raw_line or "").strip()
+    if not line or line.startswith("#") or "=" not in line:
+        return []
+    assignments: List[Tuple[str, str]] = []
+    for chunk in _INLINE_ENV_PAIR_SPLIT_RE.split(line):
+        if "=" not in chunk:
+            continue
+        key, value = chunk.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key:
+            assignments.append((key, value))
+    return assignments
+
+
 def _load_local_env_fallback(path: str = ".env") -> None:
     """
     Minimal .env loader for environments where python-dotenv is unavailable.
@@ -68,27 +125,53 @@ def _load_local_env_fallback(path: str = ".env") -> None:
         with open(path, "r", encoding="utf-8") as f:
             for raw_line in f:
                 line = raw_line.strip()
-                if not line or line.startswith("#") or "=" not in line:
-                    continue
-                key, value = line.split("=", 1)
-                key = key.strip()
-                value = value.strip().strip('"').strip("'")
-                if key and key not in os.environ:
-                    os.environ[key] = value
+                for key, value in _parse_env_assignments(line):
+                    if key and key not in os.environ:
+                        os.environ[key] = value
     except Exception:
         # Keep scraping resilient; missing env parsing should not crash analysis.
         pass
 
 
 if load_dotenv:
-    load_dotenv()
+    for env_path in _env_file_candidates():
+        if not os.path.exists(env_path):
+            continue
+        try:
+            load_dotenv(dotenv_path=env_path, override=False)
+        except TypeError:
+            # Compatibility for older python-dotenv versions.
+            load_dotenv(env_path)
 else:
-    _load_local_env_fallback()
+    for env_path in _env_file_candidates():
+        _load_local_env_fallback(env_path)
+
+
+def _hydrate_embedded_env_assignments() -> None:
+    """
+    Recover from malformed env values where multiple assignments were pasted
+    into one variable value, e.g. SERP_API_KEY=abc,RAPIDAPI_KEY=def.
+    """
+    known_keys = ("SERP_API_KEY", "RAPIDAPI_KEY", "SCRAPINGDOG_KEY", "SCRAPINGDOG_API_KEY")
+    for base_key in known_keys:
+        raw_val = str(os.getenv(base_key) or "").strip()
+        if not raw_val or "=" not in raw_val:
+            continue
+        parsed = _parse_env_assignments(f"{base_key}={raw_val}")
+        if len(parsed) <= 1:
+            continue
+        for key, value in parsed:
+            if not key or not value:
+                continue
+            if key == base_key or key not in os.environ:
+                os.environ[key] = value
+
+
+_hydrate_embedded_env_assignments()
 
 
 SERP_API_KEY = (
     os.getenv("SERP_API_KEY")
-    or os.getenv("262ad8b51b449946485141e9ee2521a8d0120bd6b0ba609c667ed3a3d56d0495")
     or ""
 ).strip()
 SCRAPINGDOG_KEY = (os.getenv("SCRAPINGDOG_KEY") or "").strip()
@@ -119,6 +202,14 @@ def _get_scrapingdog_key() -> str:
         or SCRAPINGDOG_KEY
         or ""
     ).strip()
+
+
+def _get_serp_api_key() -> str:
+    return (os.getenv("SERP_API_KEY") or SERP_API_KEY or "").strip()
+
+
+def _get_rapidapi_key() -> str:
+    return (os.getenv("RAPIDAPI_KEY") or RAPIDAPI_KEY or "").strip()
 
 
 def _clamp_int(value: Any, minimum: int, maximum: int, default: int) -> int:
@@ -518,14 +609,15 @@ def _fetch_metadata_direct(asin: str, domain: str) -> Dict[str, Any]:
 def _fetch_metadata(asin: str, domain: str) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
     product = _fetch_metadata_direct(asin, domain)
     fallback_reviews: List[Dict[str, Any]] = []
-    if not SERP_API_KEY or SERP_API_KEY == "YOUR_SERP_API_KEY_HERE" or GoogleSearch is None:
+    serp_api_key = _get_serp_api_key()
+    if not serp_api_key or serp_api_key == "YOUR_SERP_API_KEY_HERE" or GoogleSearch is None:
         return product, fallback_reviews
     try:
         params = {
             "engine": "amazon_product",
             "amazon_domain": domain,
             "asin": asin,
-            "api_key": SERP_API_KEY,
+            "api_key": serp_api_key,
         }
         result = GoogleSearch(params).get_dict()
         prod = result.get("product_results", {}) or {}
@@ -567,7 +659,8 @@ def _scrape_amazon_serpapi_reviews(
     """
     Fetch paginated Amazon review data from SerpAPI (when configured).
     """
-    if not SERP_API_KEY or SERP_API_KEY == "YOUR_SERP_API_KEY_HERE" or GoogleSearch is None:
+    serp_api_key = _get_serp_api_key()
+    if not serp_api_key or serp_api_key == "YOUR_SERP_API_KEY_HERE" or GoogleSearch is None:
         return []
 
     reviews: List[Dict[str, Any]] = []
@@ -583,7 +676,7 @@ def _scrape_amazon_serpapi_reviews(
                 params = {
                     "engine": "amazon_reviews",
                     "amazon_domain": domain,
-                    "api_key": SERP_API_KEY,
+                    "api_key": serp_api_key,
                     "asin": asin,
                     # Some SerpAPI variants use product_id; keeping both improves compatibility.
                     "product_id": asin,
@@ -733,6 +826,102 @@ def _parse_with_bs4(html_text: str) -> List[Dict[str, Any]]:
                 "user_name": user_name,
                 "review_id": str(review_id),
                 "rating_source": "parsed" if star_el else "default",
+            }
+        )
+    return parsed
+
+
+def _scrapy_first_text(block: Any, selectors: List[str]) -> str:
+    for css in selectors:
+        try:
+            values = [str(v).strip() for v in block.css(css).getall() if str(v).strip()]
+        except Exception:
+            values = []
+        if values:
+            return " ".join(values).strip()
+    return ""
+
+
+def _parse_with_scrapy_selector(html_text: str) -> List[Dict[str, Any]]:
+    if ScrapySelector is None:
+        return []
+    try:
+        sel = ScrapySelector(text=html_text)
+    except Exception:
+        return []
+
+    parsed: List[Dict[str, Any]] = []
+    blocks = sel.css(
+        "div[data-hook='review'], "
+        "li[data-hook='review'], "
+        "div.a-section.review.aok-relative, "
+        "div[data-cel-widget^='customer_review'], "
+        "div[data-hook='review-collapsed']"
+    )
+    for block in blocks:
+        text = _normalize_review_text(
+            _scrapy_first_text(
+                block,
+                [
+                    "span[data-hook='review-body'] span::text",
+                    "span[data-hook='review-body']::text",
+                    "div[data-hook='review-collapsed'] span::text",
+                    "span.review-text-content span::text",
+                    "span.review-text-content::text",
+                    ".review-text-content span::text",
+                    ".review-text::text",
+                ],
+            )
+        )
+        if text.lower() in {"read more", "read less", "report"}:
+            text = ""
+        if not text:
+            continue
+
+        date = _scrapy_first_text(
+            block,
+            [
+                "span[data-hook='review-date']::text",
+                "span.review-date::text",
+            ],
+        )
+        star_text = _scrapy_first_text(
+            block,
+            [
+                "i[data-hook='review-star-rating'] span::text",
+                "i[data-hook='cmps-review-star-rating'] span::text",
+                "i.review-rating span::text",
+                "span.a-icon-alt::text",
+            ],
+        )
+        star = 3
+        if star_text:
+            m = re.search(r"([\d\.]+)", star_text)
+            if m:
+                try:
+                    star = int(round(float(m.group(1))))
+                except Exception:
+                    star = 3
+        user_name = _normalize_review_text(
+            _scrapy_first_text(
+                block,
+                [
+                    "span.a-profile-name::text",
+                    "a[data-hook='review-author']::text",
+                ],
+            )
+            or "unknown"
+        )
+        attrib = getattr(block, "attrib", {}) or {}
+        review_id = str(attrib.get("id") or attrib.get("data-review-id") or "")
+        parsed.append(
+            {
+                "text": text,
+                "date": date,
+                "star_rating": star,
+                "user_name": user_name,
+                "review_id": review_id,
+                "rating_source": "parsed" if star_text else "default",
             }
         )
     return parsed
@@ -991,6 +1180,8 @@ def _scrape_amazon_direct(asin: str, domain: str, max_reviews: int, max_pages: i
                 consecutive_errors = 0
                 parsed = _parse_with_bs4(resp.text)
                 if not parsed:
+                    parsed = _parse_with_scrapy_selector(resp.text)
+                if not parsed:
                     parsed = _parse_with_json_ld(resp.text)
                 if not parsed:
                     parsed = _parse_with_regex(resp.text)
@@ -1039,7 +1230,144 @@ def _scrape_amazon_direct(asin: str, domain: str, max_reviews: int, max_pages: i
                     break
                 continue
 
+    if len(reviews) < max_reviews:
+        remaining = max_reviews - len(reviews)
+        selenium_reviews = _scrape_amazon_selenium(
+            asin=asin,
+            domain=domain,
+            max_reviews=remaining,
+            max_pages=min(max_pages, 5),
+        )
+        added = 0
+        for row in selenium_reviews:
+            dedupe_key = _review_dedupe_key(row)
+            if dedupe_key in seen:
+                continue
+            seen.add(dedupe_key)
+            reviews.append(row)
+            added += 1
+            if len(reviews) >= max_reviews:
+                break
+        if added > 0:
+            print(f"[INFO] Selenium fallback added {added} reviews -> total={len(reviews)}")
+
     print(f"[INFO] Direct scrape total: {len(reviews)} reviews for ASIN={asin}")
+    return reviews[:max_reviews]
+
+
+def _scrape_amazon_selenium(asin: str, domain: str, max_reviews: int, max_pages: int) -> List[Dict[str, Any]]:
+    if (
+        webdriver is None
+        or ChromeOptions is None
+        or ChromeService is None
+        or ChromeDriverManager is None
+    ):
+        print("[WARN] Selenium/webdriver-manager unavailable; skipping browser fallback.")
+        return []
+
+    reviews: List[Dict[str, Any]] = []
+    seen = set()
+    strategy_list = [
+        {"name": "helpful", "sort_by": "helpful", "filter_by_star": "all_stars"},
+        {"name": "recent", "sort_by": "recent", "filter_by_star": "all_stars"},
+    ]
+    base = f"https://www.{domain}/product-reviews/{asin}"
+    options = ChromeOptions()
+    for arg in (
+        "--headless=new",
+        "--disable-gpu",
+        "--no-sandbox",
+        "--disable-dev-shm-usage",
+        "--window-size=1920,1080",
+        "--lang=en-US",
+    ):
+        options.add_argument(arg)
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option("useAutomationExtension", False)
+
+    driver = None
+    try:
+        service = ChromeService(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=service, options=options)
+        driver.set_page_load_timeout(45)
+
+        for strategy in strategy_list:
+            page = 1
+            consecutive_empty = 0
+            while len(reviews) < max_reviews and page <= max_pages:
+                try:
+                    url = _build_review_page_url(
+                        base=base,
+                        page=page,
+                        sort_by=strategy["sort_by"],
+                        filter_by_star=strategy["filter_by_star"],
+                    )
+                    driver.get(url)
+                    time.sleep(random.uniform(2.0, 3.5))
+                    html_text = str(driver.page_source or "")
+                    if not html_text:
+                        consecutive_empty += 1
+                        if consecutive_empty >= 2:
+                            break
+                        page += 1
+                        continue
+                    if _is_amazon_bot_page(html_text):
+                        print(f"[WARN] Selenium bot challenge sort={strategy['name']} page={page}")
+                        break
+
+                    parsed = _parse_with_bs4(html_text)
+                    if not parsed:
+                        parsed = _parse_with_scrapy_selector(html_text)
+                    if not parsed:
+                        parsed = _parse_with_json_ld(html_text)
+                    if not parsed:
+                        parsed = _parse_with_regex(html_text)
+                    if not parsed:
+                        parsed = _parse_with_json_snippets(html_text)
+
+                    added = 0
+                    for row in parsed:
+                        text = _normalize_review_text(row.get("text"))
+                        if not text:
+                            continue
+                        review_obj = {
+                            "text": text,
+                            "date": str(row.get("date", "")),
+                            "star_rating": int(row.get("star_rating", 3) or 3),
+                            "user_name": str(row.get("user_name", "unknown") or "unknown"),
+                            "review_id": str(row.get("review_id", "") or ""),
+                            "rating_source": str(row.get("rating_source", "default")),
+                        }
+                        dedupe_key = _review_dedupe_key(review_obj)
+                        if dedupe_key in seen:
+                            continue
+                        seen.add(dedupe_key)
+                        reviews.append(review_obj)
+                        added += 1
+                        if len(reviews) >= max_reviews:
+                            break
+
+                    print(f"[INFO] Selenium sort={strategy['name']} page={page}: +{added} -> total={len(reviews)}")
+                    if added == 0:
+                        consecutive_empty += 1
+                    else:
+                        consecutive_empty = 0
+                    if consecutive_empty >= 2:
+                        break
+                    page += 1
+                except Exception as exc:
+                    print(f"[WARN] Selenium scrape error sort={strategy['name']} page={page}: {exc}")
+                    break
+    except Exception as exc:
+        print(f"[WARN] Selenium setup/driver failed: {exc}")
+    finally:
+        if driver is not None:
+            try:
+                driver.quit()
+            except Exception:
+                pass
+
+    print(f"[INFO] Selenium scrape total: {len(reviews)} reviews for ASIN={asin}")
     return reviews[:max_reviews]
 
 
@@ -1111,7 +1439,8 @@ def _scrape_amazon_scrapingdog(asin: str, domain: str, max_reviews: int, max_pag
 
 
 def _scrape_flipkart(product_url: str, max_reviews: int, max_pages: int) -> List[Dict[str, Any]]:
-    if not RAPIDAPI_KEY or RAPIDAPI_KEY == "YOUR_RAPIDAPI_KEY_HERE":
+    rapidapi_key = _get_rapidapi_key()
+    if not rapidapi_key or rapidapi_key == "YOUR_RAPIDAPI_KEY_HERE":
         return []
     reviews: List[Dict[str, Any]] = []
     seen = set()
@@ -1122,7 +1451,7 @@ def _scrape_flipkart(product_url: str, max_reviews: int, max_pages: int) -> List
                 "https://flipkart-reviews.p.rapidapi.com/reviews",
                 params={"url": product_url, "page": page},
                 headers={
-                    "X-RapidAPI-Key": RAPIDAPI_KEY,
+                    "X-RapidAPI-Key": rapidapi_key,
                     "X-RapidAPI-Host": "flipkart-reviews.p.rapidapi.com",
                 },
                 timeout=30,

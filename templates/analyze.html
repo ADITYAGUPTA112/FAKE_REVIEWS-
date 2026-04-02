@@ -161,10 +161,12 @@
             <div class="glass-panel case-header rounded-xl border border-primary/20 p-6">
                 <div class="flex flex-col md:flex-row gap-6 items-start">
                     <!-- Product Image -->
-                    <div
-                        class="flex-shrink-0 w-36 h-36 rounded-xl overflow-hidden border border-primary/20 bg-slate-900 flex items-center justify-center relative z-10">
+                    <a id="product-image-link" href="#" target="_blank" rel="noopener noreferrer"
+                        class="group flex-shrink-0 w-36 h-36 rounded-xl overflow-hidden border border-primary/20 bg-slate-900 flex items-center justify-center relative z-10 hover:border-primary/50 transition-colors"
+                        aria-label="Open product page">
                         <img id="product-img" alt="Product image" class="w-full h-full object-contain" />
-                    </div>
+                        <span class="material-symbols-outlined absolute right-2 bottom-2 text-xs text-primary bg-slate-900/80 border border-primary/40 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">open_in_new</span>
+                    </a>
                     <!-- Details -->
                     <div class="flex-1 relative z-10">
                         <div class="flex items-center gap-2 mb-1">
@@ -172,10 +174,16 @@
                             <span class="text-xs text-slate-400 uppercase tracking-widest font-bold">Active Case File</span>
                         </div>
                         <h2 class="text-xl font-bold mb-1" id="product-title">Product: --</h2>
-                        <p class="text-xs text-slate-400 mb-1" id="product-asin-title">ASIN: --</p>
-                        <a id="product-link" href="#" target="_blank"
-                            class="text-xs text-primary/70 hover:text-primary underline underline-offset-2 transition-colors mb-4 inline-block">Open on Amazon</a>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-300 mb-3">
+                        <p class="hidden" id="product-asin-title">ASIN: --</p>
+                        <div class="mb-3 flex flex-wrap items-center gap-2">
+                            <a id="product-open-btn" href="#" target="_blank" rel="noopener noreferrer"
+                                class="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors">
+                                <span class="material-symbols-outlined text-sm">open_in_new</span>
+                                Open Product
+                            </a>
+                            <span class="text-[11px] text-slate-500">Image par click karke bhi product open hoga.</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-300 mb-3">
                             <div class="rounded-lg border border-primary/20 bg-slate-900/40 px-3 py-2">
                                 <span class="text-slate-400">Marketplace:</span>
                                 <span class="font-semibold ml-1" id="product-marketplace">-</span>
@@ -183,10 +191,6 @@
                             <div class="rounded-lg border border-primary/20 bg-slate-900/40 px-3 py-2">
                                 <span class="text-slate-400">Rating:</span>
                                 <span class="font-semibold ml-1" id="product-rating-meta">-</span>
-                            </div>
-                            <div class="rounded-lg border border-primary/20 bg-slate-900/40 px-3 py-2">
-                                <span class="text-slate-400">Global Ratings:</span>
-                                <span class="font-semibold ml-1" id="product-ratings-total-meta">-</span>
                             </div>
                         </div>
                         <!-- Fake vs Genuine Bar -->
@@ -286,6 +290,7 @@
                     </div>
                     <p class="text-xs text-slate-500 mb-3">Monthly signal of trust score and fraud risk for this product.</p>
                     <p id="trend-summary" class="text-xs text-slate-400 mb-3">Run analysis to view movement across months.</p>
+                    <p id="trend-review-volume" class="text-xs text-slate-500 mb-3">Monthly reviews will appear after analysis.</p>
                     <div class="h-64">
                         <canvas id="trust-trend-chart"></canvas>
                     </div>
@@ -407,6 +412,7 @@
         const reviewsContainer = document.getElementById('reviews-container');
         const evidenceMeta = document.getElementById('evidence-meta');
         const trendSummary = document.getElementById('trend-summary');
+        const trendReviewVolume = document.getElementById('trend-review-volume');
         const exportReportBtn = document.getElementById('export-report-btn');
         const sortSelect = document.getElementById('sort-select');
         const reviewFilterButtons = Array.from(document.querySelectorAll('.review-filter-btn'));
@@ -437,13 +443,13 @@
         }
 
         const productPanel = document.getElementById('product-panel');
+        const productImageLink = document.getElementById('product-image-link');
         const productImg = document.getElementById('product-img');
         const productTitle = document.getElementById('product-title');
         const productAsinTitle = document.getElementById('product-asin-title');
-        const productLink = document.getElementById('product-link');
+        const productOpenBtn = document.getElementById('product-open-btn');
         const productMarketplace = document.getElementById('product-marketplace');
         const productRatingMeta = document.getElementById('product-rating-meta');
-        const productRatingsTotalMeta = document.getElementById('product-ratings-total-meta');
         const pdGenuineLabel = document.getElementById('pd-genuine-label');
         const pdFakeLabel = document.getElementById('pd-fake-label');
         const pdGenuineBar = document.getElementById('pd-genuine-bar');
@@ -685,21 +691,6 @@
                 }
             }
 
-            const reviewsCandidates = [
-                summary ? summary.product_reviews_total : null,
-                summary ? summary.reviews_total : null,
-                summary ? summary.global_ratings : null,
-                summary ? summary.total_reviews : null,
-                Number(chartData?.fake || 0) + Number(chartData?.genuine || 0),
-            ];
-            let ratingsTotal = NaN;
-            for (const candidate of reviewsCandidates) {
-                const parsed = parseCompactNumber(candidate);
-                if (Number.isFinite(parsed) && parsed > 0) {
-                    ratingsTotal = parsed;
-                    break;
-                }
-            }
             let marketplaceHost = 'amazon.com';
             try {
                 if (rawInput && /^https?:\/\//i.test(rawInput)) {
@@ -711,12 +702,10 @@
             productAsinTitle.textContent = `ASIN: ${asin}`;
             productMarketplace.textContent = marketplaceHost;
             productRatingMeta.textContent = Number.isFinite(ratingRaw) ? `${Math.min(5, ratingRaw).toFixed(1)} / 5.0` : '-';
-            productRatingsTotalMeta.textContent = Number.isFinite(ratingsTotal) && ratingsTotal > 0
-                ? Math.round(ratingsTotal).toLocaleString()
-                : '-';
 
             // Amazon image CDN (works for most ASINs without auth)
             const summaryImage = (summary && summary.product_image) ? String(summary.product_image).trim() : '';
+            productImg.style.display = '';
             productImg.src = summaryImage || `https://images-na.ssl-images-amazon.com/images/P/${asin}.01._SCLZZZZZZZ_.jpg`;
             productImg.onerror = () => {
                 productImg.src = `https://ws-na.amazon-adsystem.com/widgets/q?_encoding=UTF8&ASIN=${asin}&Format=_AC_SL160_`;
@@ -725,8 +714,8 @@
             const amzUrl = (rawInput && /amazon\./i.test(rawInput))
                 ? rawInput
                 : `https://www.${marketplaceHost}/dp/${asin}`;
-            productLink.href = amzUrl;
-            productLink.textContent = `${marketplaceHost}/dp/${asin} ->`;
+            productImageLink.href = amzUrl;
+            productOpenBtn.href = amzUrl;
 
             pdGenuineLabel.textContent = `Genuine: ${genPct.toFixed(1)}%`;
             pdFakeLabel.textContent = `Fake: ${fakePct.toFixed(1)}%`;
@@ -849,6 +838,17 @@
                             tension: 0.25,
                             pointRadius: 3,
                             spanGaps: true
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Reviews',
+                            data: [],
+                            yAxisID: 'yReviews',
+                            backgroundColor: 'rgba(148,163,184,0.28)',
+                            borderColor: 'rgba(148,163,184,0.75)',
+                            borderWidth: 1,
+                            barPercentage: 0.55,
+                            categoryPercentage: 0.7
                         }
                     ]
                 },
@@ -868,6 +868,13 @@
                             max: 100,
                             ticks: { color: '#64748b', font: { size: 10 } },
                             grid: { color: 'rgba(255,255,255,0.08)' }
+                        },
+                        yReviews: {
+                            position: 'right',
+                            min: 0,
+                            beginAtZero: true,
+                            ticks: { color: '#94a3b8', font: { size: 10 } },
+                            grid: { drawOnChartArea: false }
                         }
                     }
                 }
@@ -892,11 +899,13 @@
             if (!productId) {
                 status.textContent = 'Missing product id';
                 if (trendSummary) trendSummary.textContent = 'Missing product id.';
+                if (trendReviewVolume) trendReviewVolume.textContent = 'Missing product id.';
                 return;
             }
             const safeMonths = Math.max(1, Math.min(24, Number(months) || 12));
             status.textContent = 'Loading...';
             if (trendSummary) trendSummary.textContent = 'Calculating trend movement...';
+            if (trendReviewVolume) trendReviewVolume.textContent = 'Loading monthly review volume...';
             try {
                 const res = await fetch(`/api/trust-history?product_id=${encodeURIComponent(productId)}&platform=${encodeURIComponent(platform)}&months=${safeMonths}`);
                 const data = await res.json();
@@ -904,21 +913,33 @@
                 const history = (Array.isArray(data.history) ? data.history : []).map(h => {
                     const trust = Number(h && h.trust_score);
                     const fraud = Number(h && h.fraud_score);
+                    const reviews = Number(h && h.review_count);
+                    const scans = Number(h && h.scan_events);
                     return {
                         month: (h && h.month) ? String(h.month) : '',
                         trust_score: Number.isFinite(trust) ? trust : null,
-                        fraud_score: Number.isFinite(fraud) ? fraud : null
+                        fraud_score: Number.isFinite(fraud) ? fraud : null,
+                        review_count: Number.isFinite(reviews) ? Math.max(0, reviews) : 0,
+                        scan_events: Number.isFinite(scans) ? Math.max(0, scans) : 0,
                     };
                 });
-                const hasPoints = history.some(h =>
+                const hasSignalPoints = history.some(h =>
                     h && (Number.isFinite(h.trust_score) || Number.isFinite(h.fraud_score))
                 );
+                const hasReviewVolume = history.some(h => Number(h && h.review_count) > 0);
+                const hasPoints = hasSignalPoints || hasReviewVolume;
                 if (hasPoints) {
                     trustTrendChart.data.labels = history.map(h => h.month || '');
                     trustTrendChart.data.datasets[0].data = history.map(h => h.trust_score);
                     trustTrendChart.data.datasets[1].data = history.map(h => h.fraud_score);
+                    trustTrendChart.data.datasets[2].data = history.map(h => Number(h.review_count || 0));
                     trustTrendChart.update();
                     status.textContent = `Updated (${safeMonths}M)`;
+
+                    if (trendReviewVolume) {
+                        const monthlyParts = history.map(h => `${h.month || '-'}: ${Number(h.review_count || 0).toLocaleString()}`);
+                        trendReviewVolume.textContent = `Monthly reviews (${safeMonths}M): ${monthlyParts.join(' | ')}`;
+                    }
 
                     const validFraud = history
                         .filter(h => Number.isFinite(h && h.fraud_score))
@@ -938,7 +959,9 @@
                         } else if (validFraud.length === 1) {
                             trendSummary.textContent = `LIVE > Only one month has history data (${validFraud[0].fraud.toFixed(1)}% fraud risk).`;
                         } else {
-                            trendSummary.textContent = 'Historical records exist, but no usable trend points were found.';
+                            trendSummary.textContent = hasReviewVolume
+                                ? 'Fraud trend points unavailable, but monthly review volume is available below.'
+                                : 'Historical records exist, but no usable trend points were found.';
                         }
                     }
                     return;
@@ -953,12 +976,15 @@
                     trustTrendChart.data.labels = [label];
                     trustTrendChart.data.datasets[0].data = [100 - fraud];
                     trustTrendChart.data.datasets[1].data = [fraud];
+                    trustTrendChart.data.datasets[2].data = [0];
                     trustTrendChart.update();
                     status.textContent = `Using current run only (${safeMonths}M)`;
                     if (trendSummary) trendSummary.textContent = `Single-point view: current fraud risk is ${fraud.toFixed(1)}%.`;
+                    if (trendReviewVolume) trendReviewVolume.textContent = 'Monthly reviews not available for fallback mode.';
                 } else {
                     status.textContent = 'No history yet';
                     if (trendSummary) trendSummary.textContent = 'No historical scans available yet. Run more scans to build timeline.';
+                    if (trendReviewVolume) trendReviewVolume.textContent = 'No monthly review volume available yet.';
                 }
             }
         }

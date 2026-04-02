@@ -100,8 +100,6 @@
                         Don't have an account? <a class="text-primary font-bold hover:underline ml-1"
                             href="{{ url_for('register') }}">Register now</a>
                     </p>
-                    <button class="text-xs text-primary/50 hover:text-primary transition-colors font-mono" 
-                            id="dev-bypass-btn" type="button">[ DEV BYPASS ]</button>
                 </div>
             </div>
         </div>
@@ -161,7 +159,12 @@
                 const res = await fetch('/api/sessionLogin', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ idToken })
+                    body: JSON.stringify({
+                        idToken,
+                        email: cred.user && cred.user.email ? cred.user.email : email,
+                        displayName: cred.user && cred.user.displayName ? cred.user.displayName : '',
+                        photoURL: cred.user && cred.user.photoURL ? cred.user.photoURL : ''
+                    })
                 });
                 if (res.ok) { window.location.href = '/'; }
                 else { const d = await res.json(); showError(d.error || 'Login failed.'); }
@@ -178,15 +181,6 @@
             btnText.textContent = 'Login to Dashboard';
         });
 
-        document.getElementById('dev-bypass-btn')?.addEventListener('click', async () => {
-            const res = await fetch('/api/sessionLogin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idToken: 'local-dev-mock-token' })
-            });
-            if (res.ok) { window.location.href = '/'; }
-            else { showError('Mock login failed. Check server logs.'); }
-        });
     </script>
 </body>
 
