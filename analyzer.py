@@ -261,6 +261,8 @@ def _load_models() -> None:
     for key, path in paths.items():
         if not os.path.exists(path):
             continue
+        if key == "rf" and os.getenv("RENDER") == "true":
+            continue
         try:
             model_obj = joblib.load(path)
             if hasattr(model_obj, "n_jobs"):
@@ -272,7 +274,7 @@ def _load_models() -> None:
         except Exception as exc:
             # Optional models (notably xgb) may fail if dependency not installed.
             print(f"[WARN] Failed loading {key}: {exc}")
-    MODELS.loaded = all([MODELS.tfidf is not None, MODELS.rf is not None, MODELS.lr_base is not None])
+    MODELS.loaded = all([MODELS.tfidf is not None, MODELS.lr_base is not None])
     if not MODELS.loaded:
         print("[WARN] Base models missing; using heuristic fallback.")
 
