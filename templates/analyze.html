@@ -1460,7 +1460,7 @@
             if (!raw) { urlInput.focus(); return; }
             const asin = extractAsin(raw);
             const productRef = /amazon\./i.test(raw) ? raw : asin;
-            const reviewLimit = 10000;
+            const reviewLimit = 100; // REDUCED FROM 10000 for Render Free Tier
             const timer = showLoader();
             if (exportReportBtn) exportReportBtn.disabled = true;
 
