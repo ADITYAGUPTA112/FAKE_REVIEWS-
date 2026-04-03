@@ -30,13 +30,27 @@
                     <h1 class="font-display text-xl font-bold">TrustLens AI</h1>
                 </div>
                 <nav class="hidden items-center gap-7 md:flex">
-                    <a class="text-sm text-slate-300 hover:text-teal-300" href="{{ url_for('index') }}">Home</a>
-                    <a class="text-sm text-slate-300 hover:text-teal-300" href="{{ url_for('analyze') }}">Analyze</a>
-                    <a class="text-sm font-semibold text-teal-300" href="{{ url_for('history') }}">History</a>
-                    <a class="text-sm text-slate-300 hover:text-teal-300" href="{{ url_for('leaderboard') }}">Leaderboard</a>
-                    <a class="text-sm text-slate-300 hover:text-teal-300" href="{{ url_for('profile') }}">Profile</a>
+                    <a class="text-sm {% if request.endpoint == 'index' %}text-teal-300 font-semibold{% else %}text-slate-300 hover:text-teal-300{% endif %} transition-colors" href="{{ url_for('index') }}">Home</a>
+                    <a class="text-sm {% if request.endpoint == 'analyze' %}text-teal-300 font-semibold{% else %}text-slate-300 hover:text-teal-300{% endif %} transition-colors" href="{{ url_for('analyze') }}">Analyze</a>
+                    {% if user_session.id %}
+                    <a class="text-sm {% if request.endpoint == 'history' %}text-teal-300 font-semibold{% else %}text-slate-300 hover:text-teal-300{% endif %} transition-colors" href="{{ url_for('history') }}">History</a>
+                    <a class="text-sm {% if request.endpoint == 'leaderboard' %}text-teal-300 font-semibold{% else %}text-slate-300 hover:text-teal-300{% endif %} transition-colors" href="{{ url_for('leaderboard') }}">Leaderboard</a>
+                    <a class="text-sm {% if request.endpoint == 'profile' %}text-teal-300 font-semibold{% else %}text-slate-300 hover:text-teal-300{% endif %} transition-colors" href="{{ url_for('profile') }}">Profile</a>
+                    {% endif %}
                 </nav>
-                <a href="{{ url_for('logout') }}" class="rounded-lg border border-teal-300/40 bg-teal-300/10 px-4 py-2 text-sm font-semibold text-teal-300 hover:bg-teal-300/20">Logout</a>
+                {% if user_session.id %}
+                <div class="flex items-center gap-4">
+                    <a href="{{ url_for('profile') }}" class="block w-10 h-10 rounded-full border border-teal-300/30 p-0.5 overflow-hidden group cursor-pointer">
+                        <img class="w-full h-full object-cover rounded-full" alt="User avatar" src="{{ user_session.photo }}" />
+                    </a>
+                    <button onclick="handleLogout()" class="rounded-lg border border-teal-300/40 bg-teal-300/10 px-4 py-2 text-sm font-semibold text-teal-300 hover:bg-teal-300/20">Logout</button>
+                </div>
+                {% else %}
+                <div class="flex items-center gap-3">
+                    <a href="{{ url_for('login') }}" class="text-sm font-bold text-slate-300 hover:text-teal-300 transition-colors">Login</a>
+                    <a href="{{ url_for('register') }}" class="rounded-lg bg-teal-300 px-4 py-2 text-sm font-bold text-[#041019] transition-all hover:brightness-110">Register</a>
+                </div>
+                {% endif %}
             </div>
         </header>
 
@@ -394,6 +408,31 @@
         updateFilterButtons();
         bind();
         loadHistory();
+    </script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        
+        const firebaseConfig = {
+            apiKey: "{{ firebase_api_key }}",
+            authDomain: "fake-reviews-94913.firebaseapp.com",
+            projectId: "fake-reviews-94913",
+            storageBucket: "fake-reviews-94913.appspot.com",
+            messagingSenderId: "542387114223",
+            appId: "1:542387114223:web:53a693c0ea5d3ee3847525"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        
+        window.handleLogout = async () => {
+            try {
+                await signOut(auth);
+            } catch (e) {
+                console.error("Sign out error", e);
+            }
+            window.location.href = "{{ url_for('logout') }}";
+        };
     </script>
 </body>
 </html>

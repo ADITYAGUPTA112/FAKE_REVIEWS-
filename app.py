@@ -1,4 +1,4 @@
-﻿from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
 import os
@@ -22,9 +22,6 @@ app.secret_key = "add api key"
 
 FIREBASE_WEB_API_KEY = os.environ.get("FIREBASE_WEB_API_KEY", "")
 
-@app.context_processor
-def inject_firebase_key():
-    return dict(firebase_api_key=FIREBASE_WEB_API_KEY)
 
 UPLOAD_FOLDER      = "static/uploads/avatars"
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
@@ -39,6 +36,17 @@ DEFAULT_AVATAR_URL = (
     "https://lh3.googleusercontent.com/aida-public/AB6AXuBdi-P-pYGbwKCGyQeR-ewKR2hOIv7_NdiX301B0Kb913TQmlFjJNwWMICwFvIluwmozxWn7Jg-hf7OIIQeLXhWj-h8aadKRhnliFfLEht3B6ECeskiKiHi7LNZgvaOvuyCY-BS_A8hwypI_WFdSKIAb8Qh95TilDHaRdM6VQSRGtqUYDXHBfo0bu8559XF0d-E5JJ_qddJcXkuVrJc3hW_GFI2i0ZDF8sXDAilqj3LOXVHpMXGs0AsFiL_d5OsPgoGtJOVjZ5EGHMS"
 )
 
+@app.context_processor
+def inject_globals():
+    return {
+        "firebase_api_key": FIREBASE_WEB_API_KEY,
+        "user_session": {
+            "id": session.get("user_id"),
+            "name": session.get("user_name"),
+            "email": session.get("user_email"),
+            "photo": session.get("user_photo") or DEFAULT_AVATAR_URL,
+        }
+    }
 
 def _safe_float(value, default=None):
     try:

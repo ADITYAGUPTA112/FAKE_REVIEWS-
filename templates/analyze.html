@@ -81,26 +81,31 @@
                     <span class="text-[9px] font-mono-code text-primary/50 bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20 ml-1 hidden sm:inline">FORENSIC</span>
                 </div>
                 <nav class="hidden md:flex items-center gap-8">
-                    <a class="text-sm font-medium hover:text-primary transition-colors"
-                        href="{{ url_for('index') }}">Home</a>
-                    <a class="text-sm font-medium text-primary" href="{{ url_for('analyze') }}">Analyze</a>
-                    <a class="text-sm font-medium hover:text-primary transition-colors"
-                        href="{{ url_for('history') }}">History</a>
-                    <a class="text-sm font-medium hover:text-primary transition-colors"
-                        href="{{ url_for('leaderboard') }}">Leaderboard</a>
-                    <a class="text-sm font-medium hover:text-primary transition-colors"
-                        href="{{ url_for('profile') }}">Profile</a>
+                    <a class="text-sm {% if request.endpoint == 'index' %}text-primary font-semibold{% else %}text-slate-900 dark:text-slate-300 hover:text-primary{% endif %} transition-colors" href="{{ url_for('index') }}">Home</a>
+                    <a class="text-sm {% if request.endpoint == 'analyze' %}text-primary font-semibold{% else %}text-slate-900 dark:text-slate-300 hover:text-primary{% endif %} transition-colors" href="{{ url_for('analyze') }}">Analyze</a>
+                    {% if user_session.id %}
+                    <a class="text-sm {% if request.endpoint == 'history' %}text-primary font-semibold{% else %}text-slate-900 dark:text-slate-300 hover:text-primary{% endif %} transition-colors" href="{{ url_for('history') }}">History</a>
+                    <a class="text-sm {% if request.endpoint == 'leaderboard' %}text-primary font-semibold{% else %}text-slate-900 dark:text-slate-300 hover:text-primary{% endif %} transition-colors" href="{{ url_for('leaderboard') }}">Leaderboard</a>
+                    <a class="text-sm {% if request.endpoint == 'profile' %}text-primary font-semibold{% else %}text-slate-900 dark:text-slate-300 hover:text-primary{% endif %} transition-colors" href="{{ url_for('profile') }}">Profile</a>
+                    {% endif %}
                 </nav>
                 <div class="flex items-center gap-4">
-                    <a href="{{ url_for('logout') }}"
-                        class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-background-dark font-bold text-sm hover:opacity-90 transition-opacity">
-                        <span class="material-symbols-outlined text-sm">logout</span>
-                        Logout
-                    </a>
-                    <div class="w-10 h-10 rounded-full bg-primary/20 border border-primary/40 overflow-hidden">
-                        <img class="w-full h-full object-cover" alt="User profile avatar" data-alt="User profile avatar placeholder"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDgnPjA7r2W5CWosZDqPeHjZYmCgnPZ-0_xhdzD5GyD-uNWGDcuQKmUls3Mib1gPaPYypkoNJv0Bs9__rc1TiNnRi3kX9gBn1aM58Gvj9lbBVp2F1JYT-ffBIAmPHw1yKE_AV8opNZe4FznX6LNoXJledHsO-54QPHC3ijRfrqS5tRj9UTjECdUJgRPIeudKnALwCvO-UmovMOYLq4Uz8M8AkWO36Pyuj0jRhI--QTeGUmFprw0px4l-omqBImPhtN76Dft11mJOO4" />
+                    {% if user_session.id %}
+                    <div class="flex items-center gap-3">
+                        <a href="{{ url_for('profile') }}" class="block w-10 h-10 rounded-full border border-primary/30 p-0.5 overflow-hidden group cursor-pointer">
+                            <img class="w-full h-full object-cover rounded-full" alt="User avatar" src="{{ user_session.photo }}" />
+                        </a>
+                        <button onclick="handleLogout()" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-background-dark font-bold text-sm hover:opacity-90 transition-opacity">
+                            <span class="material-symbols-outlined text-sm">logout</span>
+                            Logout
+                        </button>
                     </div>
+                    {% else %}
+                    <div class="flex items-center gap-3">
+                        <a href="{{ url_for('login') }}" class="text-sm font-bold text-slate-900 dark:text-slate-100 hover:text-primary transition-colors">Login</a>
+                        <a href="{{ url_for('register') }}" class="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background-dark transition-all hover:brightness-110">Register</a>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -1510,6 +1515,31 @@
                 if (exportReportBtn) exportReportBtn.disabled = !latestAnalysisSnapshot;
             }
         });
+    </script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        
+        const firebaseConfig = {
+            apiKey: "{{ firebase_api_key }}",
+            authDomain: "fake-reviews-94913.firebaseapp.com",
+            projectId: "fake-reviews-94913",
+            storageBucket: "fake-reviews-94913.appspot.com",
+            messagingSenderId: "542387114223",
+            appId: "1:542387114223:web:53a693c0ea5d3ee3847525"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        
+        window.handleLogout = async () => {
+            try {
+                await signOut(auth);
+            } catch (e) {
+                console.error("Sign out error", e);
+            }
+            window.location.href = "{{ url_for('logout') }}";
+        };
     </script>
 </body>
 
