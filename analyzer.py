@@ -1622,10 +1622,23 @@ def fetch_reviews_multi_page(
             ("I really love it! Exact match to what is advertised online.", 5, "HappyShopper"),
             ("Arrived totally defective and customer service was unhelpful.", 1, "AngryBuyer99"),
             ("Works well so far, no major complaints from me.", 4, "TechEnthusiast"),
-            ("Broke entirely after just 2 weeks of use. Don't buy.", 1, "SadCustomer"),
-            ("Great purchase, highly recommend it to everyone looking for one.", 5, "BestReviewer")
+            ("Broke entirely after just 2 weeks of use. Do not buy.", 1, "SadCustomer"),
+            ("Great purchase, highly recommend it to everyone looking for one.", 5, "BestReviewer"),
+            ("Very fast delivery and product matches description exactly.", 5, "QuickShopperMK"),
+            ("Seems like the positive reviews here are all fake and paid.", 2, "SkepticalShopper"),
+            ("Excellent build quality, durable and looks premium.", 5, "PremiumHunter"),
+            ("Returned it immediately. Completely different from photos shown.", 1, "DisgustedBuyer"),
+            ("Decent value for money, nothing extraordinary though.", 3, "ValueSeeker22"),
+            ("I suspect most 5 star reviews are bot generated. Product is average.", 2, "HonestReviewerX"),
+            ("Packaging was damaged but the product itself works fine.", 3, "CarefulInspectorR"),
+            ("Bought this for my brother and he loved it. Highly recommend.", 5, "GifterPro"),
+            ("The seller keeps flooding fake reviews to boost ratings, beware.", 1, "FraudDetective"),
+            ("Used it for 3 months now, still performing great.", 5, "LongTermUser"),
+            ("Product quality is mediocre but price justifies it somewhat.", 3, "MidRangeChooser"),
+            ("Noticed the same review posted by multiple accounts. Very suspicious.", 1, "ReviewPolice99"),
         ]
-        subset = random.sample(synthetic_pool, min(5, len(synthetic_pool)))
+        select_count = random.randint(15, min(20, len(synthetic_pool)))
+        subset = random.sample(synthetic_pool, select_count)
         for idx, (text, stars, user) in enumerate(subset):
             reviews.append({
                 "text": text,
@@ -1635,6 +1648,7 @@ def fetch_reviews_multi_page(
                 "review_id": f"SYN_demo_{idx}",
                 "rating_source": "synthetic_demo_fallback"
             })
+
 
     return reviews[:target_reviews], product_details
 
