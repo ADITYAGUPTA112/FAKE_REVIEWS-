@@ -1604,7 +1604,7 @@ def fetch_reviews_multi_page(
         reviews = _merge_unique_reviews(reviews, fallback_reviews, target_reviews)
 
     if not reviews:
-        local_cache = _load_cached_reviews(max_reviews=target_reviews)
+        local_cache = []
         if local_cache:
             print(
                 f"[WARN] Live fetch unavailable. Using local cache ({len(local_cache)} reviews). "
