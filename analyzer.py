@@ -451,7 +451,7 @@ def extract_asin(url_or_asin: str) -> str:
     raw = str(url_or_asin or "").strip()
     if re.fullmatch(r"[A-Z0-9]{10}", raw, flags=re.I):
         return raw.upper()
-    for pattern in [r"/dp/([A-Z0-9]{10})", r"/gp/product/([A-Z0-9]{10})", r"([A-Z0-9]{10})"]:
+    for pattern in [r"/dp/([A-Z0-9]{10})", r"/gp/product/([A-Z0-9]{10})", r"/product-reviews/([A-Z0-9]{10})", r"asin=([A-Z0-9]{10})"]:
         m = re.search(pattern, raw, flags=re.I)
         if m:
             return m.group(1).upper()

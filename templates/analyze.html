@@ -408,7 +408,7 @@
         const statuses = ['Initializing Forensic Engine...', 'Scraping Review Data...', 'Running NLP Analysis...', 'Calculating Trust Score...', 'Scanning Reviewer Networks...', 'Building Risk Profile...'];
 
         function extractAsin(input) {
-            const m = input.match(/(?:dp|product|ASIN)\/([A-Z0-9]{10})/i) || input.match(/\b([A-Z0-9]{10})\b/);
+            const m = input.match(/(?:dp|product|product-reviews|ASIN)\/([A-Z0-9]{10})/i) || input.match(/asin=([A-Z0-9]{10})/i) || input.match(/^([A-Z0-9]{10})$/i);
             return m ? m[1] : input.trim();
         }
 
@@ -1463,8 +1463,15 @@
         runBtn.addEventListener('click', async () => {
             const raw = urlInput.value.trim();
             if (!raw) { urlInput.focus(); return; }
+            
+            const isAmz = /amazon\./i.test(raw);
+            if (!isAmz && !/^([A-Z0-9]{10})$/i.test(raw)) {
+                showError("Please enter a valid Amazon URL or a 10-character Product ASIN.");
+                return;
+            }
+            
             const asin = extractAsin(raw);
-            const productRef = /amazon\./i.test(raw) ? raw : asin;
+            const productRef = isAmz ? raw : asin;
             const reviewLimit = 20; // 20 reviews max for fast demo on 0.1 CPU core
             const timer = showLoader();
             if (exportReportBtn) exportReportBtn.disabled = true;
