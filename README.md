@@ -238,7 +238,6 @@ This project is intended for academic and research purposes.
 
 **Aditya Gupta**
 - GitHub: [@ADITYAGUPTA112](https://github.com/ADITYAGUPTA112)
-
----
+ GitHub: [@Soyammasrwall]
 
 > *"See the real product trust score before you buy."*
